@@ -1,0 +1,36 @@
+# .NET Core (Backend)
+bin/
+obj/
+appsettings.Development.json
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Node.js / React (Web Admin)
+node_modules/
+dist/
+build/
+.env
+.env.local
+.eslintcache
+
+# Flutter / Dart (Mobile)
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+ios/.generated/
+android/app/debug/
+android/app/profile/
+android/app/release/
+*.jks
+*.keystore
+key.properties
+
+# IDEs / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
