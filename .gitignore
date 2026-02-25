@@ -1,11 +1,15 @@
 # .NET Core (Backend)
 bin/
 obj/
+.vs/
 appsettings.Development.json
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
+*.db
+*.db-shm
+*.db-wal
 
 # Node.js / React (Web Admin)
 node_modules/

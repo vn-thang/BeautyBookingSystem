@@ -62,7 +62,7 @@ class StoreDashboardScreen extends StatelessWidget {
                 const Text('Tiệm tóc Hari', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 // Đã thay .withOpacity(0.9) thành .withValues(alpha: 0.9) theo chuẩn Flutter mới
-                Text('Địa chỉ: 12 Đông Viên, Thành phố Hà...', style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text('Địa chỉ: 12 Đông Viên, Thành phố Hà Nội', style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -74,7 +74,8 @@ class StoreDashboardScreen extends StatelessWidget {
 
   Widget _buildDetailedStatsCard() {
     return Card(
-      elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0, 
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -85,10 +86,21 @@ class StoreDashboardScreen extends StatelessWidget {
                 Text('Thống kê chi tiết', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ],
             ),
+            const SizedBox(height: 16),
+            
+            // --- ĐÂY LÀ PHẦN BỔ SUNG CHỌN NGÀY ---
+            Row(
+              children: [
+                Expanded(child: _buildDatePickerField('Bắt đầu', '10/1/2024')),
+                const SizedBox(width: 16),
+                Expanded(child: _buildDatePickerField('Kết thúc', '17/1/2024')),
+              ],
+            ),
+            // -------------------------------------
+
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              // Bỏ chữ 'const' ở mảng này
               children: [
                 const StatItemWidget(icon: Icons.groups, iconColor: Colors.grey, value: '0', label: 'Khách hàng'),
                 StatItemWidget(icon: Icons.calendar_month, iconColor: AppColors.primary, value: '0', label: 'Lịch đặt'),
@@ -101,6 +113,33 @@ class StoreDashboardScreen extends StatelessWidget {
     );
   }
 
+  // Hàm vẽ UI cho ô chọn ngày
+  Widget _buildDatePickerField(String label, String date) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label, 
+          style: const TextStyle(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.w500)
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(date, style: const TextStyle(fontSize: 14, color: Colors.black54)),
+              const Icon(Icons.calendar_month, size: 18, color: Colors.black54),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
   Widget _buildCommissionCard() {
     return Card(
       elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -195,3 +234,4 @@ class StoreDashboardScreen extends StatelessWidget {
     );
   }
 }
+
