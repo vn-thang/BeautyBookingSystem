@@ -1,4 +1,5 @@
 ﻿using BeautyBookingSystem.Application.Interfaces;
+using BeautyBookingSystem.Domain.Entities;
 using BeautyBookingSystem.Infrastructure.Data;
 using System;
 using System.Collections.Generic;
@@ -12,9 +13,12 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
+        public IGenericRepository<User> UserRepository { get; private set; }
+
         public UnitOfWork(AppDbContext context)
         {
             _context = context;
+            UserRepository = new GenericRepository<User>(_context);
         }
 
         public async Task<int> SaveChangesAsync()

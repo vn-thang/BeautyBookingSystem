@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BeautyBookingSystem.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,7 +12,7 @@ namespace BeautyBookingSystem.Application.Interfaces
         // Khai báo các Repository cụ thể ở đây (sau này dùng)
         // IUserRepository Users { get; }
         // IStoreRepository Stores { get; }
-
+        IGenericRepository<User> UserRepository { get; }
         Task<int> SaveChangesAsync();
     }
 }

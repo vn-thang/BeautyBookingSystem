@@ -1,8 +1,13 @@
-﻿using System;
+﻿using BeautyBookingSystem.Infrastructure.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations;
+using System;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 #nullable disable
 
+
+//Add - Migration InitialCreate - Project BeautyBookingSystem.Infrastructure - StartupProject BeautyBookingSystem.API
+//Update - Database - Project BeautyBookingSystem.Infrastructure - StartupProject BeautyBookingSystem.API
 namespace BeautyBookingSystem.Infrastructure.Migrations
 {
     /// <inheritdoc />

@@ -18,7 +18,7 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         public GenericRepository(AppDbContext context)
         {
             _context = context;
-            this.dbSet = context.Set<T>();
+            this.dbSet = context.Set<T>(); //EF Core tự động tìm table tương ứng với entity.
         }
 
         public async Task<IEnumerable<T>> GetAllAsync() => await dbSet.ToListAsync();
@@ -27,6 +27,10 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
 
         public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> expression)
             => await dbSet.Where(expression).ToListAsync();
+        public async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> expression)
+        {
+            return await dbSet.FirstOrDefaultAsync(expression);
+        }
 
         public async Task AddAsync(T entity) => await dbSet.AddAsync(entity);
 
