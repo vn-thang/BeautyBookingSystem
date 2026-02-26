@@ -3,6 +3,8 @@ bin/
 obj/
 .vs/
 appsettings.Development.json
+appsettings.json
+appsettings.*.json
 *.user
 *.suo
 *.userosscache
@@ -38,3 +40,4 @@ key.properties
 .idea/
 .DS_Store
 Thumbs.db
+/src/Backend_API/BeautyBookingSystem.API/appsettings.json
