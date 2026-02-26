@@ -18,7 +18,7 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         public GenericRepository(AppDbContext context)
         {
             _context = context;
-            this.dbSet = context.Set<T>(); //EF Core tự động tìm table tương ứng với entity.
+            this.dbSet = context.Set<T>(); 
         }
 
         public async Task<IEnumerable<T>> GetAllAsync() => await dbSet.ToListAsync();

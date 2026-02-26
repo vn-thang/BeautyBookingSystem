@@ -19,7 +19,6 @@ namespace BeautyBookingSystem.API.Controllers
             _userService = userService;
         }
 
-        // 1. API GET: api/user/me (Xem hồ sơ)
         [HttpGet("me")]
         public async Task<IActionResult> GetProfile()
         {
@@ -37,7 +36,6 @@ namespace BeautyBookingSystem.API.Controllers
             }
         }
 
-        // 2. API PUT: api/user/profile (Cập nhật hồ sơ)
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {

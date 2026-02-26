@@ -54,7 +54,6 @@ namespace BeautyBookingSystem.API.Controllers
                     return Unauthorized("Token không hợp lệ hoặc không chứa ID.");
                 }
 
-                // Gọi tới hàm xử lý logic ở Bước 2
                 var result = await _authService.ChangePasswordAsync(userId, request);
 
                 return Ok(new { message = "Đổi mật khẩu thành công!" });
@@ -70,7 +69,6 @@ namespace BeautyBookingSystem.API.Controllers
         {
             try
             {
-                // Tự động bóc ID từ trong Token gửi lên
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 if (string.IsNullOrEmpty(userId))
@@ -78,7 +76,6 @@ namespace BeautyBookingSystem.API.Controllers
                     return Unauthorized(new { message = "Token không hợp lệ!" });
                 }
 
-                // Gọi hàm xóa RefreshToken
                 await _authService.LogoutAsync(userId);
 
                 return Ok(new { message = "Đăng xuất thành công!" });

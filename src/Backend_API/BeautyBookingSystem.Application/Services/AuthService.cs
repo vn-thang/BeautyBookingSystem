@@ -1,4 +1,4 @@
-﻿using BeautyBookingSystem.Application.Common.Exceptions; // Nơi chứa BadRequestException
+﻿using BeautyBookingSystem.Application.Common.Exceptions; 
 using BeautyBookingSystem.Application.DTOs.Auth;
 using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Entities;
@@ -25,11 +25,9 @@ namespace BeautyBookingSystem.Application.Services
             _unitOfWork = unitOfWork;
             _emailService = emailService;
         }
-
-        // --- 1. HÀM ĐĂNG KÝ ---
         public async Task<TokenResponse> RegisterAsync(RegisterRequest request)
         {
-            // Dùng thống nhất qua _unitOfWork
+            
             var existingUser = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Phone == request.Phone);
             if (existingUser != null)
                 throw new BadRequestException("Số điện thoại này đã được đăng ký.");
@@ -58,27 +56,13 @@ namespace BeautyBookingSystem.Application.Services
             return await GenerateTokensAndUpdateUserAsync(newUser);
         }
 
-        // --- 2. HÀM ĐĂNG NHẬP ---
         public async Task<TokenResponse> LoginAsync(LoginRequest request)
         {
-            // TÌM KIẾM BẰNG CẢ 2 CỘT: Phone HOẶC Email
             var user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(
                 u => u.Phone == request.EmailOrPhone || u.Email == request.EmailOrPhone);
 
-            //if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-            //    throw new BadRequestException("Số điện thoại/Email hoặc mật khẩu không đúng.");
-            if (user == null)
-            {
-                // Cố tình in thẳng giá trị mà C# nhận được từ Postman ra màn hình
-                throw new BadRequestException($"LỖI 1: Hệ thống tìm không thấy. C# đang đi tìm chuỗi này: '{request.EmailOrPhone}'");
-            }
-
-            // 3. Bắt lỗi SAI MẬT KHẨU
-            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
-            if (!isPasswordValid)
-            {
-                throw new BadRequestException("LỖI 2: Tìm thấy người rồi, nhưng mật khẩu bị sai!");
-            }
+            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                throw new BadRequestException("Số điện thoại/Email hoặc mật khẩu không đúng.");
 
             if (user.Status != UserStatus.Active)
                 throw new BadRequestException("Tài khoản của bạn đã bị khóa.");
@@ -86,7 +70,6 @@ namespace BeautyBookingSystem.Application.Services
             return await GenerateTokensAndUpdateUserAsync(user);
         }
 
-        // --- 3. HÀM LÀM MỚI TOKEN ---
         public async Task<TokenResponse> RefreshTokenAsync(RefreshTokenRequest request)
         {
             var principal = GetPrincipalFromExpiredToken(request.AccessToken);
@@ -107,11 +90,10 @@ namespace BeautyBookingSystem.Application.Services
         private async Task<TokenResponse> GenerateTokensAndUpdateUserAsync(User user)
         {
             var accessToken = CreateAccessToken(user);
-            var refreshToken = CreateRefreshToken(); // Random 1 chuỗi ngẫu nhiên
+            var refreshToken = CreateRefreshToken(); 
 
-            // Cập nhật RefreshToken mới vào DB để lần sau so sánh
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); // Hạn 7 ngày
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); 
 
             _unitOfWork.UserRepository.Update(user);
             await _unitOfWork.SaveChangesAsync();
@@ -121,7 +103,7 @@ namespace BeautyBookingSystem.Application.Services
 
         private string CreateAccessToken(User user)
         {
-            // Nhét thông tin user vào bên trong Token (gọi là Claims)
+           
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -131,13 +113,13 @@ namespace BeautyBookingSystem.Application.Services
                 new Claim(ClaimTypes.Role, user.Role.ToString())
             };
 
-            // Dùng khóa bí mật trong appsettings.json để ký xác nhận
+            
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
             var token = new JwtSecurityToken(
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(15), // Hạn 15 phút
+                expires: DateTime.UtcNow.AddMinutes(15), 
                 signingCredentials: creds
             );
 
@@ -149,7 +131,7 @@ namespace BeautyBookingSystem.Application.Services
             var randomNumber = new byte[32];
             using var rng = RandomNumberGenerator.Create();
             rng.GetBytes(randomNumber); //Fill dữ liệu ngẫu nhiên vào mảng byte.
-            return Convert.ToBase64String(randomNumber); //Byte không đọc được → convert sang string.
+            return Convert.ToBase64String(randomNumber); 
         }
 
         private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
@@ -160,7 +142,7 @@ namespace BeautyBookingSystem.Application.Services
                 ValidateIssuer = false,
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!)),
-                ValidateLifetime = false // Quan trọng: Cho phép đọc token dù đã hết 15 phút
+                ValidateLifetime = false 
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -174,35 +156,29 @@ namespace BeautyBookingSystem.Application.Services
         
         public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request)
         {
-            // 1. Tìm user trong Database dựa vào ID. 
+            
             if (!int.TryParse(userId, out int parsedUserId))
             {
                 throw new Exception("ID người dùng từ Token không hợp lệ!");
             }
 
-            // 2. Truyền cái số (parsedUserId) vừa ép kiểu xong vào cho kho tìm kiếm
             var user = await _unitOfWork.UserRepository.GetByIdAsync(parsedUserId);
             if (user == null)
             {
                 throw new Exception("Không tìm thấy người dùng!");
             }
 
-            // 2. Kiểm tra xem Mật khẩu cũ khách nhập có khớp với mật khẩu đã băm (Hash) trong DB không
-            // Hàm Verify của BCrypt sẽ tự động so sánh chuỗi thô (OldPassword) với chuỗi loằng ngoằng trong DB.
             bool isOldPasswordCorrect = BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash);
             if (!isOldPasswordCorrect)
             {
                 throw new Exception("Mật khẩu cũ không chính xác!");
             }
 
-            // 3. Nếu đúng rồi, tiến hành băm (Hash) Mật khẩu mới
             string hashedNewPassword = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
-            // 4. Cập nhật lại mật khẩu mới cho user
             user.PasswordHash = hashedNewPassword;
             _unitOfWork.UserRepository.Update(user);
 
-            // 5. Lưu xuống Database
             await _unitOfWork.SaveChangesAsync();
 
             return true;
@@ -210,20 +186,17 @@ namespace BeautyBookingSystem.Application.Services
 
         public async Task<bool> LogoutAsync(string userId)
         {
-            // 1. Ép kiểu ID giống hệt lúc làm ChangePassword
             if (!int.TryParse(userId, out int parsedUserId))
             {
                 throw new Exception("ID người dùng từ Token không hợp lệ!");
             }
 
-            // 2. Tìm User trong Database
             var user = await _unitOfWork.UserRepository.GetByIdAsync(parsedUserId);
             if (user == null)
             {
                 return false;
             }
 
-            // 3. "Tiêu diệt" Refresh Token bằng cách gán nó thành null (hoặc chuỗi rỗng)
             user.RefreshToken = null;
             user.RefreshTokenExpiryTime = null; 
 
@@ -236,7 +209,6 @@ namespace BeautyBookingSystem.Application.Services
 
         public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request)
         {
-            // 1. Tìm xem Email này có trong hệ thống không
             var user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
             {
@@ -245,7 +217,6 @@ namespace BeautyBookingSystem.Application.Services
 
             string otp = new Random().Next(100000, 999999).ToString();
 
-            // 3. Lưu OTP và thời gian hết hạn (Cho phép sống đúng 5 phút) vào Database
             user.ResetPasswordOtp = otp;
             user.ResetPasswordOtpExpiry = DateTime.UtcNow.AddMinutes(5);
 

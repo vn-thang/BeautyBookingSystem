@@ -10,7 +10,6 @@ namespace BeautyBookingSystem.Application.DTOs.User
     {
         public string FullName { get; set; } = string.Empty;
 
-        // Email và Avatar khách có thể bỏ trống (null)
         public string? Email { get; set; }
         public string? AvatarUrl { get; set; }
     }
