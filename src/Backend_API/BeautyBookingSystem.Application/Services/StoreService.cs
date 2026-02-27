@@ -40,6 +40,8 @@ namespace BeautyBookingSystem.Application.Services
                 Latitude = store.Latitude,
                 Longitude = store.Longitude,
                 IsOpen = store.IsOpen,
+                AverageRating = store.AverageRating, 
+                TotalReviews = store.TotalReviews,
                 OperatingHours = store.OperatingHours.Select(oh => new OperatingHourDto
                 {
                     DayOfWeek = oh.DayOfWeek,
@@ -62,6 +64,8 @@ namespace BeautyBookingSystem.Application.Services
 
             if (request.OperatingHours == null || !request.OperatingHours.Any())
                 return "Cửa hàng phải có ít nhất 1 ngày làm việc.";
+            var duplicateDays = request.OperatingHours.GroupBy(x => x.DayOfWeek).Any(g => g.Count() > 1);
+            if (duplicateDays) return "Danh sách giờ làm việc có ngày bị lặp lại.";
 
             store.Name = request.Name;
             store.Address = request.Address;
@@ -93,8 +97,7 @@ namespace BeautyBookingSystem.Application.Services
                     OpenTime = openTime,
                     CloseTime = closeTime
                 });
-                var duplicateDays = request.OperatingHours.GroupBy(x => x.DayOfWeek).Any(g => g.Count() > 1);
-                if (duplicateDays) return "Danh sách giờ làm việc có ngày bị lặp lại.";
+                
             }
             _unitOfWork.StoreRepository.Update(store);
             await _unitOfWork.SaveChangesAsync();

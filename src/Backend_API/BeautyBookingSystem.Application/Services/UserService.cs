@@ -62,6 +62,10 @@ namespace BeautyBookingSystem.Application.Services
             }
             user.FullName = request.FullName;
                 user.AvatarUrl = request.AvatarUrl;
+            if (!string.IsNullOrEmpty(request.FcmToken))
+            {
+                user.FcmToken = request.FcmToken;
+            }
 
             user.UpdatedAt = DateTime.UtcNow;
 

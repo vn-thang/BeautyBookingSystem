@@ -30,6 +30,8 @@ namespace BeautyBookingSystem.Application.DTOs.Store
         public double? Longitude { get; set; }
 
         public bool IsOpen { get; set; }
+        public decimal AverageRating { get; set; } 
+        public int TotalReviews { get; set; }
 
         public List<OperatingHourDto> OperatingHours { get; set; } = new();
     }

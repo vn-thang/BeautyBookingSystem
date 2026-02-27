@@ -66,6 +66,10 @@ namespace BeautyBookingSystem.Application.Services
 
             if (user.Status != UserStatus.Active)
                 throw new BadRequestException("Tài khoản của bạn đã bị khóa.");
+            if (!string.IsNullOrEmpty(request.FcmToken))
+            {
+                user.FcmToken = request.FcmToken;
+            }
 
             return await GenerateTokensAndUpdateUserAsync(user);
         }

@@ -12,5 +12,6 @@ namespace BeautyBookingSystem.Application.DTOs.User
 
         public string? Email { get; set; }
         public string? AvatarUrl { get; set; }
+        public string? FcmToken { get; set; }
     }
 }

@@ -14,5 +14,6 @@ namespace BeautyBookingSystem.Application.DTOs.Auth
         [Required(ErrorMessage = "Mật khẩu không được để trống")]
         [MinLength(6, ErrorMessage = "Mật khẩu tối thiểu 6 ký tự")]
         public string Password { get; set; } = string.Empty;
+        public string? FcmToken { get; set; }
     }
 }
