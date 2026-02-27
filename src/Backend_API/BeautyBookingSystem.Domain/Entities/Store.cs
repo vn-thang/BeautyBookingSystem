@@ -24,6 +24,8 @@ namespace BeautyBookingSystem.Domain.Entities
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
         public bool IsOpen { get; set; }
+        public decimal AverageRating { get; set; } = 0; 
+        public int TotalReviews { get; set; } = 0;
         public ApprovalStatus ApprovalStatus { get; set; }
 
         // Navigation Properties

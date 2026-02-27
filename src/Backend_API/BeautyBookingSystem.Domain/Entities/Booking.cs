@@ -26,6 +26,8 @@ namespace BeautyBookingSystem.Domain.Entities
 
         public BookingStatus Status { get; set; }
         public string? CustomerNote { get; set; }
+        public CancelledByType? CancelledBy { get; set; }
+        public string? CancelReason { get; set; }
 
         public virtual ICollection<BookingDetail> BookingDetails { get; set; } = new List<BookingDetail>();
         public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();

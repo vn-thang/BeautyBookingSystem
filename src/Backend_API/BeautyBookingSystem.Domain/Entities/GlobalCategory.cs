@@ -12,6 +12,7 @@ namespace BeautyBookingSystem.Domain.Entities
         public string Name { get; set; } = string.Empty;
         public string? IconUrl { get; set; }
         public bool IsActive { get; set; }
+        public int SortOrder { get; set; } = 0;
 
         public virtual ICollection<Service> Services { get; set; } = new List<Service>();
     }
