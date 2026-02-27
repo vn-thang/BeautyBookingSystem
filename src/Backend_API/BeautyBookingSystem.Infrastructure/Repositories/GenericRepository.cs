@@ -1,6 +1,7 @@
 ﻿using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Asn1;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,7 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
             _context = context;
             this.dbSet = context.Set<T>(); 
         }
+        public IQueryable<T> GetQueryable() => dbSet;
 
         public async Task<IEnumerable<T>> GetAllAsync() => await dbSet.ToListAsync();
 

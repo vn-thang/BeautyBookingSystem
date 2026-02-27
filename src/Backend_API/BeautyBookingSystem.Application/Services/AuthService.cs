@@ -261,5 +261,43 @@ namespace BeautyBookingSystem.Application.Services
 
             return true;
         }
+        public async Task<bool> RegisterPartnerAsync(RegisterPartnerRequest request)
+        {
+            var existingPhone = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Phone == request.Phone);
+            if (existingPhone != null) throw new BadRequestException("Số điện thoại này đã được đăng ký!");
+
+            var existingEmail = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
+            if (existingEmail != null) throw new BadRequestException("Email này đã được sử dụng!");
+
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+            var newUser = new User
+            {
+                FullName = request.OwnerName,
+                Phone = request.Phone,
+                Email = request.Email,
+                PasswordHash = hashedPassword,
+                Role = Role.StoreOwner,
+                Status = UserStatus.Active 
+            };
+
+            // Lưu User vào DB TRƯỚC để SQL Server sinh ra cái ID cho User 
+            await _unitOfWork.UserRepository.AddAsync(newUser);
+            await _unitOfWork.SaveChangesAsync();
+
+            var newStore = new Store
+            {
+                OwnerId = newUser.Id,
+                Name = request.StoreName,
+                Address = request.StoreAddress,
+                Description = request.StoreDescription,
+                IsOpen = false, 
+                ApprovalStatus = ApprovalStatus.Pending 
+            };
+            await _unitOfWork.StoreRepository.AddAsync(newStore);
+            await _unitOfWork.SaveChangesAsync();
+
+            return true;
+        }
     }
 }

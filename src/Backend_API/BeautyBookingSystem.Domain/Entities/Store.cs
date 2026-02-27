@@ -21,8 +21,8 @@ namespace BeautyBookingSystem.Domain.Entities
         public string? LogoUrl { get; set; }
         public string? CoverImageUrl { get; set; }
 
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
         public bool IsOpen { get; set; }
         public ApprovalStatus ApprovalStatus { get; set; }
 

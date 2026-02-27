@@ -4,6 +4,7 @@ obj/
 .vs/
 appsettings.json
 appsettings.*.json
+!appsettings.example.json
 *.user
 *.suo
 *.userosscache
@@ -39,4 +40,3 @@ key.properties
 .idea/
 .DS_Store
 Thumbs.db
-/src/Backend_API/BeautyBookingSystem.API/appsettings.json

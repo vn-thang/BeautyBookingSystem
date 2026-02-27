@@ -9,7 +9,7 @@ namespace BeautyBookingSystem.Application.Interfaces
 {
     public interface IUnitOfWork : IDisposable
     {
-        
+        IGenericRepository<Store> StoreRepository { get; }
         IGenericRepository<User> UserRepository { get; }
         Task<int> SaveChangesAsync();
     }

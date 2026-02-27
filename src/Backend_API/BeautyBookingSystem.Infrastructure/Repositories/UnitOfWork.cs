@@ -14,11 +14,13 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         private readonly AppDbContext _context;
 
         public IGenericRepository<User> UserRepository { get; private set; }
+        public IGenericRepository<Store> StoreRepository { get; private set; }
 
         public UnitOfWork(AppDbContext context)
         {
             _context = context;
             UserRepository = new GenericRepository<User>(_context);
+            StoreRepository = new GenericRepository<Store>(_context);
         }
 
         public async Task<int> SaveChangesAsync()

@@ -113,5 +113,23 @@ namespace BeautyBookingSystem.API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+        [HttpPost("register-partner")]
+        public async Task<IActionResult> RegisterPartner([FromBody] RegisterPartnerRequest request)
+        {
+            try
+            {
+                await _authService.RegisterPartnerAsync(request);
+
+                return Ok(new
+                {
+                    message = "Đăng ký tài khoản Đối tác thành công! Cửa hàng của bạn đang ở trạng thái Chờ phê duyệt. " +
+                    "Bạn có thể đăng nhập vào App Đối tác ngay bây giờ."
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
     }
 }
