@@ -24,6 +24,8 @@ namespace BeautyBookingSystem.Domain.Entities
         public decimal Price { get; set; }
         public int DurationMinutes { get; set; }
         public bool IsActive { get; set; }
+        public bool IsFeatured { get; set; } = false; 
+        public int SortOrder { get; set; } = 0;
 
         public virtual ICollection<BookingDetail> BookingDetails { get; set; } = new List<BookingDetail>();
     }

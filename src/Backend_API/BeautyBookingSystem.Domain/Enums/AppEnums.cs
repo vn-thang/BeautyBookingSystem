@@ -17,4 +17,5 @@ namespace BeautyBookingSystem.Domain.Enums
         public enum PaymentStatus { Pending, Success, Failed, Refunded }
         public enum NotificationType { BookingUpdate, SystemAlert, Promotion }
         public enum SystemContentType { Banner, Policy, News }
+    public enum CancelledByType{ None = 0, Customer = 1,Store = 2, Admin = 3}
 }
