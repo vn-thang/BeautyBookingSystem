@@ -12,8 +12,10 @@ namespace BeautyBookingSystem.Application.Interfaces
         Task<IEnumerable<T>> GetAllAsync();
         Task<T?> GetByIdAsync(int id);
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> expression);
+        Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> expression);
         Task AddAsync(T entity);
         void Update(T entity);
         void Delete(T entity);
+        IQueryable<T> GetQueryable();
     }
 }

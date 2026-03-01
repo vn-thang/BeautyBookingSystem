@@ -1,37 +1,39 @@
-﻿using BeautyBookingSystem.Application.DTOs;
-using BeautyBookingSystem.Application.DTOs.Common;
-using BeautyBookingSystem.Application.Services;
+﻿using BeautyBookingSystem.Application.DTOs.Store;
+using BeautyBookingSystem.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace BeautyBookingSystem.API.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
     public class StoresController : ControllerBase
     {
-        private readonly StoreService _service;
+        private readonly IStoreService _storeService;
 
-        public StoresController(StoreService service)
+        public StoresController(IStoreService storeService)
         {
-            _service = service;
+            _storeService = storeService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetApproved()
+        [HttpGet("profile")]
+        public async Task<IActionResult> GetProfile()
         {
-            var result = await _service.GetApprovedAsync();
-            return Ok(ApiResponse<List<StoreDto>>.Ok(result));
+            var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "");
+            var result = await _storeService.GetStoreProfileAsync(ownerId);
+            return result != null ? Ok(result) : NotFound();
         }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetDetail(int id)
+        [Authorize(Roles = "StoreOwner")]
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] StoreProfileDto request)
         {
-            var result = await _service.GetDetailAsync(id);
+            var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "");
+            var error = await _storeService.UpdateStoreProfileAsync(ownerId, request);
 
-            if (result == null)
-                return NotFound(ApiResponse<string>.Fail("Không tìm thấy cửa hàng"));
-
-            return Ok(ApiResponse<StoreDto>.Ok(result));
+            if (error != null) return BadRequest(new { message = error });
+            return Ok(new { message = "Cập nhật thành công!" });
         }
     }
 }

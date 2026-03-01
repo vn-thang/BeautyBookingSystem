@@ -1,4 +1,5 @@
 ﻿using BeautyBookingSystem.Application.DTOs.Common;
+using BeautyBookingSystem.Application.Common.Exceptions;
 using System.Net;
 using System.Text.Json;
 
@@ -9,7 +10,9 @@ namespace BeautyBookingSystem.API.Middleware
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionMiddleware> _logger;
 
-        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
+        public ExceptionMiddleware(
+            RequestDelegate next,
+            ILogger<ExceptionMiddleware> logger)
         {
             _next = next;
             _logger = logger;
@@ -19,26 +22,54 @@ namespace BeautyBookingSystem.API.Middleware
         {
             try
             {
-                // Cho phép Request đi tiếp vào Controller
                 await _next(context);
             }
             catch (Exception ex)
             {
-                // Nếu Controller có lỗi, nó sẽ văng ra đây
-                _logger.LogError(ex, "Lỗi hệ thống: {Message}", ex.Message);
+                _logger.LogError(ex, "System Error: {Message}", ex.Message);
+
                 await HandleExceptionAsync(context, ex);
             }
         }
 
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private static Task HandleExceptionAsync(
+            HttpContext context,
+            Exception exception)
         {
             context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError; // Lỗi 500
 
-            // Trả về đúng format ApiResponse mà App Mobile mong đợi
-            var response = ApiResponse<string>.ErrorResponse("Hệ thống đang bận hoặc gặp sự cố. Vui lòng thử lại sau!");
+            var statusCode = HttpStatusCode.InternalServerError;
+            var message = "Hệ thống đang bận hoặc gặp sự cố.";
 
-            var json = JsonSerializer.Serialize(response, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            switch (exception)
+            {
+                case BadRequestException badRequest:
+                    statusCode = HttpStatusCode.BadRequest;
+                    message = badRequest.Message;
+                    break;
+
+                case UnauthorizedAccessException:
+                    statusCode = HttpStatusCode.Unauthorized;
+                    message = "Bạn chưa đăng nhập.";
+                    break;
+
+                case KeyNotFoundException:
+                    statusCode = HttpStatusCode.NotFound;
+                    message = "Không tìm thấy dữ liệu.";
+                    break;
+            }
+
+            context.Response.StatusCode = (int)statusCode;
+
+            var response = ApiResponse<string>.Fail(message);
+
+            var json = JsonSerializer.Serialize(
+                response,
+                new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+
             return context.Response.WriteAsync(json);
         }
     }

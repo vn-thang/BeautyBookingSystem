@@ -13,7 +13,7 @@ namespace BeautyBookingSystem.Domain.Entities
     {
         public string FullName { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
-        public string? Email { get; set; }
+        public string Email { get; set; } = string.Empty;
         public string? AvatarUrl { get; set; }
         public string PasswordHash { get; set; } = string.Empty;
 
@@ -22,6 +22,12 @@ namespace BeautyBookingSystem.Domain.Entities
         public bool IsPhoneVerified { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiryTime { get; set; }
+
+        public string? ResetPasswordOtp { get; set; }
+        public DateTime? ResetPasswordOtpExpiry { get; set; }
+        public string? FcmToken { get; set; }
 
         // Navigation Properties (Các bảng liên kết với User)
         public virtual ICollection<Store> Stores { get; set; } = new List<Store>();

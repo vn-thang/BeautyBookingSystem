@@ -1,6 +1,7 @@
 ﻿using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Asn1;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,8 +19,9 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         public GenericRepository(AppDbContext context)
         {
             _context = context;
-            this.dbSet = context.Set<T>();
+            this.dbSet = context.Set<T>(); 
         }
+        public IQueryable<T> GetQueryable() => dbSet;
 
         public async Task<IEnumerable<T>> GetAllAsync() => await dbSet.ToListAsync();
 
@@ -27,6 +29,10 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
 
         public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> expression)
             => await dbSet.Where(expression).ToListAsync();
+        public async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> expression)
+        {
+            return await dbSet.FirstOrDefaultAsync(expression);
+        }
 
         public async Task AddAsync(T entity) => await dbSet.AddAsync(entity);
 

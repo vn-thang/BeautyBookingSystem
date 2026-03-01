@@ -1,4 +1,5 @@
 ﻿using BeautyBookingSystem.Application.Interfaces;
+using BeautyBookingSystem.Domain.Entities;
 using BeautyBookingSystem.Infrastructure.Data;
 using System;
 using System.Collections.Generic;
@@ -12,16 +13,17 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public IVoucherRepository Vouchers { get; }
+        public IGenericRepository<User> UserRepository { get; private set; }
+        public IGenericRepository<Store> StoreRepository { get; private set; }
 
-        public UnitOfWork(AppDbContext context,
-                          IVoucherRepository voucherRepository)
+        public UnitOfWork(AppDbContext context)
         {
             _context = context;
-            Vouchers = voucherRepository;
+            UserRepository = new GenericRepository<User>(_context);
+            StoreRepository = new GenericRepository<Store>(_context);
         }
 
-        public async Task<int> CompleteAsync()
+        public async Task<int> SaveChangesAsync()
         {
             return await _context.SaveChangesAsync();
         }
@@ -29,11 +31,6 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         public void Dispose()
         {
             _context.Dispose();
-        }
-
-        public Task<int> SaveChangesAsync()
-        {
-            return _context.SaveChangesAsync();
         }
     }
 }

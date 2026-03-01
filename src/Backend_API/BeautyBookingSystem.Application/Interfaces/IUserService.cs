@@ -1,0 +1,15 @@
+﻿using BeautyBookingSystem.Application.DTOs.User;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace BeautyBookingSystem.Application.Interfaces
+{
+    public interface IUserService
+    {
+        Task<UserProfileResponse> GetProfileAsync(string userId);
+        Task<bool> UpdateProfileAsync(string userId, UpdateProfileRequest request);
+    }
+}

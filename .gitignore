@@ -2,7 +2,9 @@
 bin/
 obj/
 .vs/
-appsettings.Development.json
+appsettings.json
+appsettings.*.json
+!appsettings.example.json
 *.user
 *.suo
 *.userosscache
