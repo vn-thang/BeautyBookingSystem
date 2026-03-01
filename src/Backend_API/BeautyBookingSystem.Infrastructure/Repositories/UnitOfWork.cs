@@ -12,12 +12,16 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
-        public UnitOfWork(AppDbContext context)
+        public IVoucherRepository Vouchers { get; }
+
+        public UnitOfWork(AppDbContext context,
+                          IVoucherRepository voucherRepository)
         {
             _context = context;
+            Vouchers = voucherRepository;
         }
 
-        public async Task<int> SaveChangesAsync()
+        public async Task<int> CompleteAsync()
         {
             return await _context.SaveChangesAsync();
         }
@@ -25,6 +29,11 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         public void Dispose()
         {
             _context.Dispose();
+        }
+
+        public Task<int> SaveChangesAsync()
+        {
+            return _context.SaveChangesAsync();
         }
     }
 }

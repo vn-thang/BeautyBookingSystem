@@ -11,7 +11,7 @@ namespace BeautyBookingSystem.Application.Interfaces
         // Khai báo các Repository cụ thể ở đây (sau này dùng)
         // IUserRepository Users { get; }
         // IStoreRepository Stores { get; }
-
+        IVoucherRepository Vouchers { get; }
         Task<int> SaveChangesAsync();
     }
 }
