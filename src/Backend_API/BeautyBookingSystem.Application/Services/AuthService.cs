@@ -1,9 +1,10 @@
-﻿using BeautyBookingSystem.Application.Common.Exceptions; 
+﻿using AutoMapper;
+using BeautyBookingSystem.Application.Common.Exceptions; 
 using BeautyBookingSystem.Application.DTOs.Auth;
 using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Entities;
 using BeautyBookingSystem.Domain.Enums;
-
+using Microsoft.EntityFrameworkCore; 
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -18,37 +19,25 @@ namespace BeautyBookingSystem.Application.Services
         private readonly IEmailService _emailService;
         private readonly IConfiguration _config;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public AuthService(IConfiguration config, IUnitOfWork unitOfWork, IEmailService emailService)
+        public AuthService(IConfiguration config, IUnitOfWork unitOfWork, IEmailService emailService, IMapper mapper)
         {
             _config = config;
             _unitOfWork = unitOfWork;
             _emailService = emailService;
+            _mapper = mapper;
         }
         public async Task<TokenResponse> RegisterAsync(RegisterRequest request)
         {
-            
-            var existingUser = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Phone == request.Phone);
-            if (existingUser != null)
-                throw new BadRequestException("Số điện thoại này đã được đăng ký.");
 
-            var existingEmail = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
-            if (existingEmail != null)
-            {
-                throw new BadRequestException("Email này đã được sử dụng cho một tài khoản khác!");
-            }
+            await CheckDuplicateUserAsync(request.Phone, request.Email);
 
-            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            var newUser = _mapper.Map<User>(request);
 
-            var newUser = new User
-            {
-                FullName = request.FullName,
-                Phone = request.Phone.Trim(),
-                Email = request.Email.Trim(),
-                PasswordHash = hashedPassword.Trim(),
-                Role = Role.Customer,
-                Status = UserStatus.Active
-            };
+            newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password).Trim();
+            newUser.Role = Role.Customer;
+            newUser.Status = UserStatus.Active;
 
             await _unitOfWork.UserRepository.AddAsync(newUser);
             await _unitOfWork.SaveChangesAsync();
@@ -160,17 +149,8 @@ namespace BeautyBookingSystem.Application.Services
         
         public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request)
         {
-            
-            if (!int.TryParse(userId, out int parsedUserId))
-            {
-                throw new Exception("ID người dùng từ Token không hợp lệ!");
-            }
 
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(parsedUserId);
-            if (user == null)
-            {
-                throw new Exception("Không tìm thấy người dùng!");
-            }
+            var user = await GetUserByIdAsync(userId);
 
             bool isOldPasswordCorrect = BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash);
             if (!isOldPasswordCorrect)
@@ -190,16 +170,7 @@ namespace BeautyBookingSystem.Application.Services
 
         public async Task<bool> LogoutAsync(string userId)
         {
-            if (!int.TryParse(userId, out int parsedUserId))
-            {
-                throw new Exception("ID người dùng từ Token không hợp lệ!");
-            }
-
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(parsedUserId);
-            if (user == null)
-            {
-                return false;
-            }
+            var user = await GetUserByIdAsync(userId);
 
             user.RefreshToken = null;
             user.RefreshTokenExpiryTime = null; 
@@ -267,41 +238,45 @@ namespace BeautyBookingSystem.Application.Services
         }
         public async Task<bool> RegisterPartnerAsync(RegisterPartnerRequest request)
         {
-            var existingPhone = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Phone == request.Phone);
-            if (existingPhone != null) throw new BadRequestException("Số điện thoại này đã được đăng ký!");
+            await CheckDuplicateUserAsync(request.Phone, request.Email);
 
-            var existingEmail = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
-            if (existingEmail != null) throw new BadRequestException("Email này đã được sử dụng!");
+            var newUser = _mapper.Map<User>(request);
+            newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            newUser.Role = Role.StoreOwner;
+            newUser.Status = UserStatus.Active;
 
-            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-            var newUser = new User
-            {
-                FullName = request.OwnerName,
-                Phone = request.Phone,
-                Email = request.Email,
-                PasswordHash = hashedPassword,
-                Role = Role.StoreOwner,
-                Status = UserStatus.Active 
-            };
-
-            // Lưu User vào DB TRƯỚC để SQL Server sinh ra cái ID cho User 
             await _unitOfWork.UserRepository.AddAsync(newUser);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(); 
 
-            var newStore = new Store
-            {
-                OwnerId = newUser.Id,
-                Name = request.StoreName,
-                Address = request.StoreAddress,
-                Description = request.StoreDescription,
-                IsOpen = false, 
-                ApprovalStatus = ApprovalStatus.Pending 
-            };
+            var newStore = _mapper.Map<Store>(request);
+            newStore.OwnerId = newUser.Id;
+            newStore.IsOpen = false;
+            newStore.ApprovalStatus = ApprovalStatus.Pending;
+
             await _unitOfWork.StoreRepository.AddAsync(newStore);
             await _unitOfWork.SaveChangesAsync();
 
             return true;
+        }
+        private async Task CheckDuplicateUserAsync(string phone, string email)
+        {
+            bool isPhoneExist = await _unitOfWork.UserRepository.GetQueryable().AnyAsync(u => u.Phone == phone);
+            if (isPhoneExist) throw new BadRequestException("Số điện thoại này đã được đăng ký!");
+
+            bool isEmailExist = await _unitOfWork.UserRepository.GetQueryable().AnyAsync(u => u.Email == email);
+            if (isEmailExist) throw new BadRequestException("Email này đã được sử dụng cho một tài khoản khác!");
+        }
+
+        private async Task<User> GetUserByIdAsync(string userId)
+        {
+            if (!int.TryParse(userId, out int parsedUserId))
+                throw new BadRequestException("ID người dùng từ Token không hợp lệ!");
+
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(parsedUserId);
+            if (user == null)
+                throw new NotFoundException("Không tìm thấy người dùng!");
+
+            return user;
         }
     }
 }

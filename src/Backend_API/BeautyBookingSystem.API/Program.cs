@@ -1,4 +1,5 @@
 ﻿using BeautyBookingSystem.Application.Interfaces;
+using BeautyBookingSystem.Application.Mappers;
 using BeautyBookingSystem.Application.Services;
 using BeautyBookingSystem.Infrastructure.Data;
 using BeautyBookingSystem.Infrastructure.Repositories;
@@ -11,7 +12,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddControllers();
 //builder.Services.AddOpenApi();
@@ -25,6 +25,21 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
+builder.Services.AddScoped<IGlobalCategoryService, GlobalCategoryService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IStaffService, StaffService>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<IServiceGroupService, ServiceGroupService>();
+builder.Services.AddScoped<IServiceService, ServiceService>();
+builder.Services.AddScoped<IStoreBookingService, StoreBookingService>();
+builder.Services.AddScoped<IStorePaymentService, StorePaymentService>();
+builder.Services.AddScoped<IStoreReviewService, StoreReviewService>();
+builder.Services.AddScoped<IStoreVoucherService, StoreVoucherService>();
+builder.Services.AddScoped<IFirebasePushNotificationService, FirebasePushNotificationService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IStoreDashboardService, StoreDashboardService>();
+
+
 var jwtKey = builder.Configuration["Jwt:Key"];
 builder.Services.AddAuthentication(options =>
 {
@@ -45,7 +60,7 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
 });
-
+builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 var app = builder.Build();
 app.UseMiddleware<BeautyBookingSystem.API.Middleware.ExceptionMiddleware>();
 

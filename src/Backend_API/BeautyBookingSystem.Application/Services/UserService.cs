@@ -1,6 +1,9 @@
-﻿using BeautyBookingSystem.Application.Common.Exceptions;
+﻿using AutoMapper;
+using BeautyBookingSystem.Application.Common.Exceptions;
 using BeautyBookingSystem.Application.DTOs.User;
 using BeautyBookingSystem.Application.Interfaces;
+using BeautyBookingSystem.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,60 +15,34 @@ namespace BeautyBookingSystem.Application.Services
     public class UserService : IUserService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public UserService(IUnitOfWork unitOfWork)
+        public UserService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         public async Task<UserProfileResponse> GetProfileAsync(string userId)
         {
-            if (!int.TryParse(userId, out int parsedUserId))
-                throw new Exception("ID không hợp lệ!");
-
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(parsedUserId);
-            if (user == null)
-                throw new Exception("Không tìm thấy người dùng!");
-
-            return new UserProfileResponse
-            {
-                Id = user.Id,
-                FullName = user.FullName,
-                Phone = user.Phone,
-                Email = user.Email,
-                AvatarUrl = user.AvatarUrl,
-                Role = user.Role.ToString(),
-                Status = user.Status.ToString(),
-                IsPhoneVerified = user.IsPhoneVerified,
-                CreatedAt = user.CreatedAt
-            };
+            var user = await GetUserOrThrowAsync(userId);
+            return _mapper.Map<UserProfileResponse>(user);
         }
 
         public async Task<bool> UpdateProfileAsync(string userId, UpdateProfileRequest request)
         {
-            if (!int.TryParse(userId, out int parsedUserId))
-                throw new Exception("ID không hợp lệ!");
-
-            var user = await _unitOfWork.UserRepository.GetByIdAsync(parsedUserId);
-            if (user == null)
-                throw new Exception("Không tìm thấy người dùng!");
+            var user = await GetUserOrThrowAsync(userId);
 
             if (!string.IsNullOrWhiteSpace(request.Email) && request.Email != user.Email)
             {
-                var emailInUse = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
-                if (emailInUse != null)
-                {
-                    throw new BadRequestException("Email này đã được sử dụng bởi một tài khoản khác!");
-                }
-            
-                user.Email = request.Email;
+                var emailInUse = await _unitOfWork.UserRepository
+                    .GetQueryable()
+                    .AnyAsync(u => u.Email == request.Email);
+
+                if (emailInUse) throw new BadRequestException("Email này đã được sử dụng!");
             }
-            user.FullName = request.FullName;
-                user.AvatarUrl = request.AvatarUrl;
-            if (!string.IsNullOrEmpty(request.FcmToken))
-            {
-                user.FcmToken = request.FcmToken;
-            }
+
+            _mapper.Map(request, user);
 
             user.UpdatedAt = DateTime.UtcNow;
 
@@ -73,6 +50,17 @@ namespace BeautyBookingSystem.Application.Services
             await _unitOfWork.SaveChangesAsync();
 
             return true;
+        }
+        private async Task<User> GetUserOrThrowAsync(string userId)
+        {
+            if (!int.TryParse(userId, out int parsedUserId))
+                throw new BadRequestException("Định dạng ID người dùng không hợp lệ!");
+
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(parsedUserId);
+            if (user == null)
+                throw new NotFoundException("Người dùng không tồn tại!");
+
+            return user;
         }
     }
 }

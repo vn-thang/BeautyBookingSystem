@@ -1,22 +1,26 @@
-﻿using BeautyBookingSystem.Application.DTOs.Store;
+﻿using AutoMapper;
+using BeautyBookingSystem.Application.Common.Exceptions;
+using BeautyBookingSystem.Application.DTOs.Store;
 using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBookingSystem.Application.Services
 {
     public class StoreService : IStoreService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public StoreService(IUnitOfWork unitOfWork)
+        public StoreService(IUnitOfWork unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         public async Task<StoreProfileDto?> GetStoreProfileAsync(int ownerId)
@@ -29,26 +33,7 @@ namespace BeautyBookingSystem.Application.Services
 
             if (store == null) return null;
 
-            return new StoreProfileDto
-            {
-                Name = store.Name,
-                Address = store.Address,
-                Phone = store.Phone,
-                Description = store.Description,
-                LogoUrl = store.LogoUrl,
-                CoverImageUrl = store.CoverImageUrl,
-                Latitude = store.Latitude,
-                Longitude = store.Longitude,
-                IsOpen = store.IsOpen,
-                AverageRating = store.AverageRating, 
-                TotalReviews = store.TotalReviews,
-                OperatingHours = store.OperatingHours.Select(oh => new OperatingHourDto
-                {
-                    DayOfWeek = oh.DayOfWeek,
-                    OpenTime = oh.OpenTime.ToString(@"hh\:mm"),
-                    CloseTime = oh.CloseTime.ToString(@"hh\:mm")
-                }).ToList()
-            };
+            return _mapper.Map<StoreProfileDto>(store);
         }
 
         public async Task<string?> UpdateStoreProfileAsync(int ownerId, StoreProfileDto request)
@@ -62,47 +47,43 @@ namespace BeautyBookingSystem.Application.Services
             if (store == null)
                 return "Không tìm thấy cửa hàng.";
 
-            if (request.OperatingHours == null || !request.OperatingHours.Any())
-                return "Cửa hàng phải có ít nhất 1 ngày làm việc.";
-            var duplicateDays = request.OperatingHours.GroupBy(x => x.DayOfWeek).Any(g => g.Count() > 1);
-            if (duplicateDays) return "Danh sách giờ làm việc có ngày bị lặp lại.";
+            ValidateOperatingHours(request.OperatingHours);
 
-            store.Name = request.Name;
-            store.Address = request.Address;
-            store.Phone = request.Phone;
-            store.Description = request.Description;
-            store.LogoUrl = request.LogoUrl;
-            store.CoverImageUrl = request.CoverImageUrl;
-            store.Latitude = request.Latitude;
-            store.Longitude = request.Longitude;
-            store.IsOpen = request.IsOpen;
+            _mapper.Map(request, store);
 
+            // 3. Xử lý giờ hoạt động 
             store.OperatingHours.Clear();
-
             foreach (var item in request.OperatingHours)
             {
-                if (!TimeSpan.TryParse(item.OpenTime, out var openTime))
-                    return $"Giờ mở không hợp lệ ({item.DayOfWeek})";
-
-                if (!TimeSpan.TryParse(item.CloseTime, out var closeTime))
-                    return $"Giờ đóng không hợp lệ ({item.DayOfWeek})";
-
-                if (openTime >= closeTime)
-                    return $"Giờ mở phải nhỏ hơn giờ đóng ({item.DayOfWeek})";
-
                 store.OperatingHours.Add(new StoreOperatingHour
                 {
                     StoreId = store.Id,
                     DayOfWeek = item.DayOfWeek,
-                    OpenTime = openTime,
-                    CloseTime = closeTime
+                    OpenTime = TimeSpan.Parse(item.OpenTime),
+                    CloseTime = TimeSpan.Parse(item.CloseTime)
                 });
-                
             }
             _unitOfWork.StoreRepository.Update(store);
             await _unitOfWork.SaveChangesAsync();
 
             return null; 
+        }
+        private void ValidateOperatingHours(List<OperatingHourDto>? hours)
+        {
+            if (hours == null || !hours.Any())
+                throw new BadRequestException("Cửa hàng phải có ít nhất 1 ngày làm việc.");
+
+            if (hours.GroupBy(x => x.DayOfWeek).Any(g => g.Count() > 1))
+                throw new BadRequestException("Danh sách giờ làm việc có ngày bị lặp lại.");
+
+            foreach (var item in hours)
+            {
+                if (!TimeSpan.TryParse(item.OpenTime, out var open) || !TimeSpan.TryParse(item.CloseTime, out var close))
+                    throw new BadRequestException($"Định dạng giờ không hợp lệ tại {item.DayOfWeek}");
+
+                if (open >= close)
+                    throw new BadRequestException($"Giờ mở phải nhỏ hơn giờ đóng tại {item.DayOfWeek}");
+            }
         }
     }
 }

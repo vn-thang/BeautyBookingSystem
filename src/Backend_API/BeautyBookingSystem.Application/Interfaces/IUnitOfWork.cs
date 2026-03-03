@@ -11,6 +11,16 @@ namespace BeautyBookingSystem.Application.Interfaces
     {
         IGenericRepository<Store> StoreRepository { get; }
         IGenericRepository<User> UserRepository { get; }
+        IGenericRepository<GlobalCategory> GlobalCategoryRepository { get; }
+        IGenericRepository<Staff> StaffRepository { get; }
+        IGenericRepository<ServiceGroup> ServiceGroupRepository { get; }
+        IGenericRepository<Service> ServiceRepository { get; }
+        IGenericRepository<Booking> BookingRepository { get; }
+        IGenericRepository<BookingDetail> BookingDetailRepository { get; }
+        IGenericRepository<Payment> PaymentRepository { get; }
+        IGenericRepository<Review> ReviewRepository { get; }
+        IGenericRepository<Voucher> VoucherRepository { get; }
+        IGenericRepository<Notification> NotificationRepository { get; }
         Task<int> SaveChangesAsync();
     }
 }
