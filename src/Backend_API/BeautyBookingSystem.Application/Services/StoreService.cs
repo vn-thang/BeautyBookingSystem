@@ -48,6 +48,7 @@ namespace BeautyBookingSystem.Application.Services
                 return "Không tìm thấy cửa hàng.";
 
             ValidateOperatingHours(request.OperatingHours);
+            ValidateCoordinates(request.Latitude, request.Longitude);
 
             _mapper.Map(request, store);
 
@@ -84,6 +85,14 @@ namespace BeautyBookingSystem.Application.Services
                 if (open >= close)
                     throw new BadRequestException($"Giờ mở phải nhỏ hơn giờ đóng tại {item.DayOfWeek}");
             }
+        }
+        private void ValidateCoordinates(double? lat, double? lng)
+        {
+            if (lat.HasValue && (lat < -90 || lat > 90))
+                throw new BadRequestException("Vĩ độ (Latitude) không hợp lệ (phải từ -90 đến 90).");
+
+            if (lng.HasValue && (lng < -180 || lng > 180))
+                throw new BadRequestException("Kinh độ (Longitude) không hợp lệ (phải từ -180 đến 180).");
         }
     }
 }
