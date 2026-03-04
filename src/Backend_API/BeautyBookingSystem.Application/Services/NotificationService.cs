@@ -103,7 +103,6 @@ namespace BeautyBookingSystem.Application.Services
                 Message = message,
                 Type = type,
                 IsRead = false,
-                CreatedAt = DateTime.UtcNow
             };
 
             await _unitOfWork.NotificationRepository.AddAsync(notification);

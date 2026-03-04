@@ -35,7 +35,6 @@ namespace BeautyBookingSystem.Application.Services
                     .ThenInclude(b => b.Customer) 
                 .Where(p => p.Booking.StoreId == storeId);
 
-            // 1. Lọc theo ngày (Dùng PaidAt hoặc lấy CreatedAt từ bảng Booking sang)
             if (request.FromDate.HasValue)
                 query = query.Where(p => p.PaidAt >= request.FromDate.Value || p.Booking.CreatedAt >= request.FromDate.Value);
 

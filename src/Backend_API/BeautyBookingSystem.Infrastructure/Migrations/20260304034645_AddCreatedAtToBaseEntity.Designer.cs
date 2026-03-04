@@ -4,6 +4,7 @@ using BeautyBookingSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BeautyBookingSystem.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260304034645_AddCreatedAtToBaseEntity")]
+    partial class AddCreatedAtToBaseEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -729,9 +732,6 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Property<decimal>("MinOrderValue")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int?>("ServiceId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
@@ -748,8 +748,6 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ServiceId");
 
                     b.HasIndex("StoreId");
 
@@ -984,18 +982,11 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.Voucher", b =>
                 {
-                    b.HasOne("BeautyBookingSystem.Domain.Entities.Service", "Service")
-                        .WithMany()
-                        .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("BeautyBookingSystem.Domain.Entities.Store", "Store")
                         .WithMany("Vouchers")
                         .HasForeignKey("StoreId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Service");
 
                     b.Navigation("Store");
                 });

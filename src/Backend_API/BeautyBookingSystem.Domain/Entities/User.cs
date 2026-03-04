@@ -20,8 +20,6 @@ namespace BeautyBookingSystem.Domain.Entities
         public Role Role { get; set; }
         public UserStatus Status { get; set; }
         public bool IsPhoneVerified { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
 
@@ -29,7 +27,6 @@ namespace BeautyBookingSystem.Domain.Entities
         public DateTime? ResetPasswordOtpExpiry { get; set; }
         public string? FcmToken { get; set; }
 
-        // Navigation Properties (Các bảng liên kết với User)
         public virtual ICollection<Store> Stores { get; set; } = new List<Store>();
         public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
         public virtual ICollection<UserVoucher> UserVouchers { get; set; } = new List<UserVoucher>();

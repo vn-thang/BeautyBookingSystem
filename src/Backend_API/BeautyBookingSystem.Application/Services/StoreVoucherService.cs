@@ -43,6 +43,7 @@ namespace BeautyBookingSystem.Application.Services
         {
             int storeId = await _currentUserService.GetCurrentStoreIdAsync();
             var vouchers = await _unitOfWork.VoucherRepository.GetQueryable()
+                .Include(v => v.Service)
                 .Where(v => v.StoreId == storeId)
                 .OrderByDescending(v => v.Id)
                 .ToListAsync();
@@ -69,9 +70,18 @@ namespace BeautyBookingSystem.Application.Services
             if (isCodeExist)
                 throw new BadRequestException($"Mã khuyến mãi '{request.Code}' đã tồn tại trong cửa hàng của bạn.");
 
+            if (request.ServiceId.HasValue)
+            {
+                var isValidService = await _unitOfWork.ServiceRepository.GetQueryable()
+                    .AnyAsync(s => s.Id == request.ServiceId.Value && s.StoreId == storeId);
+
+                if (!isValidService)
+                    throw new BadRequestException("Dịch vụ không tồn tại hoặc không thuộc cửa hàng của bạn.");
+            }
             var voucher = new Voucher
             {
                 StoreId = storeId,
+                ServiceId = request.ServiceId,
                 Code = request.Code.ToUpper(), 
                 DiscountType = request.DiscountType,
                 DiscountValue = request.DiscountValue,
@@ -96,14 +106,17 @@ namespace BeautyBookingSystem.Application.Services
 
                 var store = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
 
-                foreach (var customerId in customerIds)
+                if (customerIds.Any())
                 {
-                    _ = _notificationService.CreateAndSendNotificationAsync(
-                        customerId,
-                        $"🎁 Ưu đãi mới từ {store?.Name}",
-                        $"Nhập mã {voucher.Code} để được giảm giá ngay cho lần đặt lịch tiếp theo!",
-                        NotificationType.Promotion 
+                    var notificationTasks = customerIds.Select(customerId =>
+                        _notificationService.CreateAndSendNotificationAsync(
+                            customerId,
+                            $"🎁 Ưu đãi mới từ {store?.Name}",
+                            $"Nhập mã {voucher.Code} để được giảm giá ngay cho lần đặt lịch tiếp theo!",
+                            NotificationType.Promotion
+                        )
                     );
+                    await Task.WhenAll(notificationTasks);
                 }
             }
 

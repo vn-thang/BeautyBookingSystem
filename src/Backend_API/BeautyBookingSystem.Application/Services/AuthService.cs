@@ -225,7 +225,6 @@ namespace BeautyBookingSystem.Application.Services
                 throw new BadRequestException("Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới!");
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            // 4. XÓA MÃ OTP SAU KHI DÙNG XONG 
             user.ResetPasswordOtp = null;
             user.ResetPasswordOtpExpiry = null;
             user.RefreshToken = null;

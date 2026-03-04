@@ -8,7 +8,7 @@ namespace BeautyBookingSystem.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "StoreOwner")]
     public class StoreBookingsController : ControllerBase
     {
         private readonly IStoreBookingService _bookingService;

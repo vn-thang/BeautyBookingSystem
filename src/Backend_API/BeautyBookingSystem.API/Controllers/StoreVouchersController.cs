@@ -6,10 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BeautyBookingSystem.API.Controllers
 {
-    //[Route("api/[controller]")]
     [Route("api/store-vouchers")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "StoreOwner")]
     public class StoreVouchersController : ControllerBase
     {
         private readonly IStoreVoucherService _storeVoucherService;

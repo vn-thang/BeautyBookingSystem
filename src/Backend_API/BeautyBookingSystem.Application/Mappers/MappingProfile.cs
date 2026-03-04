@@ -1,4 +1,7 @@
 ﻿using AutoMapper;
+using BeautyBookingSystem.Application.DTOs.AdminReview;
+using BeautyBookingSystem.Application.DTOs.AdminStore;
+using BeautyBookingSystem.Application.DTOs.AdminUser;
 using BeautyBookingSystem.Application.DTOs.Auth;
 using BeautyBookingSystem.Application.DTOs.Category;
 using BeautyBookingSystem.Application.DTOs.Notification;
@@ -94,9 +97,32 @@ namespace BeautyBookingSystem.Application.Mappers
             CreateMap<Review, StoreReviewDto>()
                 .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.FullName))
                 .ForMember(dest => dest.CustomerAvatar, opt => opt.MapFrom(src => src.Customer.AvatarUrl));
-            CreateMap<Voucher, VoucherDto>();
+           
+            CreateMap<Voucher, VoucherDto>()
+            .ForMember(dest => dest.ServiceName, opt => opt.MapFrom(src => src.Service != null ? src.Service.Name : null));
 
             CreateMap<Notification, NotificationDto>();
+
+            CreateMap<User, UserDto>();
+            CreateMap<User, UserDetailDto>()
+                .IncludeBase<User, UserDto>()
+                .ForMember(dest => dest.TotalBookings, opt => opt.MapFrom(src => src.Bookings.Count))
+                .ForMember(dest => dest.TotalStores, opt => opt.MapFrom(src => src.Stores.Count))
+                .ForMember(dest => dest.TotalReviews, opt => opt.MapFrom(src => src.Reviews.Count));
+
+            CreateMap<Store, StoreAdminDto>()
+            .ForMember(d => d.Status, opt => opt.MapFrom(s => s.ApprovalStatus)) 
+            .ForMember(d => d.OwnerName, opt => opt.MapFrom(s => s.Owner.FullName));
+
+            CreateMap<Store, StoreAdminDetailDto>()
+                .ForMember(d => d.Status, opt => opt.MapFrom(s => s.ApprovalStatus))
+                .ForMember(d => d.AvatarUrl, opt => opt.MapFrom(s => s.LogoUrl))
+                .ForMember(d => d.OwnerName, opt => opt.MapFrom(s => s.Owner.FullName))
+                .ForMember(d => d.OwnerEmail, opt => opt.MapFrom(s => s.Owner.Email));
+
+            CreateMap<Review, ReviewDto>()
+            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.FullName))
+            .ForMember(dest => dest.StoreName, opt => opt.MapFrom(src => src.Store.Name));
         }
     }
 }

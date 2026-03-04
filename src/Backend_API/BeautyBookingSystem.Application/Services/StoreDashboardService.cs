@@ -26,7 +26,7 @@ namespace BeautyBookingSystem.Application.Services
             int storeId = await _currentUserService.GetCurrentStoreIdAsync();
             var response = new StoreDashboardDto();
 
-            // 1. Lấy thông tin Header 
+            //1. Lấy thông tin Header 
             var store = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
             if (store != null)
             {
@@ -48,7 +48,7 @@ namespace BeautyBookingSystem.Application.Services
             if (request.EndDate.HasValue)
                 bookingQuery = bookingQuery.Where(b => b.CreatedAt <= request.EndDate.Value);
 
-            // 3. THỐNG KÊ CHI TIẾT 
+            // 3. Thống kê chi tiết
             response.Statistics.TotalBookings = await bookingQuery.CountAsync();
 
             response.Statistics.TotalCustomers = await bookingQuery
@@ -61,13 +61,13 @@ namespace BeautyBookingSystem.Application.Services
                 .Where(b => b.Status == BookingStatus.Completed) 
                 .SumAsync(b => b.TotalPrice);
 
-            // 4. THỐNG KÊ TIỀN HOA HỒNG (Tạm thời gán = 0)
+            // 4. Thống kê tiền hoa hồng (Tạm thời gán = 0)
             
             response.Commission.TotalCommission = 0;
             response.Commission.AppUsageFee = 0;
             response.Commission.BalanceToPay = 0;
 
-            // 5. ĐƠN ĐẶT LỊCH 
+            // 5. Đơn đặt lịch 
             var counts = await bookingQuery
                 .GroupBy(b => b.Status)
                 .Select(g => new { Status = g.Key, Count = g.Count() })

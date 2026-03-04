@@ -2,6 +2,7 @@
 using BeautyBookingSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BeautyBookingSystem.API.Controllers
 {
@@ -24,7 +25,7 @@ namespace BeautyBookingSystem.API.Controllers
         }
 
         [HttpGet("admin")]
-        // [Authorize(Roles = "Admin")] // Mở comment này khi bạn ráp Auth xong
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllForAdmin()
         {
             var result = await _categoryService.GetAllAsync(onlyActive: false);
@@ -32,7 +33,7 @@ namespace BeautyBookingSystem.API.Controllers
         }
 
         [HttpPost]
-        // [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request)
         {
             var result = await _categoryService.CreateAsync(request);
@@ -40,7 +41,7 @@ namespace BeautyBookingSystem.API.Controllers
         }
 
         [HttpPut("{id}")]
-        // [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryRequest request)
         {
             await _categoryService.UpdateAsync(id, request);
@@ -48,7 +49,7 @@ namespace BeautyBookingSystem.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        // [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             await _categoryService.DeleteAsync(id);

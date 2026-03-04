@@ -1,4 +1,5 @@
-﻿using BeautyBookingSystem.Domain.Entities;
+﻿using BeautyBookingSystem.Domain.Common;
+using BeautyBookingSystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections;
@@ -41,11 +42,36 @@ namespace BeautyBookingSystem.Infrastructure.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Xử lý lỗi Cascade Delete của SQL Server (Khi xóa User/Store không bị lỗi vòng lặp)
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
             {
                 relationship.DeleteBehavior = DeleteBehavior.Restrict;
             }
+        }
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var entries = ChangeTracker
+                .Entries()
+                .Where(e => e.Entity is BaseEntity && (
+                        e.State == EntityState.Added ||
+                        e.State == EntityState.Modified));
+
+            foreach (var entityEntry in entries)
+            {
+                if (entityEntry.State == EntityState.Added)
+                {
+                    var entity = (BaseEntity)entityEntry.Entity;
+                    entity.CreatedAt = DateTime.UtcNow;
+                    entity.UpdatedAt = DateTime.UtcNow;
+                }
+                else if (entityEntry.State == EntityState.Modified)
+                {
+                    ((BaseEntity)entityEntry.Entity).UpdatedAt = DateTime.UtcNow;
+
+                    entityEntry.Property("CreatedAt").IsModified = false;
+                }
+            }
+
+            return base.SaveChangesAsync(cancellationToken);
         }
     }
 }

@@ -28,7 +28,6 @@ namespace BeautyBookingSystem.Domain.Entities
         public int TotalReviews { get; set; } = 0;
         public ApprovalStatus ApprovalStatus { get; set; }
 
-        // Navigation Properties
         public virtual ICollection<StoreOperatingHour> OperatingHours { get; set; } = new List<StoreOperatingHour>();
         public virtual ICollection<Staff> Staffs { get; set; } = new List<Staff>();
         public virtual ICollection<ServiceGroup> ServiceGroups { get; set; } = new List<ServiceGroup>();

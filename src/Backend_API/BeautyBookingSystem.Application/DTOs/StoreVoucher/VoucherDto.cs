@@ -11,6 +11,8 @@ namespace BeautyBookingSystem.Application.DTOs.StoreVoucher
     {
         public int Id { get; set; }
         public string Code { get; set; } = string.Empty;
+        public int? ServiceId { get; set; }
+        public string? ServiceName { get; set; }
         public DiscountType DiscountType { get; set; }
         public decimal DiscountValue { get; set; }
         public decimal MinOrderValue { get; set; }

@@ -38,6 +38,10 @@ builder.Services.AddScoped<IStoreVoucherService, StoreVoucherService>();
 builder.Services.AddScoped<IFirebasePushNotificationService, FirebasePushNotificationService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IStoreDashboardService, StoreDashboardService>();
+builder.Services.AddScoped<IAdminUserService, AdminUserService>();
+builder.Services.AddScoped<IAdminStoreService, AdminStoreService>();
+builder.Services.AddScoped<IAdminReviewService, AdminReviewService>();
+builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 
 
 var jwtKey = builder.Configuration["Jwt:Key"];

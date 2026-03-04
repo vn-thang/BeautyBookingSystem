@@ -59,7 +59,7 @@ namespace BeautyBookingSystem.Application.Services
                     query = query.Where(r => r.Reply == null || r.Reply == "");
             }
 
-            var reviews = await query.OrderByDescending(r => r.Id).ToListAsync();
+            var reviews = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
 
             return _mapper.Map<List<StoreReviewDto>>(reviews);
         }
