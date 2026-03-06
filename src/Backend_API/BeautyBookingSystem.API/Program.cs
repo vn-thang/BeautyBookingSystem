@@ -76,7 +76,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseAuthentication(); // BẮT BUỘC PHẢI ĐỨNG TRƯỚC Authorization
 app.UseAuthorization();
 app.MapControllers();

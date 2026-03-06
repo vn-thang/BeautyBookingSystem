@@ -235,22 +235,29 @@ namespace BeautyBookingSystem.Application.Services
 
             return true;
         }
-        public async Task<bool> RegisterPartnerAsync(RegisterPartnerRequest request)
+        public async Task<bool> RegisterPartnerAsync(RegisterRequest request)
         {
             await CheckDuplicateUserAsync(request.Phone, request.Email);
 
             var newUser = _mapper.Map<User>(request);
             newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
             newUser.Role = Role.StoreOwner;
             newUser.Status = UserStatus.Active;
 
             await _unitOfWork.UserRepository.AddAsync(newUser);
-            await _unitOfWork.SaveChangesAsync(); 
+            await _unitOfWork.SaveChangesAsync();
 
-            var newStore = _mapper.Map<Store>(request);
-            newStore.OwnerId = newUser.Id;
-            newStore.IsOpen = false;
-            newStore.ApprovalStatus = ApprovalStatus.Pending;
+            var newStore = new Store
+            {
+                OwnerId = newUser.Id,
+                Name = "Chưa cập nhật",
+                Address = "Chưa cập nhật",
+                Phone = request.Phone,
+                Description = "",
+                IsOpen = false,
+                ApprovalStatus = ApprovalStatus.Pending
+            };
 
             await _unitOfWork.StoreRepository.AddAsync(newStore);
             await _unitOfWork.SaveChangesAsync();

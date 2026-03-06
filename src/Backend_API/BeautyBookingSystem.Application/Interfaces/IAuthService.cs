@@ -16,6 +16,6 @@ namespace BeautyBookingSystem.Application.Interfaces
         Task<bool> LogoutAsync(string userId);
         Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request);
         Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
-        Task<bool> RegisterPartnerAsync(RegisterPartnerRequest request);
+        Task<bool> RegisterPartnerAsync(RegisterRequest request);
     }
 }
