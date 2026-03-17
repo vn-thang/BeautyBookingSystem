@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/store_booking_model.dart';
 
-// 1. Thẻ chứa dùng chung (Thay cho _CardContainer)
 class CustomCardContainer extends StatelessWidget {
   final String title;
   final Widget child;
@@ -33,7 +32,6 @@ class CustomCardContainer extends StatelessWidget {
   }
 }
 
-// 2. Dòng thông tin (Thay cho _InfoRow)
 class InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -63,7 +61,6 @@ class InfoRow extends StatelessWidget {
   }
 }
 
-// 3. Banner Trạng Thái
 class BookingStatusBanner extends StatelessWidget {
   final StoreBookingDetailModel detail;
   const BookingStatusBanner({super.key, required this.detail});
@@ -97,7 +94,6 @@ class BookingStatusBanner extends StatelessWidget {
   }
 }
 
-// 4. Section Khách hàng
 class CustomerSection extends StatelessWidget {
   final StoreBookingDetailModel detail;
   const CustomerSection({super.key, required this.detail});
@@ -122,7 +118,6 @@ class CustomerSection extends StatelessWidget {
   }
 }
 
-// 5. Section Dịch vụ
 class ServicesSection extends StatelessWidget {
   final StoreBookingDetailModel detail;
   const ServicesSection({super.key, required this.detail});
@@ -184,7 +179,6 @@ class ServicesSection extends StatelessWidget {
   }
 }
 
-// 6. Section Thanh Toán
 class PaymentSection extends StatelessWidget {
   final StoreBookingDetailModel detail;
   const PaymentSection({super.key, required this.detail});

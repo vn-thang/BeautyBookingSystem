@@ -23,7 +23,6 @@ class GlobalCategoryModel {
     );
   }
 
-  // Cần thiết khi bạn muốn gửi dữ liệu lên Backend
   Map<String, dynamic> toJson() {
     return {
       'id': id,

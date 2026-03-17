@@ -119,7 +119,7 @@ static Future<dynamic> delete(String endpoint) async {
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         final data = json['data'] ?? json;
-        final newAccess = data['accessToken']; // Nhớ check key 'data' có đúng với JSON C# trả về không nhé
+        final newAccess = data['accessToken']; 
         final newRefresh = data['refreshToken'];
         
         await TokenStorage.saveTokens(newAccess, newRefresh);
@@ -147,7 +147,6 @@ static Future<dynamic> delete(String endpoint) async {
       );
     }
 
-    // 3. Đá văng ra màn hình Login (Dùng currentState thẳng luôn, không bị lỗi)
     navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
   }
 

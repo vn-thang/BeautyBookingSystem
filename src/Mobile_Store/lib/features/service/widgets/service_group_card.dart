@@ -35,7 +35,7 @@ class ServiceGroupCard extends StatelessWidget {
               children: [
                 ClipOval(
                   child: Image.network(
-                    'https://picsum.photos/100', // Bạn có thể map imageUrl của group vào đây nếu API có hỗ trợ
+                    'https://picsum.photos/100', 
                     width: 50, height: 50, fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(width: 50, height: 50, color: Colors.grey.shade200, child: const Icon(Icons.image, color: Colors.grey)),
                   ),

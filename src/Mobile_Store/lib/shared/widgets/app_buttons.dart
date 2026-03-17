@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Nút bấm Gradient chính (Dùng cho Lưu, Cập nhật, Đăng nhập...)
 class AppGradientButton extends StatelessWidget {
   final String text;
   final bool isLoading;
@@ -26,7 +25,7 @@ class AppGradientButton extends StatelessWidget {
           gradient: LinearGradient(
             colors: isLoading
                 ? [Colors.grey, Colors.grey.shade400]
-                : [const Color(0xFFFF7EB3), const Color(0xFFFF758C)], // Tone màu hồng/đỏ của bạn
+                : [const Color(0xFFFF7EB3), const Color(0xFFFF758C)], 
           ),
           boxShadow: isLoading ? [] : [
             BoxShadow(
@@ -58,7 +57,6 @@ class AppGradientButton extends StatelessWidget {
   }
 }
 
-// Nút bấm viền (Dùng cho các lựa chọn phụ như "Đổi mật khẩu" ở trang Profile)
 class AppOutlineButton extends StatelessWidget {
   final String text;
   final VoidCallback onTap;
@@ -75,7 +73,7 @@ class AppOutlineButton extends StatelessWidget {
         height: 48,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: const Color(0xFF2563EB), width: 1.5), // Màu xanh theo code cũ của bạn
+          border: Border.all(color: const Color(0xFF2563EB), width: 1.5), 
         ),
         child: Center(
           child: Text(

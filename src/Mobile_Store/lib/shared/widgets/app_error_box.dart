@@ -11,7 +11,7 @@ class AppErrorBox extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.1), // Nền đỏ nhạt
+        color: Colors.red.withValues(alpha: 0.1), 
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
       ),

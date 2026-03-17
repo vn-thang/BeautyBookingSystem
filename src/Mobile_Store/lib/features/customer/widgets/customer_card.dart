@@ -14,7 +14,6 @@ class CustomerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Format tiền VNĐ
     final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
     return Card(
@@ -28,11 +27,9 @@ class CustomerCard extends StatelessWidget {
           padding: const EdgeInsets.all(12.0),
           child: Row(
             children: [
-              // Avatar hoặc Chữ cái đầu tiên
               _buildAvatar(),
               const SizedBox(width: 12),
               
-              // Thông tin chính
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/features/support/screens/contact_support_screen.dart';
 import '../../../core/theme/app_colors.dart';
 import '../services/dashboard_service.dart';
 import '../../store/screens/update_profile_screen.dart';
@@ -22,7 +23,6 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
   String? _errorMessage;
   StoreDashboardModel? _dashboardData;
   
-  // Khởi tạo mặc định là 'today' hoặc 'all' tùy bạn
   String _selectedFilter = 'today'; 
   DateTime? _startDate; 
   DateTime? _endDate;   
@@ -62,7 +62,6 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
     if (_selectedFilter == newFilter) return;
     setState(() {
       _selectedFilter = newFilter;
-      // Nếu không phải chọn "tùy chỉnh", reset lại ngày
       if (newFilter != 'custom') {
         _startDate = null;
         _endDate = null;
@@ -71,15 +70,13 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
     _fetchDashboardData();
   }
 
-  // Đã sửa: Cho phép nhận 1 trong 2 ngày (có thể null)
   void _onDateChanged(DateTime? start, DateTime? end) {
     setState(() {
       _startDate = start;
       _endDate = end;
-      // Tự động chuyển dropdown sang "Tùy chỉnh"
       _selectedFilter = 'custom';
     });
-    _fetchDashboardData(); // Gọi API ngay khi đổi ngày
+    _fetchDashboardData(); 
   }
 
   Future<void> _onRefresh() async {
@@ -208,10 +205,17 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
               style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () { /* Link tới tổng đài hoặc chat */ },
-              child: const Text("Liên hệ hỗ trợ"),
-            )
+           ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ContactSupportScreen(), 
+      ),
+    );
+  },
+  child: const Text("Liên hệ hỗ trợ"),
+)
           ],
         ),
       ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
 
 class ReplyDialogWidget extends StatefulWidget {
   final String? initialReply;
@@ -11,8 +12,7 @@ class ReplyDialogWidget extends StatefulWidget {
 
 class _ReplyDialogWidgetState extends State<ReplyDialogWidget> {
   late TextEditingController _controller;
-  final Color primaryRed = const Color(0xFFDE4A62);
-
+  
   @override
   void initState() {
     super.initState();
@@ -39,7 +39,7 @@ class _ReplyDialogWidgetState extends State<ReplyDialogWidget> {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: primaryRed, width: 2), // Viền đỏ khi đang gõ
+            borderSide: BorderSide(color: AppColors.primary, width: 2), 
           ),
         ),
       ),
@@ -54,8 +54,8 @@ class _ReplyDialogWidgetState extends State<ReplyDialogWidget> {
             Navigator.pop(context, _controller.text.trim());
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: primaryRed, // Nền nút màu đỏ
-            foregroundColor: Colors.white, // Chữ màu trắng
+            backgroundColor: AppColors.primary, 
+            foregroundColor: Colors.white, 
           ),
           child: const Text('Gửi'),
         ),

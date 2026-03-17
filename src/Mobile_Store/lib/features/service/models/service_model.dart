@@ -1,10 +1,10 @@
 class ServiceModel {
   final int id;
   final int categoryId;
-  final int? groupId; // Sửa thành groupId và cho phép null (?) vì Backend thiết kế int? GroupId
+  final int? groupId;
   final String name;
   final double price;
-  final int durationMinutes; // Sửa tên biến khớp với C# (DurationMinutes)
+  final int durationMinutes; 
   final String? description;
   final String? imageUrl;
   final bool isActive;
@@ -25,11 +25,9 @@ class ServiceModel {
     return ServiceModel(
       id: json['id'] ?? 0,
       categoryId: json['categoryId'] ?? 0,
-      // Backend C# trả về 'groupId'
       groupId: json['groupId'], 
       name: json['name'] ?? '',
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
-      // Backend C# trả về 'durationMinutes'
       durationMinutes: json['durationMinutes'] ?? 0,
       description: json['description'],
       imageUrl: json['imageUrl'],

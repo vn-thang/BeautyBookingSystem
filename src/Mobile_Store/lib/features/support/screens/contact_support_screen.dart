@@ -5,7 +5,6 @@ import '../../../core/theme/app_colors.dart';
 class ContactSupportScreen extends StatelessWidget {
   const ContactSupportScreen({super.key});
 
-  // 1. Logic gọi Điện thoại
   Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
     final Uri launchUri = Uri(
       scheme: 'tel',
@@ -14,11 +13,10 @@ class ContactSupportScreen extends StatelessWidget {
     _launchInExternalApp(context, launchUri);
   }
 
-  // 2. Logic gửi Email
   Future<void> _sendEmail(BuildContext context) async {
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
-      path: 'support@beautybooking.com', // Thay bằng email thật của bạn
+      path: 'support@beautybooking.com', 
       queryParameters: {
         'subject': 'Cần hỗ trợ từ BeautyBooking',
       },
@@ -26,15 +24,12 @@ class ContactSupportScreen extends StatelessWidget {
     _launchInExternalApp(context, emailLaunchUri);
   }
 
-  // 3. Logic mở Zalo (Có thể dùng số điện thoại hoặc link Zalo OA)
   Future<void> _openZalo(BuildContext context, String phoneNumber) async {
     final Uri zaloUri = Uri.parse('https://zalo.me/$phoneNumber');
     
     try {
-      // Thử mở thẳng app Zalo (externalApplication)
       bool launched = await launchUrl(zaloUri, mode: LaunchMode.externalApplication);
       
-      // Nếu không mở được app Zalo (do máy không cài), thử mở bằng trình duyệt web
       if (!launched) {
         await launchUrl(zaloUri, mode: LaunchMode.inAppBrowserView);
       }
@@ -47,7 +42,6 @@ class ContactSupportScreen extends StatelessWidget {
     }
   }
 
-  // Hàm helper chung để mở link và bắt lỗi
   Future<void> _launchInExternalApp(BuildContext context, Uri url) async {
     try {
       if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
@@ -69,7 +63,7 @@ class ContactSupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Nền xám nhạt để làm nổi bật các Card
+      backgroundColor: const Color(0xFFF8F9FA), 
       appBar: AppBar(
         title: const Text(
           "Liên hệ & Hỗ trợ",
@@ -86,7 +80,6 @@ class ContactSupportScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 20),
-            // Hình ảnh minh họa (Icon lớn)
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -109,13 +102,12 @@ class ContactSupportScreen extends StatelessWidget {
             ),
             const SizedBox(height: 40),
 
-            // Nút Gọi Hotline
             _buildContactCard(
               icon: Icons.phone_in_talk_outlined,
               title: "Gọi Hotline",
               subtitle: "1900 1234 - Phục vụ 24/7",
               color: Colors.green,
-              onTap: () => _makePhoneCall(context, '19001234'), // Thay sđt ở đây
+              onTap: () => _makePhoneCall(context, '19001234'), 
             ),
             const SizedBox(height: 15),
 
@@ -125,11 +117,10 @@ class ContactSupportScreen extends StatelessWidget {
               title: "Chat qua Zalo",
               subtitle: "Phản hồi nhanh chóng",
               color: Colors.blue,
-              onTap: () => _openZalo(context, '0966774351'), // Thay sđt Zalo ở đây
+              onTap: () => _openZalo(context, '0966774351'), 
             ),
             const SizedBox(height: 15),
 
-            // Nút Email
             _buildContactCard(
               icon: Icons.email_outlined,
               title: "Gửi Email",
@@ -143,7 +134,6 @@ class ContactSupportScreen extends StatelessWidget {
     );
   }
 
-  // Widget tạo ra các thanh bấm nhìn giống Card rất đẹp mắt
   Widget _buildContactCard({
     required IconData icon,
     required String title,

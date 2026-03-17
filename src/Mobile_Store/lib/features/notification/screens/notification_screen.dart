@@ -50,7 +50,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Future<void> _handleTapNotification(NotificationModel notification) async {
-    // Gọi bottom sheet bằng 1 dòng gọn gàng
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -68,8 +67,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
       }
     }
   }
-
-  // ĐÃ XÓA TOÀN BỘ KHỐI HÀM _showNotificationDetail DÀI THÒÒNG Ở ĐÂY
 
   void _showSnackBar(String message, {bool isError = false}) {
     if (!mounted) return;

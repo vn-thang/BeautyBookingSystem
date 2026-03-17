@@ -19,10 +19,8 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
   bool _isLoading = true;
   String? _errorMessage;
 
-  // Lưu danh sách nhân viên rảnh cho TỪNG dịch vụ (Key: bookingDetailId)
   final Map<int, List<AvailableStaffModel>> _availableStaffMap = {};
   
-  // Lưu lựa chọn nhân viên của người dùng (Key: bookingDetailId, Value: staffId)
   final Map<int, int> _selectedStaffMap = {};
 
   @override
@@ -31,7 +29,6 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
     _fetchAvailableStaffs();
   }
 
-  // Khởi tạo: Quét tìm nhân viên rảnh cho tất cả dịch vụ trong đơn
   Future<void> _fetchAvailableStaffs() async {
     try {
       for (var service in widget.booking.services) {
@@ -54,7 +51,6 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
   }
 
   Future<void> _submitAssignment() async {
-    // Kiểm tra xem đã chọn đủ nhân viên cho tất cả dịch vụ chưa
     if (_selectedStaffMap.length < widget.booking.services.length) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng phân công nhân viên cho tất cả dịch vụ!'), backgroundColor: Colors.orange)
@@ -62,13 +58,11 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
       return;
     }
 
-    // Chuyển đổi dữ liệu sang định dạng API cần
     final assignments = _selectedStaffMap.entries.map((e) => {
       "bookingDetailId": e.key,
       "staffId": e.value
     }).toList();
 
-    // Hiển thị loading mờ toàn màn hình để tránh bấm đúp
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -79,17 +73,17 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
       await StoreBookingApi.assignStaff(widget.booking.id, assignments);
       
       if (!mounted) return;
-      Navigator.pop(context); // Đóng Loading Dialog
-      Navigator.pop(context); // Đóng Bottom Sheet
+      Navigator.pop(context); 
+      Navigator.pop(context); 
       
-      widget.onSuccess(); // Reload lại màn hình chi tiết
+      widget.onSuccess(); 
       
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Duyệt đơn & Gán nhân viên thành công!'), backgroundColor: Colors.green)
       );
     } catch (e) {
       if (!mounted) return;
-      Navigator.pop(context); // Đóng Loading Dialog
+      Navigator.pop(context); 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString()), backgroundColor: Colors.red)
       );
@@ -103,7 +97,7 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
         top: 24, left: 24, right: 24,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      // Đặt max height để có thể cuộn nếu danh sách dịch vụ quá dài
+     
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -118,7 +112,6 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
           ),
           const SizedBox(height: 16),
           
-          // Giao diện Loading / Lỗi / Danh sách
           Expanded(child: _buildBody()),
 
           if (!_isLoading && _errorMessage == null) ...[
@@ -170,7 +163,6 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
             ),
             const SizedBox(height: 12),
             
-            // Dropdown chọn nhân viên
             if (staffs.isEmpty)
               Container(
                 padding: const EdgeInsets.all(12),

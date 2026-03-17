@@ -12,12 +12,10 @@ class ServiceHistoryCard extends StatelessWidget {
     final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
     final dateFormat = DateFormat('dd/MM/yyyy');
     
-    // Format ngày hiển thị
     String displayDate = history.appointmentDate != null 
         ? dateFormat.format(history.appointmentDate!) 
         : 'Không rõ ngày';
 
-    // Cắt bớt giây trong StartTime (từ "09:30:00" thành "09:30")
     String displayTime = history.startTime;
     if (displayTime.length >= 5) {
       displayTime = displayTime.substring(0, 5); 

@@ -53,7 +53,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
             indicatorWeight: 3,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            tabAlignment: TabAlignment.start, // Canh trái giống ảnh
+            tabAlignment: TabAlignment.start,
             tabs: [
               Tab(text: 'Tất cả'),
               Tab(text: 'Chờ duyệt'),
@@ -65,7 +65,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
         ),
         body: Column(
           children: [
-            // --- BỘ LỌC NGÀY THÁNG ---
+           
             Container(
               color: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -90,7 +90,6 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
               ),
             ),
             
-            // --- DANH SÁCH THEO TAB ---
             const Expanded(
               child: TabBarView(
                 children: [
@@ -108,7 +107,6 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
     );
   }
 
- // Thay thế toàn bộ hàm cũ bằng hàm này
   Widget _buildDateFilterButton(String label, String value, VoidCallback onTap) {
     return Row(
       children: [
@@ -117,7 +115,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
           child: InkWell(
             onTap: onTap,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6), // Giảm padding ngang
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6), 
               decoration: BoxDecoration(
                 border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
                 borderRadius: BorderRadius.circular(20),
@@ -125,16 +123,15 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Dùng Flexible thay vì Expanded để text tự động thu gọn nếu chật
+                 
                   Flexible(
                     child: Text(
-                      // Đổi "Chọn thời..." thành "Chọn..." cho ngắn gọn
                       value.contains('Chọn thời') ? 'Chọn...' : value, 
                       style: TextStyle(color: AppColors.primary, fontSize: 12, overflow: TextOverflow.ellipsis),
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.calendar_month_outlined, size: 14, color: AppColors.primary), // Thu nhỏ icon một chút
+                  Icon(Icons.calendar_month_outlined, size: 14, color: AppColors.primary), 
                 ],
               ),
             ),

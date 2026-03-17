@@ -1,7 +1,7 @@
 class CustomerServiceHistoryModel {
   final int bookingId;
   final DateTime? appointmentDate;
-  final String startTime; // C# TimeSpan thường trả về dạng chuỗi "HH:mm:ss"
+  final String startTime; 
   final String serviceName;
   final String staffName;
   final double price;
@@ -36,7 +36,7 @@ class CustomerProfileModel {
   final String? avatarUrl;
   final int totalVisits;
   final double totalSpent;
-  final int totalCancelled; // Số lần bom/hủy lịch
+  final int totalCancelled; 
   final List<CustomerServiceHistoryModel> serviceHistories;
 
   CustomerProfileModel({

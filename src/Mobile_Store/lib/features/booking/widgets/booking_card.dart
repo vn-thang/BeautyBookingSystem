@@ -8,7 +8,6 @@ class BookingCard extends StatelessWidget {
 
   const BookingCard({super.key, required this.booking, required this.onTap});
 
-  // Helper: Chuyển đổi trạng thái sang Text và Màu sắc
   (String, Color) _getStatusInfo(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
@@ -41,7 +40,7 @@ class BookingCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Ảnh đại diện (Tạm thời dùng Icon/Placeholder)
+            
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Container(
@@ -53,7 +52,6 @@ class BookingCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             
-            // Thông tin chi tiết
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,21 +61,21 @@ class BookingCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          booking.customerName, // Tên khách hàng
+                          booking.customerName, 
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Text(
-                        '• ${statusInfo.$1}', // Trạng thái
+                        '• ${statusInfo.$1}', 
                         style: TextStyle(color: statusInfo.$2, fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    currencyFormat.format(booking.finalPrice), // Giá tiền
+                    currencyFormat.format(booking.finalPrice), 
                     style: const TextStyle(color: Color(0xFFDE4660), fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   const SizedBox(height: 4),

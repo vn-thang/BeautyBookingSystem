@@ -42,7 +42,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đổi mật khẩu thành công!'), backgroundColor: Colors.green),
       );
-      Navigator.pop(context); // Trở về trang Profile
+      Navigator.pop(context); 
     } else {
       setState(() => _errorMessage = result.errorMessage);
     }
@@ -59,15 +59,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Nền trắng tinh giống ảnh mẫu
+      backgroundColor: Colors.white, 
       appBar: AppBar(
         title: const Text(
           'Đổi mật khẩu',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
-        centerTitle: true, // Đưa text ra giữa như ảnh
+        centerTitle: true,
         backgroundColor: AppColors.primary, // Đổ màu nền đỏ/hồng
-        foregroundColor: AppColors.background, // Đổi nút Back và Text thành màu trắng
+        foregroundColor: AppColors.background, 
         elevation: 0,
       ),
       body: SingleChildScrollView(

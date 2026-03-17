@@ -5,7 +5,7 @@ import 'booking_card.dart';
 import '../screens/booking_detail_screen.dart';
 
 class BookingListTab extends StatefulWidget {
-  final String? status; // null = Tất cả, 'Pending', 'Confirmed', 'Completed', 'Cancelled'
+  final String? status; 
 
   const BookingListTab({super.key, this.status});
 

@@ -4,13 +4,11 @@ import '../services/service_api.dart';
 import '../models/global_category_model.dart';
 import '../models/service_model.dart';
 import '../../../shared/widgets/shared_service_widgets.dart';
-
-// --- THÊM IMPORT NÀY ---
 import '../../../shared/widgets/app_image_picker.dart'; 
 
 class ServiceBottomSheet extends StatefulWidget {
   final int storeId;
-  final ServiceModel? service; // NẾU NULL -> Thêm mới, NẾU CÓ DATA -> Chỉnh sửa
+  final ServiceModel? service; 
   final int? serviceGroupId;
   final String? groupName;
   final VoidCallback onSuccess;
@@ -35,7 +33,6 @@ class _ServiceBottomSheetState extends State<ServiceBottomSheet> {
   late TextEditingController _durationController;
   late TextEditingController _descriptionController;
   
-  // SỬA ĐỔI 1: Bỏ _imageUrlController, thay bằng biến String đơn giản
   String _imageUrl = ''; 
 
   late Future<List<GlobalCategoryModel>> _categoriesFuture;
@@ -53,7 +50,6 @@ class _ServiceBottomSheetState extends State<ServiceBottomSheet> {
     _durationController = TextEditingController(text: widget.service?.durationMinutes.toString() ?? '');
     _descriptionController = TextEditingController(text: widget.service?.description ?? '');
     
-    // SỬA ĐỔI 2: Gán ảnh cũ (nếu có) vào biến _imageUrl
     _imageUrl = widget.service?.imageUrl ?? '';
 
     _selectedCategoryId = widget.service?.categoryId;
@@ -68,7 +64,6 @@ class _ServiceBottomSheetState extends State<ServiceBottomSheet> {
     _priceController.dispose();
     _durationController.dispose();
     _descriptionController.dispose();
-    // Đã xóa _imageUrlController nên không cần dispose nó nữa
     super.dispose();
   }
 
@@ -100,7 +95,6 @@ class _ServiceBottomSheetState extends State<ServiceBottomSheet> {
           durationMinutes: duration,
           description: _descriptionController.text.trim(),
           
-          // SỬA ĐỔI 3: Truyền thẳng _imageUrl vào đây
           imageUrl: _imageUrl, 
           isActive: _isActive,
         );
@@ -114,7 +108,6 @@ class _ServiceBottomSheetState extends State<ServiceBottomSheet> {
           durationMinutes: duration,
           description: _descriptionController.text.trim(),
           
-          // SỬA ĐỔI 3: Truyền thẳng _imageUrl vào đây
           imageUrl: _imageUrl, 
         );
       }
@@ -213,19 +206,18 @@ class _ServiceBottomSheetState extends State<ServiceBottomSheet> {
               ),
               const SizedBox(height: 16),
 
-              // SỬA ĐỔI 4: Thay thế TextFormField bằng AppImagePicker
               const Text('Hình ảnh dịch vụ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               const SizedBox(height: 8),
               Center(
                 child: AppImagePicker(
-                  folderName: 'services', // Phân loại ảnh vào thư mục services trên Cloudinary
-                  isCircle: false, // Để false để ảnh ra hình vuông bo góc, hợp với dịch vụ hơn
+                  folderName: 'services', 
+                  isCircle: false,
                   width: 120,
                   height: 120,
                   initialImageUrl: _imageUrl.isNotEmpty ? _imageUrl : null,
                   onImageUploaded: (url) {
                     setState(() {
-                      _imageUrl = url; // Lưu link mới vào biến
+                      _imageUrl = url; 
                     });
                   },
                 ),

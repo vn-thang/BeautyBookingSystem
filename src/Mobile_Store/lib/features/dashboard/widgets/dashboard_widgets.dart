@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_store/features/booking/screens/booking_management_screen.dart';
-import '../../../core/theme/app_colors.dart'; // Sửa lại đường dẫn cho đúng với project của bạn
+import '../../../core/theme/app_colors.dart'; 
 import 'package:mobile_store/shared/widgets/stat_item_widget.dart';
 import 'package:mobile_store/shared/widgets/circle_action_button.dart';
 import '../../store/screens/update_profile_screen.dart';
 
-// Hàm format tiền dùng chung cho các card
 String _formatCurrency(dynamic amount) {
   if (amount == null) return '0';
   double value = double.tryParse(amount.toString()) ?? 0;
@@ -47,15 +46,13 @@ class DashboardHeader extends StatelessWidget {
     final storeName = headerData['name'] ?? 'Chưa cập nhật tên';
     final address = headerData['address'] ?? 'Chưa cập nhật địa chỉ';
     final logoUrl = headerData['logoUrl']?.toString() ?? '';
-    // Đã xóa hoàn toàn logic coverImageUrl và Stack để code gọn gàng, dùng nền trơn
-
+    
     return Material(
       color: AppColors.primary,
       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
       clipBehavior: Clip.antiAlias, // Để cắt ảnh nền bo tròn theo viền
       child: InkWell(
         onTap: () {
-          // CHUYỂN HƯỚNG SANG MÀN HÌNH THÔNG TIN
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const UpdateProfileScreen()),
@@ -66,7 +63,6 @@ class DashboardHeader extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Avatar (Logo Cửa hàng)
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
@@ -82,7 +78,6 @@ class DashboardHeader extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               
-              // Thông tin cửa hàng
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,7 +106,7 @@ class DashboardHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              // ĐÃ BỎ ICON CHUÔNG THÔNG BÁO Ở ĐÂY
+              
             ],
           ),
         ),
@@ -226,12 +221,12 @@ class CommissionCard extends StatelessWidget {
 
 class BookingsCard extends StatelessWidget {
   final Map<String, dynamic> counts;
-  final VoidCallback onViewAllBookings; // THÊM CALLBACK CHUYỂN TRANG
+  final VoidCallback onViewAllBookings; 
   
   const BookingsCard({
     super.key, 
     required this.counts,
-    required this.onViewAllBookings, // Bắt buộc truyền vào
+    required this.onViewAllBookings, 
   });
 
   @override
@@ -242,7 +237,6 @@ class BookingsCard extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Bọc InkWell để bấm vào phần header là nhảy trang
             InkWell(
               onTap: onViewAllBookings,
               borderRadius: BorderRadius.circular(8),
@@ -267,7 +261,6 @@ class BookingsCard extends StatelessWidget {
             Row(
   mainAxisAlignment: MainAxisAlignment.spaceAround,
   children: [
-    // Tab 1: Chờ duyệt
     GestureDetector(
       onTap: () {
         Navigator.push(
@@ -283,7 +276,6 @@ class BookingsCard extends StatelessWidget {
       ),
     ),
 
-    // Tab 2: Đã duyệt / Xác nhận
     GestureDetector(
       onTap: () {
         Navigator.push(
@@ -299,7 +291,6 @@ class BookingsCard extends StatelessWidget {
       ),
     ),
 
-    // Tab 3: Hoàn thành
     GestureDetector(
       onTap: () {
         Navigator.push(
@@ -315,7 +306,6 @@ class BookingsCard extends StatelessWidget {
       ),
     ),
 
-    // Tab 4: Đã hủy
     GestureDetector(
       onTap: () {
         Navigator.push(

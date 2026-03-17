@@ -3,7 +3,7 @@ class NotificationModel {
   final String title;
   final String message;
   final int type;
-  bool isRead; // Để không final vì ta sẽ đổi trạng thái khi click
+  bool isRead; 
   final DateTime createdAt;
 
   NotificationModel({

@@ -16,12 +16,12 @@ class LockedTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       initialValue: value,
-      enabled: false, // Khóa không cho sửa
+      enabled: false,
       style: const TextStyle(fontSize: 14, color: Colors.black54),
       decoration: InputDecoration(
         labelText: label,
         filled: true,
-        fillColor: Colors.grey[200], // Nền xám
+        fillColor: Colors.grey[200], 
         prefixIcon: Icon(icon, size: 20, color: Colors.grey),
         suffixIcon: const Icon(Icons.lock_outline, size: 16, color: Colors.grey),
         border: OutlineInputBorder(

@@ -34,7 +34,6 @@ class StoreManagementScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Thẻ chứa các menu quản lý
             Card(
               elevation: 0, 
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -54,10 +53,9 @@ class StoreManagementScreen extends StatelessWidget {
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   _buildListTile(
   context, 
-  Icons.account_balance_wallet_outlined, // Icon cái ví tiền cực hợp
+  Icons.account_balance_wallet_outlined, 
   'Sổ thu chi / Thanh toán', 
   onTap: () {
-    // Lệnh chuyển sang màn hình StorePaymentScreen
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const StorePaymentScreen()),
@@ -71,13 +69,10 @@ class StoreManagementScreen extends StatelessWidget {
                     Icons.info_outline, 
                     'Thông tin dịch vụ',
                     onTap: () async {
-                      // 1. Lấy storeId động từ TokenStorage
                       final currentStoreId = await TokenStorage.getStoreId();
 
-                      // Kiểm tra context.mounted trước khi dùng UI (bắt buộc khi dùng async/await trong Flutter)
                       if (!context.mounted) return;
 
-                      // 2. Kiểm tra xem có lấy được storeId không
                       if (currentStoreId == null || currentStoreId == 0) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Không tìm thấy thông tin cửa hàng. Vui lòng đăng nhập lại!')),
@@ -85,7 +80,6 @@ class StoreManagementScreen extends StatelessWidget {
                         return;
                       }
 
-                      // 3. Chuyển trang và truyền ID động vào
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -105,7 +99,6 @@ class StoreManagementScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          // Không cần truyền storeId nữa, cực kỳ nhàn!
                           builder: (context) => const StaffManagementScreen(), 
                         ),
                       );
@@ -114,7 +107,7 @@ class StoreManagementScreen extends StatelessWidget {
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   _buildListTile(
                     context, 
-                    Icons.local_offer_outlined, // Icon hình thẻ giảm giá
+                    Icons.local_offer_outlined, 
                     'Quản lý chương trình khuyến mãi',
                     onTap: () {
                       Navigator.push(
@@ -128,7 +121,7 @@ class StoreManagementScreen extends StatelessWidget {
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   _buildListTile(
                     context, 
-                    Icons.rate_review_outlined, // Icon hình hộp thoại đánh giá
+                    Icons.rate_review_outlined, 
                     'Quản lý đánh giá',
                     onTap: () {
                       Navigator.push(
@@ -142,13 +135,12 @@ class StoreManagementScreen extends StatelessWidget {
                   const Divider(height: 1, indent: 16, endIndent: 16),
                   _buildListTile(
             context,
-            Icons.person_outline, // Icon hình người đại diện cho tài khoản
+            Icons.person_outline, 
             'Quản lý tài khoản',
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  // CHÚ Ý: Xóa chữ 'const' ở đây để tránh lỗi biên dịch
                   builder: (context) => AccountMenuScreen(), 
                 ),
               );
@@ -157,10 +149,9 @@ class StoreManagementScreen extends StatelessWidget {
           const Divider(height: 1, indent: 16, endIndent: 16),
           _buildListTile(
                     context,
-                    Icons.group_outlined, // Icon này đẹp hơn
+                    Icons.group_outlined, 
                     'Quản lý khách hàng',
                     onTap: () async {
-                      // 1. Lấy storeId động từ TokenStorage giống y hệt phần Dịch vụ
                       final currentStoreId = await TokenStorage.getStoreId();
                       if (!context.mounted) return;
 
@@ -170,8 +161,6 @@ class StoreManagementScreen extends StatelessWidget {
                         );
                         return;
                       }
-
-                      // 2. Chuyển trang và truyền ID lấy được vào
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -183,17 +172,13 @@ class StoreManagementScreen extends StatelessWidget {
                     },
                   ),
 
-                  const Divider(height: 1, indent: 16, endIndent: 16), // Gạch ngang phân cách
+                  const Divider(height: 1, indent: 16, endIndent: 16), 
                   _buildListTile(
                     context,
-                    Icons.description_outlined, // Icon tờ giấy/tài liệu hợp với chính sách
+                    Icons.description_outlined,
                     'Chính sách và Điều khoản',
                     onTap: () async {
-                      // Nếu bạn đã tạo hàm _openTermsWebPage() ở trên rồi thì chỉ cần gọi:
-                      // _openTermsWebPage();
-                      
-                      // Còn nếu chưa thì viết trực tiếp logic mở link vào đây luôn:
-                      final Uri url = Uri.parse('https://google.com'); // Thay link Notion/Web của bạn vào đây
+                      final Uri url = Uri.parse('https://google.com'); 
                       if (!await launchUrl(url, mode: LaunchMode.inAppBrowserView)) {
                         debugPrint('Không thể mở link: $url');
                       }
@@ -202,7 +187,7 @@ class StoreManagementScreen extends StatelessWidget {
                    const Divider(height: 1, indent: 16, endIndent: 16), 
                   _buildListTile(
                     context,
-                    Icons.support_agent_outlined, // Icon nhân viên hỗ trợ cực chuẩn
+                    Icons.support_agent_outlined, 
                     'Liên hệ & Hỗ trợ',
                     onTap: () {
                       Navigator.push(
@@ -218,17 +203,13 @@ class StoreManagementScreen extends StatelessWidget {
             ),
             
             const SizedBox(height: 24),
-
-
-            // Nút đăng xuất (Tách riêng ra cho nổi bật)
           Card(
   elevation: 0, 
   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-  child: ListTile( // Đổi _buildListTile thành ListTile hoặc giữ nguyên hàm _buildListTile của bạn
+  child: ListTile( 
     leading: const Icon(Icons.logout, color: Colors.red),
     title: const Text('Đăng xuất', style: TextStyle(color: Colors.red)),
     onTap: () {
-      // 1. Hiển thị Popup xác nhận
       showDialog(
         context: context,
         builder: (BuildContext dialogContext) {
@@ -238,29 +219,24 @@ class StoreManagementScreen extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(), // Đóng popup
+                onPressed: () => Navigator.of(dialogContext).pop(),
                 child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () async {
-                  // Đóng popup xác nhận
                   Navigator.of(dialogContext).pop();
 
-                  // Hiển thị Loading (dùng navigatorKey để không bị nhầm context)
                   showDialog(
                     context: navigatorKey.currentContext!,
                     barrierDismissible: false,
                     builder: (context) => const Center(child: CircularProgressIndicator(color: Colors.red)),
                   );
 
-                  // Gọi API Đăng xuất (Thay bằng class gọi API thực tế của bạn)
                   await AuthService.logout(); 
 
-                  // Đóng cái Loading Dialog
                   navigatorKey.currentState!.pop();
 
-                  // Đẩy về trang Login và xóa sạch lịch sử các trang trước đó
                   navigatorKey.currentState!.pushAndRemoveUntil(
                     MaterialPageRoute(builder: (context) => const LoginScreen()),
                     (route) => false,
@@ -281,7 +257,6 @@ class StoreManagementScreen extends StatelessWidget {
     );
   }
 
-  // Hàm build giao diện từng dòng
   Widget _buildListTile(BuildContext context, IconData icon, String title, {VoidCallback? onTap, Color? color}) {
     return ListTile(
       leading: Icon(icon, color: color ?? AppColors.primary),

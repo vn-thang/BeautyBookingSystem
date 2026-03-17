@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class PermissionDialog {
-  /// Hàm hiển thị bảng xin quyền (Soft Prompt) có thể tái sử dụng
   static Future<bool> showCustomPrompt({
     required BuildContext context,
     required IconData icon,
@@ -9,21 +8,19 @@ class PermissionDialog {
     required String description,
     String confirmText = 'Cho phép',
     String cancelText = 'Để sau',
-    Color primaryColor = Colors.pink, // Đổi màu theo theme app của bạn
+    Color primaryColor = Colors.pink, 
   }) async {
-    // showDialog trả về Future<bool?> nên ta await nó
     bool? userAgreed = await showDialog<bool>(
       context: context,
-      barrierDismissible: false, // Bắt buộc người dùng phải chọn 1 trong 2 nút
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
-              mainAxisSize: MainAxisSize.min, // Tự động co giãn theo nội dung
+              mainAxisSize: MainAxisSize.min, 
               children: [
-                // Icon động đậy xíu cho đẹp
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -34,7 +31,6 @@ class PermissionDialog {
                 ),
                 const SizedBox(height: 20),
                 
-                // Tiêu đề
                 Text(
                   title,
                   textAlign: TextAlign.center,
@@ -42,7 +38,6 @@ class PermissionDialog {
                 ),
                 const SizedBox(height: 12),
                 
-                // Nội dung giải thích lý do
                 Text(
                   description,
                   textAlign: TextAlign.center,
@@ -50,12 +45,11 @@ class PermissionDialog {
                 ),
                 const SizedBox(height: 24),
                 
-                // Hai nút bấm
                 Row(
                   children: [
                     Expanded(
                       child: TextButton(
-                        onPressed: () => Navigator.pop(context, false), // Trả về false
+                        onPressed: () => Navigator.pop(context, false), 
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
@@ -65,7 +59,7 @@ class PermissionDialog {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context, true), // Trả về true
+                        onPressed: () => Navigator.pop(context, true), 
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColor,
                           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -85,7 +79,6 @@ class PermissionDialog {
       },
     );
 
-    // Nếu user bấm ra ngoài (dù đã set barrierDismissible) hoặc có lỗi, mặc định là false
     return userAgreed ?? false;
   }
 }
