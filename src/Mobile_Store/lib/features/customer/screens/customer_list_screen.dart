@@ -36,7 +36,6 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     super.dispose();
   }
 
-  // Gọi API thông qua CustomerApi
   Future<void> _fetchCustomers({String? searchTerm}) async {
     setState(() {
       _isLoading = true;
@@ -57,17 +56,15 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     }
   }
 
-  // Xử lý khi gõ tìm kiếm (Debounce tránh spam API)
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       _fetchCustomers(searchTerm: query);
     });
-    // Gọi setState rỗng để Widget SearchBar cập nhật icon Clear (X)
+   
     setState(() {}); 
   }
 
-  // Xử lý khi bấm nút Xóa text
   void _clearSearch() {
     _searchController.clear();
     _fetchCustomers();
@@ -77,13 +74,13 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100], // Nền ứng dụng xám nhạt
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text(
           'Quản lý Khách hàng',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        centerTitle: true, // Căn giữa tiêu đề cho đẹp
+        centerTitle: true, 
         elevation: 0,
         
         backgroundColor: AppColors.primary, 
@@ -92,14 +89,13 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       ),
       body: Column(
         children: [
-          // 1. Ô Tìm kiếm
+        
           CustomerSearchBar(
             controller: _searchController,
             onChanged: _onSearchChanged,
             onClear: _clearSearch,
           ),
           
-          // 2. Khu vực Danh sách
           Expanded(
             child: _buildBodyContent(),
           ),
@@ -108,7 +104,6 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     );
   }
 
-  // Hàm xử lý UI dựa theo trạng thái (Loading/Error/Success)
   Widget _buildBodyContent() {
     if (_isLoading && _customers.isEmpty) {
       return const Center(child: CircularProgressIndicator());
@@ -170,7 +165,6 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     );
   }
 
-  // Giao diện khi Trống (Không có data)
   Widget _buildEmptyState() {
     return Center(
       child: Column(

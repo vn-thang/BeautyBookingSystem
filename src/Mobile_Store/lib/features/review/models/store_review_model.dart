@@ -5,7 +5,7 @@ class StoreReviewModel {
   final String? customerAvatar;
   final int rating;
   final String? comment;
-  String? reply; // Không để final vì có thể update sau khi phản hồi
+  String? reply; 
   final bool isHidden;
 
   StoreReviewModel({

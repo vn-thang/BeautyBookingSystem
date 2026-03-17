@@ -100,7 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
             hint: 'Email hoặc số điện thoại',
             icon: Icons.person_outline,
             controller: _emailController,
-            // Gọi hàm dùng chung (không cần truyền param, Flutter tự truyền value)
+           
             validator: FormValidators.emailOrPhone, 
             onChanged: (_) => _clearError(),
             ),
@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
   icon: Icons.lock_outline,
   controller: _passwordController,
   isPassword: true,
-  // Gọi hàm dùng chung
+ 
   validator: (val) => FormValidators.password(val), 
   onChanged: (_) => _clearError(),
 ),

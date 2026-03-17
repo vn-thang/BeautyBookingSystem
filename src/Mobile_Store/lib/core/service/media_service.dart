@@ -8,8 +8,7 @@ class MediaService {
   // Hàm chọn ảnh dùng chung
   static Future<File?> pickImage(ImageSource source) async {
     try {
-      // imageQuality: 70 giúp nén ảnh gốc xuống còn khoảng 30% dung lượng, 
-      // Cực kỳ quan trọng để app chạy mượt và upload nhanh hơn
+      // imageQuality: 70 giúp nén ảnh gốc xuống còn khoảng 30% dung lượng
       final XFile? pickedFile = await _picker.pickImage(
         source: source,
         imageQuality: 70, 

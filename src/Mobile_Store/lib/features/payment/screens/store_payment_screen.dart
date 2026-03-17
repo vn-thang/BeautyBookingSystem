@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:mobile_store/features/booking/screens/booking_detail_screen.dart';
 import '../services/store_payment_api.dart';
@@ -99,21 +98,18 @@ class _StorePaymentScreenState extends State<StorePaymentScreen> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        // Màu nền xám nhạt để làm nổi bật các Card trắng
         backgroundColor: Colors.grey.shade100, 
         appBar: AppBar(
           title: const Text('Sổ Thu Chi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
           centerTitle: true,
-          // 🎨 SỬA THÀNH MÀU ĐỎ HỒNG ĐỒNG BỘ
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.background,
           elevation: 0,
           bottom: TabBar(
-            // 🎨 SỬA MÀU TAB BAR
-            labelColor: Colors.white, // Chữ tab đang chọn màu trắng
-            unselectedLabelColor: Colors.white70, // Chữ tab chưa chọn màu trắng hơi mờ
-            indicatorColor: Colors.white, // Gạch chân màu trắng
-            indicatorWeight: 3, // Làm gạch chân dày hơn 1 chút cho đẹp
+            labelColor: Colors.white, 
+            unselectedLabelColor: Colors.white70, 
+            indicatorColor: Colors.white, 
+            indicatorWeight: 3,
             tabs: const [
               Tab(text: 'Chờ thu'),  
               Tab(text: 'Đã thu'), 
@@ -122,7 +118,6 @@ class _StorePaymentScreenState extends State<StorePaymentScreen> {
           ),
         ),
         body: _isLoading 
-          // 🎨 SỬA VÒNG XOAY THÀNH MÀU ĐỎ
           ? Center(child: CircularProgressIndicator(color: AppColors.primary))
           : TabBarView(
               children: [
@@ -142,7 +137,6 @@ class _StorePaymentScreenState extends State<StorePaymentScreen> {
       );
     }
 
-    // Thêm RefreshIndicator để vuốt từ trên xuống làm mới dữ liệu
     return RefreshIndicator(
       color: AppColors.primary,
       onRefresh: _fetchPayments,
@@ -163,13 +157,11 @@ class _StorePaymentScreenState extends State<StorePaymentScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      // Chuyển sang màn hình Chi tiết đơn và truyền BookingId
                       builder: (context) => BookingDetailScreen(
                         bookingId: payment.bookingId, 
                       ),
                     ),
                   ).then((_) {
-                    // Khi từ màn hình chi tiết quay lại, tự động refresh mảng để lỡ có thu tiền bên trong thì bên ngoài cũng cập nhật
                     _fetchPayments(); 
                   });
                 },
@@ -177,7 +169,6 @@ class _StorePaymentScreenState extends State<StorePaymentScreen> {
                   payment: payment,
                   isPending: isPending,
                   isSuccess: isSuccess,
-                  // Truyền hàm cho các nút bấm bên trong Card (nếu Card của bạn có thiết kế nút thu tiền/hoàn tiền riêng)
                   onConfirm: () => _processConfirmPayment(payment), 
                   onRefund: () => _processRefundPayment(payment),  
                 ),

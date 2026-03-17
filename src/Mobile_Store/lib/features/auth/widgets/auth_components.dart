@@ -1,9 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-// ==========================================
-// 1. NỀN GRADIENT VÀ KHUNG KÍNH (GLASSMORPHISM)
-// ==========================================
 class AuthGlassBackground extends StatelessWidget {
   final Widget child;
 
@@ -32,7 +29,7 @@ class AuthGlassBackground extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(25),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15), // Dùng .withOpacity(0.15) nếu Flutter SDK cũ
+                    color: Colors.white.withValues(alpha: 0.15), 
                     borderRadius: BorderRadius.circular(40),
                     border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
                   ),
@@ -47,9 +44,6 @@ class AuthGlassBackground extends StatelessWidget {
   }
 }
 
-// ==========================================
-// 2. KHUNG BÁO LỖI (ERROR BOX)
-// ==========================================
 class AuthErrorBox extends StatelessWidget {
   final String errorMessage;
 
@@ -84,9 +78,6 @@ class AuthErrorBox extends StatelessWidget {
   }
 }
 
-// ==========================================
-// 3. NÚT BẤM CHÍNH (GRADIENT BUTTON)
-// ==========================================
 class AuthGradientButton extends StatelessWidget {
   final String text;
   final bool isLoading;
@@ -132,9 +123,6 @@ class AuthGradientButton extends StatelessWidget {
   }
 }
 
-// ==========================================
-// 4. NÚT BẤM VIỀN (OUTLINE BUTTON)
-// ==========================================
 class AuthOutlineButton extends StatelessWidget {
   final String text;
   final VoidCallback onTap;

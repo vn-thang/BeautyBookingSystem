@@ -12,7 +12,7 @@ class CloudinaryService {
     try {
       final Uri url = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
 
-      // Tạo một request dạng Multipart (chuyên dùng để gửi file)
+      // Tạo một request dạng Multipart 
       final request = http.MultipartRequest('POST', url)
         ..fields['upload_preset'] = uploadPreset
         ..fields['folder'] = folderName // Phân loại thư mục trên Cloudinary

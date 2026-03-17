@@ -7,10 +7,10 @@ import '../models/store_dashboard_model.dart';
 class DetailedStatsCard extends StatelessWidget {
   final StatisticsModel stats;
   final String currentFilter;
-  final DateTime? startDate; // Đã thêm
-  final DateTime? endDate;   // Đã thêm
+  final DateTime? startDate; 
+  final DateTime? endDate;   
   final ValueChanged<String> onFilterChanged;
-  final Function(DateTime? startDate, DateTime? endDate) onDateChanged; // Đã sửa tên
+  final Function(DateTime? startDate, DateTime? endDate) onDateChanged; 
 
   const DetailedStatsCard({
     super.key,
@@ -52,7 +52,6 @@ class DetailedStatsCard extends StatelessWidget {
     );
 
     if (picked != null) {
-      // Khi chọn 1 ngày, lập tức đẩy dữ liệu lên cho màn hình chính
       if (isStart) {
         onDateChanged(picked, endDate);
       } else {

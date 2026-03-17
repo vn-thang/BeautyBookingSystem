@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 class AppTextField extends StatefulWidget {
   final String hint;
-  final String? label; // Thêm label nếu cần
+  final String? label; 
   final IconData icon;
   final TextEditingController controller;
-  final String? Function(String?)? validator; // Chuyển thành optional
+  final String? Function(String?)? validator; 
   final bool isPassword;
   final void Function(String)? onChanged;
   final TextInputType? keyboardType;

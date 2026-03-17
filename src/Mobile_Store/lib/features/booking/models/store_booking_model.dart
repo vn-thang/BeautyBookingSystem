@@ -76,7 +76,7 @@ class BookingServiceModel {
   final int bookingDetailId;
   final String serviceName;
   final DateTime appointmentDate;
-  final String startTime; // TimeSpan từ C# thường map sang String "HH:mm:ss" trong Flutter
+  final String startTime; 
   final String endTime;
   final double price;
   final int? staffId;

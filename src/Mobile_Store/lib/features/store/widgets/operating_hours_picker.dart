@@ -16,7 +16,6 @@ class OperatingHoursPicker extends StatefulWidget {
 }
 
 class _OperatingHoursPickerState extends State<OperatingHoursPicker> {
-  // 1. Khai báo biến phải nằm TRONG class State
   final List<String> _days = [
     "Chủ nhật",
     "Thứ 2",
@@ -27,12 +26,10 @@ class _OperatingHoursPickerState extends State<OperatingHoursPicker> {
     "Thứ 7"
   ];
 
-  // 2. Hàm xử lý cũng phải nằm TRONG class State
   Future<void> _pickTime(OperatingHour day, bool isOpeningTime) async {
     final timeString = isOpeningTime ? day.openTime : day.closeTime;
     final parts = timeString.split(':');
 
-    // Dùng tryParse để tránh crash nếu timeString bị dị dạng
     TimeOfDay initialTime = (parts.length == 2)
         ? TimeOfDay(
             hour: int.tryParse(parts[0]) ?? 8,
@@ -57,11 +54,9 @@ class _OperatingHoursPickerState extends State<OperatingHoursPicker> {
           day.closeTime = formattedTime;
         }
 
-        // So sánh giờ mở/đóng ở đây để cảnh báo user
         final openParts = day.openTime.split(':');
         final closeParts = day.closeTime.split(':');
         
-        // Thêm kiểm tra an toàn độ dài mảng để tránh crash index out of bounds
         if (openParts.length == 2 && closeParts.length == 2) {
            final openMinutes = int.parse(openParts[0]) * 60 + int.parse(openParts[1]);
            final closeMinutes = int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
@@ -80,7 +75,6 @@ class _OperatingHoursPickerState extends State<OperatingHoursPicker> {
     }
   }
 
-  // 3. Hàm build
   @override
   Widget build(BuildContext context) {
     return Theme(

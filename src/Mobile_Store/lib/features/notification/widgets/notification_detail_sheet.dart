@@ -1,4 +1,3 @@
-// file: lib/features/notification/widgets/notification_detail_sheet.dart
 import 'package:flutter/material.dart';
 import '../models/notification_model.dart';
 import '../../../core/utils/date_formatter.dart'; 
@@ -21,7 +20,7 @@ class NotificationDetailSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Thanh kéo nhỏ
+         
           Center(
             child: Container(
               width: 40, height: 5,
@@ -30,18 +29,15 @@ class NotificationDetailSheet extends StatelessWidget {
             ),
           ),
           
-          // Tiêu đề
           Text(notification.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           
-          // Thời gian (Sử dụng DateFormatter vừa tạo)
           Text(
             DateFormatter.formatDateTime(notification.createdAt),
             style: const TextStyle(fontSize: 14, color: Colors.grey),
           ),
           const Divider(height: 30),
-          
-          // Nội dung chi tiết
+
           Flexible(
             child: SingleChildScrollView(
               child: Text(
@@ -52,7 +48,6 @@ class NotificationDetailSheet extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           
-          // Nút đóng
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(

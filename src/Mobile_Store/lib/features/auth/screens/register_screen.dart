@@ -30,7 +30,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    // Khởi tạo đồ bắt sự kiện khi bấm vào chữ màu xanh
     _termsRecognizer = TapGestureRecognizer()..onTap = _openTermsWebPage;
   }
   @override
@@ -47,7 +46,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_serverErrorMessage != null) setState(() => _serverErrorMessage = null);
   }
 Future<void> _openTermsWebPage() async {
-    // TẠM THỜI ĐỂ LINK GOOGLE, BẠN THAY LINK NOTION CỦA BẠN VÀO ĐÂY NHÉ
     final Uri url = Uri.parse('https://google.com'); 
     
     if (!await launchUrl(url, mode: LaunchMode.inAppBrowserView)) {
@@ -58,16 +56,15 @@ Future<void> _openTermsWebPage() async {
     _clearError();
     if (!_formKey.currentState!.validate()) return;
 
-  // --- KIỂM TRA XEM ĐÃ TÍCH CHỌN ĐIỀU KHOẢN CHƯA ---
     if (!_isAgreed) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Vui lòng đồng ý với Chính sách & điều khoản để tiếp tục!'),
           backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating, // Hiển thị đè lên trên cho đẹp
+          behavior: SnackBarBehavior.floating, 
         ),
       );
-      return; // Dừng lại, không gọi API
+      return; 
     }
     setState(() => _isLoading = true);
     try {
@@ -111,7 +108,7 @@ Future<void> _openTermsWebPage() async {
   hint: 'Họ và tên chủ tiệm',
   icon: Icons.person_outline,
   controller: _ownerNameController,
-  // SỬA DÒNG NÀY
+ 
   validator: (val) => FormValidators.requiredField(val, 'Vui lòng nhập họ tên'),
   onChanged: (_) => _clearError(),
 ),
@@ -121,7 +118,6 @@ Future<void> _openTermsWebPage() async {
   hint: 'Số điện thoại',
   icon: Icons.phone_outlined,
   controller: _phoneController,
-  // SỬA DÒNG NÀY
   validator: FormValidators.phone,
   onChanged: (_) => _clearError(),
 ),
@@ -131,7 +127,7 @@ Future<void> _openTermsWebPage() async {
   hint: 'Email',
   icon: Icons.email_outlined,
   controller: _emailController,
-  // SỬA DÒNG NÀY
+  
   validator: FormValidators.email,
   onChanged: (_) => _clearError(),
 ),
@@ -142,24 +138,23 @@ Future<void> _openTermsWebPage() async {
   icon: Icons.lock_outline,
   controller: _passwordController,
   isPassword: true,
-  // SỬA DÒNG NÀY
+  
   validator: (val) => FormValidators.password(val),
   onChanged: (_) => _clearError(),
 ),
 
-const SizedBox(height: 14), // Thêm khoảng trống nhỏ trước Checkbox
+const SizedBox(height: 14), 
 
-              // --- GIAO DIỆN CHECKBOX ĐIỀU KHOẢN THÊM VÀO ĐÂY ---
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    height: 24, // Thu nhỏ kích thước hộp Checkbox cho gọn
+                    height: 24,
                     width: 24,
                     child: Checkbox(
                       value: _isAgreed,
-                      activeColor: Colors.blue, // Đổi màu xanh cho nổi bật
-                      side: const BorderSide(color: Color(0xFF334155)), // Viền khi chưa tích
+                      activeColor: Colors.blue, 
+                      side: const BorderSide(color: Color(0xFF334155)), 
                       onChanged: (bool? value) {
                         setState(() {
                           _isAgreed = value ?? false;
@@ -167,14 +162,14 @@ const SizedBox(height: 14), // Thêm khoảng trống nhỏ trước Checkbox
                       },
                     ),
                   ),
-                  const SizedBox(width: 8), // Khoảng cách giữa ô tích và chữ
+                  const SizedBox(width: 8), 
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 2.0), // Căn chữ cho ngang với ô tích
+                      padding: const EdgeInsets.only(top: 2.0), 
                       child: RichText(
                         text: TextSpan(
                           text: 'Tôi đã đọc và đồng ý với ',
-                          // Style chữ này đồng bộ với chữ "Đã có tài khoản?" ở dưới
+                         
                           style: const TextStyle(color: Color(0xFF334155), fontSize: 13),
                           children: [
                             TextSpan(
@@ -183,7 +178,7 @@ const SizedBox(height: 14), // Thêm khoảng trống nhỏ trước Checkbox
                                 color: Colors.blue,
                                 fontWeight: FontWeight.bold,
                               ),
-                              recognizer: _termsRecognizer, // Bắn sự kiện click
+                              recognizer: _termsRecognizer, 
                             ),
                             const TextSpan(text: ' dịch vụ của hệ thống.'),
                           ],

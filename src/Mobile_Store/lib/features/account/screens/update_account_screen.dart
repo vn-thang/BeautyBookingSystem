@@ -21,8 +21,8 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
   final _emailCtrl = TextEditingController(); 
   final _phoneCtrl = TextEditingController(); 
   
-  bool _isFetching = true; // Trạng thái đang tải dữ liệu cũ
-  bool _isUpdating = false; // Trạng thái đang bấm nút lưu
+  bool _isFetching = true; 
+  bool _isUpdating = false; 
   String? _errorMessage;
   String? _avatarUrl;
 
@@ -38,13 +38,13 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
 
     if (result.isSuccess && result.data != null) {
       final user = result.data!;
-      // QUAN TRỌNG: Gán dữ liệu từ API vào các Controller để nó hiện lên màn hình
+      //Gán dữ liệu từ API vào các Controller để nó hiện lên màn hình
       setState(() {
         _fullNameCtrl.text = user.fullName;
         _emailCtrl.text = user.email ?? 'Chưa cập nhật';
         _phoneCtrl.text = user.phone;
         _avatarUrl = user.avatarUrl;
-        _isFetching = false; // Tắt vòng xoay loading
+        _isFetching = false; 
       });
     } else {
       setState(() {
@@ -62,12 +62,12 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
         Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         const SizedBox(height: 8),
         TextFormField(
-          controller: controller, // Dùng controller để dữ liệu tự cập nhật khi load xong
+          controller: controller, 
           enabled: false,
           style: const TextStyle(fontSize: 14, color: Colors.black54),
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.grey[100], // Sửa thành xám nhạt cho tinh tế hơn
+            fillColor: Colors.grey[100], 
             prefixIcon: Icon(icon, size: 20, color: AppColors.textSub),
             suffixIcon: const Icon(Icons.lock_outline, size: 16, color: AppColors.textSub),
             contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
@@ -79,7 +79,6 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
     );
   }
 
-  // --- HÀM UPDATE: Gửi dữ liệu mới lên server ---
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -117,19 +116,19 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-      backgroundColor: Colors.white, // Đổi màu nền thành trắng tinh
+      backgroundColor: Colors.white, 
       appBar: AppBar(
         title: const Text(
           'Tài khoản của tôi',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
-        centerTitle: true, // Căn giữa tiêu đề
-        backgroundColor: AppColors.primary, // Đổ màu nền đỏ/hồng
-        foregroundColor: AppColors.background, // Chữ trắng
+        centerTitle: true, 
+        backgroundColor: AppColors.primary, 
+        foregroundColor: AppColors.background, 
         elevation: 0,
       ),
       body: _isFetching
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary)) // Sửa màu loading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary)) 
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Form(
@@ -139,12 +138,12 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
                    Center(
                       child: AppImagePicker(
                         folderName: 'avatars', // Tạo thư mục avatars trên mây
-                        isCircle: true,        // Bật chế độ bo tròn thành hình Avatar
-                        width: 120,            // Chỉnh kích thước to/nhỏ tùy ý bạn
+                        isCircle: true,        
+                        width: 120,            
                         height: 120,
-                        initialImageUrl: _avatarUrl, // Hiện avatar cũ (nếu có)
+                        initialImageUrl: _avatarUrl,
                         onImageUploaded: (url) {
-                          // Khi up lên Cloudinary thành công, nó sẽ ném link vào đây
+                      
                           setState(() {
                             _avatarUrl = url; // Lưu lại để lát gửi về API C#
                           });
@@ -168,7 +167,6 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Ô số điện thoại (Chỉ xem)
                     _buildReadOnlyField(
                       label: 'Số điện thoại',
                       controller: _phoneCtrl, 
@@ -176,7 +174,6 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Ô email (Chỉ xem)
                     _buildReadOnlyField(
                       label: 'Email',
                       controller: _emailCtrl, 
@@ -185,7 +182,6 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
                     
                     const SizedBox(height: 30),
 
-                    // Nút cập nhật
                     AppGradientButton(
                       text: 'LƯU THAY ĐỔI',
                       isLoading: _isUpdating,

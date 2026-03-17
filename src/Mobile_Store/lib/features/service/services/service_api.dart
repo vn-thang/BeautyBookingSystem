@@ -3,9 +3,6 @@ import '../models/global_category_model.dart';
 import '../models/service_group_model.dart';
 
 class ServiceApi {
-  // =======================================================
-  // 1. GLOBAL CATEGORIES & SERVICE GROUPS
-  // =======================================================
   static Future<List<GlobalCategoryModel>> getGlobalCategories() async {
     final json = await ApiClient.get('/api/GlobalCategories');
     List data = json is List ? json : (json['data'] ?? []);
@@ -21,9 +18,6 @@ class ServiceApi {
     return groups;
   }
 
-  // =======================================================
-  // 3. CRUD: NHÓM DỊCH VỤ (SERVICE GROUP)
-  // =======================================================
   static Future<void> createServiceGroup({required int storeId, required String name}) async {
     await ApiClient.post('/api/ServiceGroups', body: {
       'storeId': storeId, 'name': name, 'sortOrder': 0,
@@ -42,9 +36,6 @@ class ServiceApi {
     await ApiClient.delete('/api/ServiceGroups/$groupId');
   }
 
-  // =======================================================
-  // 4. CRUD: DỊCH VỤ CON (SERVICE)
-  // =======================================================
   static Future<void> createService({
     required int storeId, required int categoryId, int? groupId,    
     required String name, required double price, required int durationMinutes, 

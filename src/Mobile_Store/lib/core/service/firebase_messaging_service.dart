@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../features/notification/services/notification_api.dart';
 
-// Nó dùng để nhận thông báo khi App đã bị vuốt tắt hoàn toàn (Killed/Terminated)
+// Dùng để nhận thông báo khi App đã bị vuốt tắt hoàn toàn (Killed/Terminated)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   log('🌙 [Background/Killed] Nhận thông báo: ${message.notification?.title}');

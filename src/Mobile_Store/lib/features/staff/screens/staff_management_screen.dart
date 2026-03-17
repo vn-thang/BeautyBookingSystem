@@ -30,7 +30,6 @@ class _StaffManagementScreenState extends State<StaffManagementScreen> {
     });
   }
 
-  // Khai báo hàm dùng chung để hiện thông báo, code nhìn sẽ cực kỳ gọn
   void _showMessage(String msg, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

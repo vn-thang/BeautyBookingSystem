@@ -15,42 +15,15 @@ class ServiceGroupModel {
     this.services = const [],
   });
 
-  // factory ServiceGroupModel.fromJson(Map<String, dynamic> json) {
-  //    List<ServiceModel> parsedServices = [];
-    
-  //   // 🟢 Bọc try-catch từng dịch vụ để xem cái nào làm crash app
-  //   if (json['services'] != null) {
-  //     for (var item in json['services']) {
-  //       try {
-  //         parsedServices.add(ServiceModel.fromJson(item));
-  //       } catch (e) {
-  //         // NẾU CÓ LỖI, NÓ SẼ IN RA TẠI ĐÂY:
-  //         print("❌ LỖI PARSE DỊCH VỤ '${item['name'] ?? 'Không tên'}': $e");
-  //       }
-  //     }
-  //   }
-  //   return ServiceGroupModel(
-  //     id: json['id'] ?? 0,
-  //     storeId: json['storeId'] ?? 0,
-  //     name: json['name'] ?? '',
-  //     sortOrder: json['sortOrder'] ?? 0,
-  //     // Parse an toàn danh sách dịch vụ con nếu Backend có trả về
-  //     services: json['services'] != null
-  //         ? (json['services'] as List).map((i) => ServiceModel.fromJson(i)).toList()
-  //         : [],
-  //   );
-  // }
-
 factory ServiceGroupModel.fromJson(Map<String, dynamic> json) {
     List<ServiceModel> parsedServices = [];
     
-    // 🟢 Bọc try-catch từng dịch vụ để xem cái nào làm crash app
     if (json['services'] != null) {
       for (var item in json['services']) {
         try {
           parsedServices.add(ServiceModel.fromJson(item));
         } catch (e) {
-          // ❌ NẾU CÓ LỖI, NÓ SẼ IN RA TẠI ĐÂY:
+         
           ("❌ LỖI PARSE DỊCH VỤ '${item['name'] ?? 'Không tên'}': $e");
         }
       }
@@ -61,7 +34,6 @@ factory ServiceGroupModel.fromJson(Map<String, dynamic> json) {
       storeId: json['storeId'] ?? 0,
       name: json['name'] ?? '',
       sortOrder: json['sortOrder'] ?? 0,
-      // 🔥 SỬA Ở ĐÂY: Truyền thẳng danh sách đã lọc lỗi an toàn vào
       services: parsedServices, 
     );
   }

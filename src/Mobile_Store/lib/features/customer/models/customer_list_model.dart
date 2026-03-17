@@ -22,7 +22,6 @@ class CustomerListModel {
       phone: json['phone'] ?? '',
       avatarUrl: json['avatarUrl'],
       totalVisits: json['totalVisits'] ?? 0,
-      // Ép kiểu an toàn cho số thập phân từ JSON
       totalSpent: (json['totalSpent'] ?? 0).toDouble(), 
     );
   }

@@ -47,7 +47,7 @@ class StoreHeaderModel {
 class StatisticsModel {
   final int totalCustomers;
   final int totalBookings;
-  final double totalRevenue; // Trong Dart, C# decimal chuyển thành double
+  final double totalRevenue;
 
   StatisticsModel({
     required this.totalCustomers,
@@ -59,7 +59,6 @@ class StatisticsModel {
     return StatisticsModel(
       totalCustomers: json['totalCustomers'] ?? 0,
       totalBookings: json['totalBookings'] ?? 0,
-      // Ép kiểu an toàn cho double
       totalRevenue: (json['totalRevenue'] ?? 0).toDouble(), 
     );
   }

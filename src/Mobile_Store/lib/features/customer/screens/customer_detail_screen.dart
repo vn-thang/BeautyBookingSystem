@@ -1,158 +1,3 @@
-// import 'package:flutter/material.dart';
-// import '../models/customer_profile_model.dart';
-// import '../services/customer_api.dart';
-// import '../widgets/customer_info_card.dart';
-// import '../widgets/customer_stats_row.dart';
-// import '../widgets/service_history_card.dart';
-
-// class CustomerDetailScreen extends StatefulWidget {
-//   final int storeId;
-//   final int customerId;
-
-//   const CustomerDetailScreen({
-//     super.key,
-//     required this.storeId,
-//     required this.customerId,
-//   });
-
-//   @override
-//   State<CustomerDetailScreen> createState() => _CustomerDetailScreenState();
-// }
-
-// class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
-//   CustomerProfileModel? _profile;
-//   bool _isLoading = true;
-//   String? _errorMessage;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _fetchCustomerProfile();
-//   }
-
-//   Future<void> _fetchCustomerProfile() async {
-//     setState(() {
-//       _isLoading = true;
-//       _errorMessage = null;
-//     });
-
-//     try {
-//       final data = await CustomerApi.getCustomerProfile(widget.storeId, widget.customerId);
-//       setState(() {
-//         _profile = data;
-//         _isLoading = false;
-//       });
-//     } catch (e) {
-//       setState(() {
-//         _errorMessage = e.toString();
-//         _isLoading = false;
-//       });
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.grey[50],
-//       appBar: AppBar(
-//         title: const Text('Hồ sơ Khách hàng'),
-//         elevation: 0,
-//         backgroundColor: Colors.white,
-//         foregroundColor: Colors.black,
-//       ),
-//       body: _buildBody(),
-//     );
-//   }
-
-//   Widget _buildBody() {
-//     if (_isLoading) {
-//       return const Center(child: CircularProgressIndicator());
-//     }
-
-//     if (_errorMessage != null) {
-//       return Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-//             const Icon(Icons.error_outline, size: 60, color: Colors.redAccent),
-//             const SizedBox(height: 16),
-//             Text(_errorMessage!, textAlign: TextAlign.center),
-//             TextButton(
-//               onPressed: _fetchCustomerProfile,
-//               child: const Text('Thử lại'),
-//             )
-//           ],
-//         ),
-//       );
-//     }
-
-//     if (_profile == null) {
-//       return const Center(child: Text('Không tìm thấy dữ liệu khách hàng.'));
-//     }
-
-//     return RefreshIndicator(
-//       onRefresh: _fetchCustomerProfile,
-//       child: SingleChildScrollView(
-//         physics: const AlwaysScrollableScrollPhysics(),
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             // 1. Khối thông tin cơ bản
-//             CustomerInfoCard(profile: _profile!),
-//             const SizedBox(height: 20),
-            
-//             // 2. Khối thống kê
-//             CustomerStatsRow(profile: _profile!),
-//             const SizedBox(height: 24),
-            
-//             // Tiêu đề Lịch sử
-//             const Text(
-//               'Lịch sử Dịch vụ',
-//               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-//             ),
-//             const SizedBox(height: 12),
-
-//             // 3. Danh sách Lịch sử (Dùng ListView.builder với shrinkWrap để nằm trong ScrollView)
-//             _profile!.serviceHistories.isEmpty
-//                 ? _buildEmptyHistory()
-//                 : ListView.builder(
-//                     shrinkWrap: true,
-//                     physics: const NeverScrollableScrollPhysics(),
-//                     itemCount: _profile!.serviceHistories.length,
-//                     itemBuilder: (context, index) {
-//                       return ServiceHistoryCard(
-//                         history: _profile!.serviceHistories[index],
-//                       );
-//                     },
-//                   ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildEmptyHistory() {
-//     return Container(
-//       padding: const EdgeInsets.all(32),
-//       alignment: Alignment.center,
-//       child: Column(
-//         children: [
-//           Icon(Icons.history_toggle_off, size: 48, color: Colors.grey.shade400),
-//           const SizedBox(height: 12),
-//           Text(
-//             'Khách hàng chưa sử dụng dịch vụ nào.',
-//             style: TextStyle(color: Colors.grey.shade600),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-
-
-
 import 'package:flutter/material.dart';
 import 'package:mobile_store/features/booking/screens/booking_detail_screen.dart';
 import '../models/customer_profile_model.dart';
@@ -210,7 +55,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100], // Đồng bộ màu nền xám nhạt
+      backgroundColor: Colors.grey[100], 
       appBar: AppBar(
         title: const Text(
           'Hồ sơ Khách hàng',
@@ -314,7 +159,6 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 3. Danh sách Lịch sử
            _profile!.serviceHistories.isEmpty
     ? _buildEmptyHistory()
     : ListView.builder(
@@ -322,22 +166,21 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         physics: const NeverScrollableScrollPhysics(),
         itemCount: _profile!.serviceHistories.length,
         itemBuilder: (context, index) {
-          // Lấy ra dữ liệu của 1 thẻ lịch sử ở vị trí hiện tại
           final historyItem = _profile!.serviceHistories[index]; 
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 12.0),
             child: Material(
-              color: Colors.transparent, // Giữ nền trong suốt để thẻ Card hiển thị đúng màu
+              color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(12), // Bo góc cho hiệu ứng bấm giống với thẻ Card
+                borderRadius: BorderRadius.circular(12), 
                 onTap: () {
-                  // XỬ LÝ SỰ KIỆN BẤM: Chuyển trang và truyền ID
+                
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => BookingDetailScreen(
-                        bookingId: historyItem.bookingId, // Truyền ID đơn hàng sang
+                        bookingId: historyItem.bookingId,
                       ),
                     ),
                   );

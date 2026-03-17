@@ -5,7 +5,7 @@ import '../../../shared/widgets/shared_service_widgets.dart';
 
 class ServiceGroupBottomSheet extends StatefulWidget {
   final int storeId;
-  final ServiceGroupModel? group; // NẾU NULL -> Thêm mới, NẾU CÓ DATA -> Chỉnh sửa
+  final ServiceGroupModel? group;
   final VoidCallback onSuccess;
 
   const ServiceGroupBottomSheet({

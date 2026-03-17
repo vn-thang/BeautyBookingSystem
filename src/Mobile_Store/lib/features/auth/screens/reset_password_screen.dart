@@ -75,7 +75,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
           child: Container(
-            // Khối thẻ (Card) trắng bo góc, đổ bóng giống y hệt màn Forgot Password
             padding: const EdgeInsets.all(24.0),
             decoration: BoxDecoration(
               color: Colors.white,

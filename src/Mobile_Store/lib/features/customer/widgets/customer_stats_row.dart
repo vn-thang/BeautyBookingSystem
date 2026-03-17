@@ -34,7 +34,6 @@ class CustomerStatsRow extends StatelessWidget {
           value: '${profile.totalCancelled}',
           unit: 'lần',
           icon: Icons.cancel_outlined,
-          // Bôi đỏ đậm nếu khách này hủy >= 3 lần (Cảnh báo bom hàng)
           color: profile.totalCancelled >= 3 ? Colors.red : Colors.orange,
         ),
       ],

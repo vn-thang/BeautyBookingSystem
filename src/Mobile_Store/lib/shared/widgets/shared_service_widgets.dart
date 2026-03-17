@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 const Color kPrimaryColor = Color(0xFFDE4660);
-
-// Nút submit có trạng thái loading
 class LoadingSubmitButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback? onPressed;
@@ -35,7 +33,6 @@ class LoadingSubmitButton extends StatelessWidget {
   }
 }
 
-// Tiêu đề BottomSheet có nút đóng
 class BottomSheetHeader extends StatelessWidget {
   final String title;
 
@@ -58,7 +55,6 @@ class BottomSheetHeader extends StatelessWidget {
   }
 }
 
-// Helper để hiển thị SnackBar
 class SnackBarHelper {
   static void showSuccess(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -73,7 +69,6 @@ class SnackBarHelper {
   }
 }
 
-// Hàm hỗ trợ tạo InputDecoration chuẩn
 InputDecoration buildCustomInputDecoration(String label, String hint) {
   return InputDecoration(
     labelText: label,

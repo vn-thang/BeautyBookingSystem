@@ -37,7 +37,7 @@ class FormValidators {
     return null;
   }
 
-  // 5. Validate Mật khẩu (Có thể tùy chỉnh độ dài tối thiểu)
+  // 5. Validate Mật khẩu
   static String? password(String? value, {int minLength = 6}) {
     if (value == null || value.isEmpty) return 'Vui lòng nhập mật khẩu';
     if (value.length < minLength) return 'Mật khẩu phải có ít nhất $minLength ký tự';

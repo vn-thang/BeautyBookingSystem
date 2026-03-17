@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/store_review_model.dart';
+import '../../../core/theme/app_colors.dart';
 
 class ReviewCardWidget extends StatelessWidget {
   final StoreReviewModel review;
@@ -9,7 +10,6 @@ class ReviewCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color primaryRed = const Color(0xFFDE4A62); // Cố định màu đỏ
 
     return Card(
       elevation: 1,
@@ -20,7 +20,6 @@ class ReviewCardWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header: Avatar & Tên & Sao
             Row(
               children: [
                 CircleAvatar(
@@ -47,11 +46,9 @@ class ReviewCardWidget extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             
-            // Nội dung khách đánh giá
             Text(review.comment ?? 'Không có nhận xét', style: const TextStyle(fontSize: 14)),
             const SizedBox(height: 16),
             
-            // Phần phản hồi của cửa hàng
             if (review.reply != null && review.reply!.isNotEmpty) ...[
               Container(
                 width: double.infinity,
@@ -60,7 +57,7 @@ class ReviewCardWidget extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Phản hồi của bạn:", style: TextStyle(fontWeight: FontWeight.bold, color: primaryRed, fontSize: 13)),
+                    Text("Phản hồi của bạn:", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 13)),
                     const SizedBox(height: 4),
                     Text(review.reply!, style: const TextStyle(fontSize: 14)),
                   ],
@@ -70,8 +67,8 @@ class ReviewCardWidget extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
                   onPressed: onReplyTap,
-                  icon: Icon(Icons.edit, size: 16, color: primaryRed),
-                  label: Text("Sửa phản hồi", style: TextStyle(color: primaryRed)),
+                  icon: Icon(Icons.edit, size: 16, color: AppColors.primary),
+                  label: Text("Sửa phản hồi", style: TextStyle(color: AppColors.primary)),
                 ),
               )
             ] else ...[
@@ -79,10 +76,10 @@ class ReviewCardWidget extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: onReplyTap,
-                  icon: Icon(Icons.reply, color: primaryRed),
-                  label: Text("Trả lời khách hàng", style: TextStyle(color: primaryRed)),
+                  icon: Icon(Icons.reply, color: AppColors.primary),
+                  label: Text("Trả lời khách hàng", style: TextStyle(color: AppColors.primary)),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: primaryRed), // Viền nút màu đỏ
+                    side: BorderSide(color: AppColors.primary), 
                   ),
                 ),
               )

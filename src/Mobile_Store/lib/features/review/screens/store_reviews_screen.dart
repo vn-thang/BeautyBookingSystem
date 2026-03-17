@@ -86,7 +86,7 @@ class _StoreReviewsScreenState extends State<StoreReviewsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Đánh giá của khách', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: AppColors.primary, // Màu đỏ chủ đạo
+        backgroundColor: AppColors.primary,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
@@ -105,11 +105,11 @@ class _StoreReviewsScreenState extends State<StoreReviewsScreen> {
           
           Expanded(
             child: _isLoading 
-              ? Center(child: CircularProgressIndicator(color: AppColors.primary)) // Màu loading
+              ? Center(child: CircularProgressIndicator(color: AppColors.primary)) 
               : _reviews.isEmpty
                   ? const Center(child: Text("Không tìm thấy đánh giá nào."))
                   : RefreshIndicator(
-                      color: AppColors.primary, // Màu vòng xoay pull-to-refresh
+                      color: AppColors.primary, 
                       onRefresh: _fetchReviews,
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16),
