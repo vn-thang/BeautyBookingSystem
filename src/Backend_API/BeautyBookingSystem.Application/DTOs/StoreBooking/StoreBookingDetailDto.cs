@@ -12,7 +12,8 @@ namespace BeautyBookingSystem.Application.DTOs.StoreBooking
         public decimal TotalPrice { get; set; }
         public decimal DiscountAmount { get; set; }
         public string? CancelReason { get; set; } 
-        public string? CancelledBy { get; set; }  
+        public string? CancelledBy { get; set; }
+        public int? PaymentId { get; set; }
         public List<BookingServiceItemDto> Services { get; set; } = new();
     }
 }

@@ -7,12 +7,12 @@ class StatItemWidget extends StatelessWidget {
   final String label;
 
   const StatItemWidget({
-    Key? key,
-    required this.icon,
-    required this.iconColor,
-    required this.value,
-    required this.label,
-  }) : super(key: key);
+  super.key,
+  required this.icon,
+  required this.iconColor,
+  required this.value,
+  required this.label,
+});
 
   @override
   Widget build(BuildContext context) {

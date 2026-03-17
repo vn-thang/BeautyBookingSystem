@@ -8,7 +8,7 @@ namespace BeautyBookingSystem.Domain.Enums
 {
         public enum Role { Customer, StoreOwner, Admin }
         public enum UserStatus { Active, Locked }
-        public enum ApprovalStatus { Pending, Approved, Locked }
+        public enum ApprovalStatus { Incomplete = -1, Pending, Approved, Locked }
         public enum DiscountType { Percent, Amount }
         public enum BookingStatus { Pending, Confirmed, Completed, Cancelled }
         public enum BookingDetailStatus { Pending, InProgress, Done, Cancelled }

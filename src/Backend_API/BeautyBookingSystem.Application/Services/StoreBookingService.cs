@@ -52,6 +52,7 @@ namespace BeautyBookingSystem.Application.Services
                 .Include(b => b.Customer)
                 .Include(b => b.BookingDetails).ThenInclude(bd => bd.Service)
                 .Include(b => b.BookingDetails).ThenInclude(bd => bd.Staff)
+                .Include(b => b.Payments)
                 .FirstOrDefaultAsync(b => b.Id == bookingId && b.StoreId == storeId);
 
             if (booking == null)

@@ -106,17 +106,30 @@ namespace BeautyBookingSystem.Application.Services
 
                 var store = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
 
+                //if (customerIds.Any())
+                //{
+                //    var notificationTasks = customerIds.Select(customerId =>
+                //        _notificationService.CreateAndSendNotificationAsync(
+                //            customerId,
+                //            $"🎁 Ưu đãi mới từ {store?.Name}",
+                //            $"Nhập mã {voucher.Code} để được giảm giá ngay cho lần đặt lịch tiếp theo!",
+                //            NotificationType.Promotion
+                //        )
+                //    );
+                //    await Task.WhenAll(notificationTasks);
+                //}
+
                 if (customerIds.Any())
                 {
-                    var notificationTasks = customerIds.Select(customerId =>
-                        _notificationService.CreateAndSendNotificationAsync(
+                    foreach (var customerId in customerIds)
+                    {
+                        await _notificationService.CreateAndSendNotificationAsync(
                             customerId,
                             $"🎁 Ưu đãi mới từ {store?.Name}",
                             $"Nhập mã {voucher.Code} để được giảm giá ngay cho lần đặt lịch tiếp theo!",
                             NotificationType.Promotion
-                        )
-                    );
-                    await Task.WhenAll(notificationTasks);
+                        );
+                    }
                 }
             }
 

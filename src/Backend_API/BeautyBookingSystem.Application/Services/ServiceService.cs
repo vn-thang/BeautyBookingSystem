@@ -38,7 +38,7 @@ namespace BeautyBookingSystem.Application.Services
 
         private async Task ValidateGroupOwnershipAsync(int? groupId, int currentStoreId)
         {
-            if (groupId.HasValue)
+            if (groupId.HasValue && groupId.Value > 0)
             {
                 var group = await _unitOfWork.ServiceGroupRepository.GetByIdAsync(groupId.Value);
                 if (group == null || group.StoreId != currentStoreId)

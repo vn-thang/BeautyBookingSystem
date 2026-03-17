@@ -62,6 +62,11 @@ namespace BeautyBookingSystem.Application.Services
             if (payment == null)
                 throw new NotFoundException("Không tìm thấy giao dịch này.");
 
+            if (payment.Booking.Status == BookingStatus.Pending)
+            {
+                throw new BadRequestException("Không thể thanh toán cho đơn đặt lịch chưa được duyệt!");
+            }
+
             if (payment.Status == PaymentStatus.Success)
                 throw new Exception("Giao dịch này đã được thanh toán rồi.");
 

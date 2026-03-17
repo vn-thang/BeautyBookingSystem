@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
+using System.IO;
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -42,6 +46,7 @@ builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 builder.Services.AddScoped<IAdminStoreService, AdminStoreService>();
 builder.Services.AddScoped<IAdminReviewService, AdminReviewService>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+builder.Services.AddScoped<IStoreCustomerService, StoreCustomerService>();
 
 
 var jwtKey = builder.Configuration["Jwt:Key"];
@@ -65,6 +70,20 @@ builder.Services.AddAuthentication(options =>
     };
 });
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
+
+var firebaseKeyPath = Path.Combine(Directory.GetCurrentDirectory(), "firebase-key.json"); 
+if (File.Exists(firebaseKeyPath))
+{
+    FirebaseApp.Create(new AppOptions()
+    {
+        Credential = GoogleCredential.FromFile(firebaseKeyPath)
+    });
+    Console.WriteLine("Firebase Admin SDK initialized successfully.");
+}
+else
+{
+    Console.WriteLine("CẢNH BÁO: Không tìm thấy file firebase-key.json");
+}
 var app = builder.Build();
 app.UseMiddleware<BeautyBookingSystem.API.Middleware.ExceptionMiddleware>();
 

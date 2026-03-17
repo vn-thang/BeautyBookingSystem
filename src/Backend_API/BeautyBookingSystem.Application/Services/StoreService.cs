@@ -3,6 +3,7 @@ using BeautyBookingSystem.Application.Common.Exceptions;
 using BeautyBookingSystem.Application.DTOs.Store;
 using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Entities;
+using BeautyBookingSystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -38,7 +39,7 @@ namespace BeautyBookingSystem.Application.Services
 
         public async Task<string?> UpdateStoreProfileAsync(int ownerId, StoreProfileDto request)
         {
-            
+            // 1. Đã lấy sẵn OperatingHours từ DB lên đây rồi
             var store = await _unitOfWork.StoreRepository
                 .GetQueryable()
                 .Include(s => s.OperatingHours)
@@ -50,25 +51,48 @@ namespace BeautyBookingSystem.Application.Services
             ValidateOperatingHours(request.OperatingHours);
             ValidateCoordinates(request.Latitude, request.Longitude);
 
+            // 2. AutoMapper chạy mượt mà (đã tự động Ignore OperatingHours nhờ config của bạn)
             _mapper.Map(request, store);
 
-            // 3. Xử lý giờ hoạt động 
-            store.OperatingHours.Clear();
-            foreach (var item in request.OperatingHours)
+            // 3. Xử lý giờ hoạt động tối ưu
+            if (request.OperatingHours != null)
             {
-                store.OperatingHours.Add(new StoreOperatingHour
+                // Dùng luôn store.OperatingHours, KHÔNG CẦN gọi FindAsync nữa
+                if (store.OperatingHours != null && store.OperatingHours.Any())
                 {
-                    StoreId = store.Id,
-                    DayOfWeek = item.DayOfWeek,
-                    OpenTime = TimeSpan.Parse(item.OpenTime),
-                    CloseTime = TimeSpan.Parse(item.CloseTime)
-                });
+                    // Phải dùng .ToList() trước khi lặp để tránh lỗi "Collection was modified" khi xóa
+                    foreach (var oldHour in store.OperatingHours.ToList())
+                    {
+                        _unitOfWork.StoreOperatingHourRepository.Delete(oldHour);
+                    }
+                }
+
+                // Thêm giờ mới
+                foreach (var item in request.OperatingHours)
+                {
+                    await _unitOfWork.StoreOperatingHourRepository.AddAsync(new StoreOperatingHour
+                    {
+                        StoreId = store.Id,
+                        DayOfWeek = item.DayOfWeek,
+                        OpenTime = TimeSpan.Parse(item.OpenTime),
+                        CloseTime = TimeSpan.Parse(item.CloseTime)
+                    });
+                }
             }
+
+            if (store.ApprovalStatus == ApprovalStatus.Incomplete)
+            {
+                store.ApprovalStatus = ApprovalStatus.Pending;
+            }
+
             _unitOfWork.StoreRepository.Update(store);
+
+            // 4. Lưu tất cả thay đổi (Update thông tin + Delete giờ cũ + Insert giờ mới) trong 1 Transaction duy nhất
             await _unitOfWork.SaveChangesAsync();
 
-            return null; 
+            return null;
         }
+
         private void ValidateOperatingHours(List<OperatingHourDto>? hours)
         {
             if (hours == null || !hours.Any())

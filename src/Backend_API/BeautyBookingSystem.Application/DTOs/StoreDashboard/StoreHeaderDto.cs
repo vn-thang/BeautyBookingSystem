@@ -10,6 +10,6 @@ namespace BeautyBookingSystem.Application.DTOs.StoreDashboard
     {
         public string Name { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
-        public string? Avatar { get; set; }
+        public string? LogoUrl { get; set; }
     }
 }
