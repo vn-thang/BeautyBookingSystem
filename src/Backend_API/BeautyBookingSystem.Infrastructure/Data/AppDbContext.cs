@@ -41,6 +41,12 @@ namespace BeautyBookingSystem.Infrastructure.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Store>()
+            .HasMany(s => s.OperatingHours)
+            .WithOne(h => h.Store)
+            .HasForeignKey(h => h.StoreId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Cascade);
 
             foreach (var relationship in modelBuilder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
             {
@@ -49,25 +55,31 @@ namespace BeautyBookingSystem.Infrastructure.Data
         }
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
+          
             var entries = ChangeTracker
                 .Entries()
                 .Where(e => e.Entity is BaseEntity && (
                         e.State == EntityState.Added ||
-                        e.State == EntityState.Modified));
+                        e.State == EntityState.Modified))
+                .ToList();
 
             foreach (var entityEntry in entries)
             {
-                if (entityEntry.State == EntityState.Added)
+                
+                if (entityEntry.Entity is BaseEntity entity)
                 {
-                    var entity = (BaseEntity)entityEntry.Entity;
-                    entity.CreatedAt = DateTime.UtcNow;
-                    entity.UpdatedAt = DateTime.UtcNow;
-                }
-                else if (entityEntry.State == EntityState.Modified)
-                {
-                    ((BaseEntity)entityEntry.Entity).UpdatedAt = DateTime.UtcNow;
+                    if (entityEntry.State == EntityState.Added)
+                    {
+                        entity.CreatedAt = DateTime.UtcNow;
+                        entity.UpdatedAt = DateTime.UtcNow;
+                    }
+                    else if (entityEntry.State == EntityState.Modified)
+                    {
+                        entity.UpdatedAt = DateTime.UtcNow;
 
-                    entityEntry.Property("CreatedAt").IsModified = false;
+                
+                        entityEntry.Property(nameof(BaseEntity.CreatedAt)).IsModified = false;
+                    }
                 }
             }
 

@@ -21,9 +21,15 @@ namespace BeautyBookingSystem.API.Controllers
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
-            var ownerId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "");
+            var claimValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(claimValue) || !int.TryParse(claimValue, out var ownerId))
+            {
+                return Unauthorized(new { message = "Token không hợp lệ hoặc không tìm thấy ID người dùng." });
+            }
             var result = await _storeService.GetStoreProfileAsync(ownerId);
-            return result != null ? Ok(result) : NotFound();
+
+            return result != null ? Ok(result) : NotFound(new { message = "Không tìm thấy hồ sơ cửa hàng." });
         }
         [Authorize(Roles = "StoreOwner")]
         [HttpPut("profile")]

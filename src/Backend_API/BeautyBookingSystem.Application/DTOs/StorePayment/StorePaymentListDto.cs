@@ -17,5 +17,6 @@ namespace BeautyBookingSystem.Application.DTOs.StorePayment
         public string Status { get; set; } = string.Empty;
         public string? TransactionId { get; set; }
         public DateTime? PaidAt { get; set; }
+        public string BookingStatus { get; set; } = string.Empty;
     }
 }
