@@ -10,6 +10,7 @@ namespace BeautyBookingSystem.Application.Interfaces
     public interface IUnitOfWork : IDisposable
     {
         IGenericRepository<Store> StoreRepository { get; }
+        IGenericRepository<StoreOperatingHour> StoreOperatingHourRepository { get; }
         IGenericRepository<User> UserRepository { get; }
         IGenericRepository<GlobalCategory> GlobalCategoryRepository { get; }
         IGenericRepository<Staff> StaffRepository { get; }

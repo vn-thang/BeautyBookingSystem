@@ -45,30 +45,57 @@ namespace BeautyBookingSystem.Application.Services
             return await GenerateTokensAndUpdateUserAsync(newUser);
         }
 
-        public async Task<TokenResponse> LoginAsync(LoginRequest request)
+       public async Task<TokenResponse> LoginAsync(LoginRequest request)
+{
+    var user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(
+        u => u.Phone == request.EmailOrPhone || u.Email == request.EmailOrPhone);
+
+    if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        throw new BadRequestException("Số điện thoại/Email hoặc mật khẩu không đúng.");
+
+    if (user.Status != UserStatus.Active)
+        throw new BadRequestException("Tài khoản của bạn đã bị khóa.");
+        
+    if (!string.IsNullOrEmpty(request.FcmToken))
+    {
+        user.FcmToken = request.FcmToken;
+    }
+
+    // 👇 1. TÌM STORE TRƯỚC ĐỂ LẤY ĐƯỢC STORE ID 👇
+    int? currentStoreId = null;
+    string? currentStoreStatus = null;
+
+    if (user.Role == Role.StoreOwner)
+    {
+        var store = await _unitOfWork.StoreRepository.FirstOrDefaultAsync(s => s.OwnerId == user.Id);
+        if (store != null)
         {
-            var user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(
-                u => u.Phone == request.EmailOrPhone || u.Email == request.EmailOrPhone);
-
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-                throw new BadRequestException("Số điện thoại/Email hoặc mật khẩu không đúng.");
-
-            if (user.Status != UserStatus.Active)
-                throw new BadRequestException("Tài khoản của bạn đã bị khóa.");
-            if (!string.IsNullOrEmpty(request.FcmToken))
-            {
-                user.FcmToken = request.FcmToken;
-            }
-
-            return await GenerateTokensAndUpdateUserAsync(user);
+            currentStoreId = store.Id;
+            currentStoreStatus = store.ApprovalStatus.ToString(); 
         }
+    }
+
+    // 👇 2. TRUYỀN CURRENT STORE ID VÀO HÀM TẠO TOKEN 👇
+    // Lúc này hàm sẽ biết phải nhét số 1 (chẳng hạn) vào trong Token
+    var tokenResponse = await GenerateTokensAndUpdateUserAsync(user, currentStoreId);
+
+    // 3. GẮN THÊM THÔNG TIN VÀO RESPONSE TRẢ VỀ CHO APP FLUTTER
+    tokenResponse.Role = user.Role.ToString(); 
+    
+    if (currentStoreStatus != null)
+    {
+        tokenResponse.StoreStatus = currentStoreStatus;
+    }
+
+    return tokenResponse;
+}
 
         public async Task<TokenResponse> RefreshTokenAsync(RefreshTokenRequest request)
         {
             var principal = GetPrincipalFromExpiredToken(request.AccessToken);
             if (principal == null) throw new BadRequestException("Access Token không hợp lệ.");
 
-            var userIdString = principal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            var userIdString = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(userIdString, out int userId)) throw new BadRequestException("Dữ liệu Token bị lỗi.");
 
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
@@ -76,13 +103,18 @@ namespace BeautyBookingSystem.Application.Services
             {
                 throw new BadRequestException("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
             }
-
-            return await GenerateTokensAndUpdateUserAsync(user);
+           int? currentStoreId = null;
+           if (user.Role == Role.StoreOwner)
+    {
+        var store = await _unitOfWork.StoreRepository.FirstOrDefaultAsync(s => s.OwnerId == user.Id);
+        currentStoreId = store?.Id;
+    }
+            return await GenerateTokensAndUpdateUserAsync(user, currentStoreId);
         }
 
-        private async Task<TokenResponse> GenerateTokensAndUpdateUserAsync(User user)
+        private async Task<TokenResponse> GenerateTokensAndUpdateUserAsync(User user, int? storeId = null)
         {
-            var accessToken = CreateAccessToken(user);
+            var accessToken = CreateAccessToken(user, storeId);
             var refreshToken = CreateRefreshToken(); 
 
             user.RefreshToken = refreshToken;
@@ -94,21 +126,24 @@ namespace BeautyBookingSystem.Application.Services
             return new TokenResponse { AccessToken = accessToken, RefreshToken = refreshToken };
         }
 
-        private string CreateAccessToken(User user)
+        private string CreateAccessToken(User user, int? storeId = null)
         {
            
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.MobilePhone, user.Phone),
                 new Claim(ClaimTypes.Role, user.Role.ToString())
             };
-
+            if (storeId.HasValue)
+    {
+        claims.Add(new Claim("storeId", storeId.Value.ToString()));
+    }
             
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
 
             var token = new JwtSecurityToken(
                 claims: claims,
@@ -173,9 +208,10 @@ namespace BeautyBookingSystem.Application.Services
             var user = await GetUserByIdAsync(userId);
 
             user.RefreshToken = null;
-            user.RefreshTokenExpiryTime = null; 
+            user.RefreshTokenExpiryTime = null;
+            user.FcmToken = null;
 
-           
+
             _unitOfWork.UserRepository.Update(user);
             await _unitOfWork.SaveChangesAsync();
 
@@ -256,7 +292,7 @@ namespace BeautyBookingSystem.Application.Services
                 Phone = request.Phone,
                 Description = "",
                 IsOpen = false,
-                ApprovalStatus = ApprovalStatus.Pending
+                ApprovalStatus = ApprovalStatus.Incomplete
             };
 
             await _unitOfWork.StoreRepository.AddAsync(newStore);

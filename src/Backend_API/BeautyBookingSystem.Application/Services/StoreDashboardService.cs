@@ -30,13 +30,45 @@ namespace BeautyBookingSystem.Application.Services
             var store = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
             if (store != null)
             {
+                response.Status = store.ApprovalStatus.ToString().ToLower();
                 response.Header = new StoreHeaderDto
                 {
                     Name = store.Name,
                     Address = store.Address,
-                    Avatar = store.LogoUrl 
+                    LogoUrl = store.LogoUrl 
                 };
             }
+
+
+            if (!string.IsNullOrEmpty(request.TimeFilter))
+            {
+                DateTime now = DateTime.Now; // Lưu ý: Nếu server chạy theo giờ UTC thì dùng DateTime.UtcNow
+                switch (request.TimeFilter.ToLower())
+                {
+                    case "today": // Hôm nay
+                        request.StartDate = now.Date; // Ví dụ: 00:00:00 hôm nay
+                        request.EndDate = now.Date.AddDays(1).AddTicks(-1); // 23:59:59 hôm nay
+                        break;
+                    case "week": // Tuần này (Thứ 2 đến Chủ nhật)
+                        int diff = (7 + (now.DayOfWeek - DayOfWeek.Monday)) % 7;
+                        request.StartDate = now.Date.AddDays(-1 * diff);
+                        request.EndDate = request.StartDate.Value.AddDays(7).AddTicks(-1);
+                        break;
+                    case "month": // Tháng này
+                        request.StartDate = new DateTime(now.Year, now.Month, 1);
+                        request.EndDate = request.StartDate.Value.AddMonths(1).AddTicks(-1);
+                        break;
+                    case "year": // Năm nay
+                        request.StartDate = new DateTime(now.Year, 1, 1);
+                        request.EndDate = request.StartDate.Value.AddYears(1).AddTicks(-1);
+                        break;
+                    case "all": // Tất cả
+                        request.StartDate = null;
+                        request.EndDate = null;
+                        break;
+                }
+            }
+
 
             // 2. Tạo Query cơ bản lọc theo Store và Ngày tháng
             var bookingQuery = _unitOfWork.BookingRepository.GetQueryable()

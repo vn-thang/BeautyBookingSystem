@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using BeautyBookingSystem.Application.Common.Exceptions;
+using BeautyBookingSystem.Application.DTOs.Service;
 using BeautyBookingSystem.Application.DTOs.ServiceGroup;
 using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Entities;
@@ -37,11 +38,56 @@ namespace BeautyBookingSystem.Application.Services
             int currentStoreId = await _currentUserService.GetCurrentStoreIdAsync();
 
             var groups = await _unitOfWork.ServiceGroupRepository.GetQueryable()
+                .Include(g => g.Services)
                 .Where(g => g.StoreId == currentStoreId)
                 .OrderBy(g => g.SortOrder)
                 .ToListAsync();
 
-            return _mapper.Map<List<ServiceGroupDto>>(groups);
+            var result = _mapper.Map<List<ServiceGroupDto>>(groups);
+
+            // 2. Lấy các dịch vụ "tự do" (GroupId == null) của cửa hàng hiện tại
+            var ungroupedServices = await _unitOfWork.ServiceRepository.GetQueryable()
+                .Where(s => s.StoreId == currentStoreId && s.GroupId == null)
+                .OrderBy(s => s.SortOrder)
+                .ToListAsync();
+
+            // 3. Nếu có dịch vụ tự do -> Tạo nhóm ảo ID = 0 
+            //if (ungroupedServices.Any())
+            //{
+            //    var virtualGroup = new ServiceGroupDto
+            //    {
+            //        Id = 0,
+            //        Name = "Dịch vụ tự do",
+            //        StoreId = currentStoreId,
+            //        SortOrder = -1, 
+            //        Services = _mapper.Map<List<ServiceDto>>(ungroupedServices) 
+            //    };
+
+            //    result.Insert(0, virtualGroup);
+            // 3. Nếu có dịch vụ tự do -> Tạo nhóm ảo ID = 0 
+            if (ungroupedServices.Any())
+            {
+                var mappedServices = _mapper.Map<List<ServiceDto>>(ungroupedServices);
+
+                // 🔥 THÊM VÒNG LẶP NÀY ĐỂ GÁN GROUP ID = 0
+                foreach (var s in mappedServices)
+                {
+                    s.GroupId = 0;
+                }
+
+                var virtualGroup = new ServiceGroupDto
+                {
+                    Id = 0,
+                    Name = "Dịch vụ tự do",
+                    StoreId = currentStoreId,
+                    SortOrder = -1,
+                    Services = mappedServices
+                };
+
+                result.Insert(0, virtualGroup);
+            }
+     
+            return result;
         }
 
         public async Task<ServiceGroupDto> GetByIdAsync(int id)

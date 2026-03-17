@@ -15,6 +15,7 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
        
         public IGenericRepository<User> UserRepository { get; private set; }
         public IGenericRepository<Store> StoreRepository { get; private set; }
+        public IGenericRepository<StoreOperatingHour> StoreOperatingHourRepository { get; private set; }
         public IGenericRepository<GlobalCategory> GlobalCategoryRepository { get; private set; }
         public IGenericRepository<Staff> StaffRepository { get; private set; }
         public IGenericRepository<ServiceGroup> ServiceGroupRepository { get; private set; }
@@ -26,11 +27,14 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         public IGenericRepository<Voucher> VoucherRepository { get; private set; }
         public IGenericRepository<Notification> NotificationRepository { get; private set; }
 
+     
+
         public UnitOfWork(AppDbContext context)
         {
             _context = context;
             UserRepository = new GenericRepository<User>(_context);
             StoreRepository = new GenericRepository<Store>(_context);
+            StoreOperatingHourRepository = new GenericRepository<StoreOperatingHour>(_context);
             GlobalCategoryRepository = new GenericRepository<GlobalCategory>(_context);
             StaffRepository = new GenericRepository<Staff>(_context);
             ServiceGroupRepository = new GenericRepository<ServiceGroup>(_context);

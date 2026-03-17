@@ -19,9 +19,10 @@ namespace BeautyBookingSystem.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] bool onlyActive = true)
         {
-            var result = await _staffService.GetAllByCurrentStoreAsync(onlyActive: true);
+            var result = await _staffService.GetAllByCurrentStoreAsync(onlyActive);
+
             return Ok(result);
         }
 
