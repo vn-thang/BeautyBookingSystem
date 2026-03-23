@@ -1,4 +1,5 @@
 ﻿using BeautyBookingSystem.Application.Interfaces;
+using BeautyBookingSystem.Application.Interfaces.Repositories;
 using BeautyBookingSystem.Domain.Entities;
 using BeautyBookingSystem.Infrastructure.Data;
 using System;
@@ -13,14 +14,33 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
     {
         private readonly AppDbContext _context;
 
+        public IVoucherRepository VoucherRepository { get; }
         public IGenericRepository<User> UserRepository { get; private set; }
         public IGenericRepository<Store> StoreRepository { get; private set; }
+        public IGlobalCategoryRepository GlobalCategoryRepository { get; private set; }
+        public IServiceGroupRepository ServiceGroupRepository { get; private set; }
+        public IServiceRepository ServiceRepository { get; private set; }
+        public IBookingRepository BookingRepository { get; }
+        public IBookingDetailRepository BookingDetailRepository { get; }
+        public IPaymentRepository PaymentRepository { get; }
+        public IStaffRepository StaffRepository { get; }
+        public IGenericRepository<SystemContent> SystemContentRepository { get; private set; }
+
 
         public UnitOfWork(AppDbContext context)
         {
             _context = context;
             UserRepository = new GenericRepository<User>(_context);
             StoreRepository = new GenericRepository<Store>(_context);
+            VoucherRepository = new VoucherRepository(_context);
+            GlobalCategoryRepository = new GlobalCategoryRepository(_context);
+            ServiceGroupRepository = new ServiceGroupRepository(_context);
+            ServiceRepository = new ServiceRepository(_context);
+            BookingRepository = new BookingRepository(_context);
+            BookingDetailRepository = new BookingDetailRepository(_context);
+            PaymentRepository = new PaymentRepository(_context);
+            StaffRepository = new StaffRepository(context);
+            SystemContentRepository = new GenericRepository<SystemContent>(_context);
         }
 
         public async Task<int> SaveChangesAsync()

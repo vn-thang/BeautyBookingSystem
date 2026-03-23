@@ -21,6 +21,7 @@ namespace BeautyBookingSystem.Domain.Entities
 
         public decimal TotalPrice { get; set; }
         public decimal DiscountAmount { get; set; }
+        public decimal DepositAmount { get; set; } = 0;
         public decimal FinalPrice { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

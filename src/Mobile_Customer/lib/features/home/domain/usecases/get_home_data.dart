@@ -6,7 +6,7 @@ class GetHomeData {
 
   GetHomeData(this.repository);
 
-  Future<HomeData> call() async {
-    return await repository.getHomeData();
+  Future<HomeData> call(double lat, double lon) {
+    return repository.getHomeData(lat, lon);
   }
 }

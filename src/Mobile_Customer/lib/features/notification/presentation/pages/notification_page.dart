@@ -8,7 +8,6 @@ class NotificationPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(child: Text("Notification Page")),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
     );
   }
 }

@@ -1,33 +1,34 @@
-﻿using BeautyBookingSystem.Application.DTOs;
-using BeautyBookingSystem.Application.DTOs.Common;
-using BeautyBookingSystem.Application.Services;
+﻿// API/Controllers/ServiceGroupsController.cs
 using Microsoft.AspNetCore.Mvc;
+using BeautyBookingSystem.Application.Interfaces;
 
-namespace BeautyBookingSystem.API.Controllers
+[Route("api/[controller]")]
+[ApiController]
+public class ServiceGroupsController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class ServiceGroupsController : ControllerBase
+    private readonly IServiceGroupService _service;
+
+    public ServiceGroupsController(IServiceGroupService service)
     {
-        private readonly ServiceGroupService _service;
+        _service = service;
+    }
 
-        public ServiceGroupsController(ServiceGroupService service)
-        {
-            _service = service;
-        }
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        return Ok(await _service.GetAllAsync());
+    }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var result = await _service.GetAllAsync();
-            return Ok(ApiResponse<List<ServiceGroupDto>>.Ok(result));
-        }
+    [HttpGet("store/{storeId}")]
+    public async Task<IActionResult> GetByStore(int storeId)
+    {
+        return Ok(await _service.GetByStoreAsync(storeId));
+    }
 
-        [HttpGet("store/{storeId}")]
-        public async Task<IActionResult> GetByStore(int storeId)
-        {
-            var result = await _service.GetByStoreAsync(storeId);
-            return Ok(ApiResponse<List<ServiceGroupDto>>.Ok(result));
-        }
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var result = await _service.GetByIdAsync(id);
+        return result == null ? NotFound() : Ok(result);
     }
 }

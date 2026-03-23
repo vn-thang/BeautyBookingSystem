@@ -1,26 +1,34 @@
-﻿using BeautyBookingSystem.Application.DTOs;
-using BeautyBookingSystem.Application.DTOs.Common;
-using BeautyBookingSystem.Application.Services;
+﻿// API/Controllers/GlobalCategoriesController.cs
 using Microsoft.AspNetCore.Mvc;
+using BeautyBookingSystem.Application.Interfaces;
 
-namespace BeautyBookingSystem.API.Controllers
+[Route("api/[controller]")]
+[ApiController]
+public class GlobalCategoriesController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class GlobalCategoriesController : ControllerBase
+    private readonly IGlobalCategoryService _service;
+
+    public GlobalCategoriesController(IGlobalCategoryService service)
     {
-        private readonly GlobalCategoryService _service;
+        _service = service;
+    }
 
-        public GlobalCategoriesController(GlobalCategoryService service)
-        {
-            _service = service;
-        }
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        return Ok(await _service.GetAllAsync());
+    }
 
-        [HttpGet]
-        public async Task<IActionResult> Get()
-        {
-            var result = await _service.GetActiveAsync();
-            return Ok(ApiResponse<List<GlobalCategoryDto>>.Ok(result));
-        }
+    [HttpGet("active")]
+    public async Task<IActionResult> GetActive()
+    {
+        return Ok(await _service.GetActiveAsync());
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var result = await _service.GetByIdAsync(id);
+        return result == null ? NotFound() : Ok(result);
     }
 }

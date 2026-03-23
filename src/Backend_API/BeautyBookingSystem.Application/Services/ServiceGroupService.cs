@@ -1,32 +1,58 @@
-﻿using AutoMapper;
-using BeautyBookingSystem.Application.DTOs;
+﻿// Application/Services/ServiceGroupService.cs
+using BeautyBookingSystem.Application.DTOs.ServiceGroup;
 using BeautyBookingSystem.Application.Interfaces;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace BeautyBookingSystem.Application.Services
 {
-    public class ServiceGroupService
+    public class ServiceGroupService : IServiceGroupService
     {
-        private readonly IServiceGroupRepository _repository;
-        private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public ServiceGroupService(
-            IServiceGroupRepository repository,
-            IMapper mapper)
+        public ServiceGroupService(IUnitOfWork unitOfWork)
         {
-            _repository = repository;
-            _mapper = mapper;
+            _unitOfWork = unitOfWork;
         }
-
         public async Task<List<ServiceGroupDto>> GetAllAsync()
         {
-            var entities = await _repository.GetAllAsync();
-            return _mapper.Map<List<ServiceGroupDto>>(entities);
-        }
+            var list = await _unitOfWork.ServiceGroupRepository.GetAllOrderedAsync();
 
+            return list.Select(x => new ServiceGroupDto
+            {
+                Id = x.Id,
+                StoreId = x.StoreId,
+                Name = x.Name,
+                SortOrder = x.SortOrder
+            }).ToList();
+        }
         public async Task<List<ServiceGroupDto>> GetByStoreAsync(int storeId)
         {
-            var groups = await _repository.GetByStoreIdAsync(storeId);
-            return _mapper.Map<List<ServiceGroupDto>>(groups);
+            var list = await _unitOfWork.ServiceGroupRepository.GetByStoreAsync(storeId);
+
+            return list.Select(x => new ServiceGroupDto
+            {
+                Id = x.Id,
+                StoreId = x.StoreId,
+                Name = x.Name,
+                SortOrder = x.SortOrder
+            }).ToList();
+        }
+
+        public async Task<ServiceGroupDto?> GetByIdAsync(int id)
+        {
+            var entity = await _unitOfWork.ServiceGroupRepository.GetByIdAsync(id);
+
+            if (entity == null) return null;
+
+            return new ServiceGroupDto
+            {
+                Id = entity.Id,
+                StoreId = entity.StoreId,
+                Name = entity.Name,
+                SortOrder = entity.SortOrder
+            };
         }
     }
 }

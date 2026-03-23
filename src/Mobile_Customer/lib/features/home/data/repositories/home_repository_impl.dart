@@ -1,6 +1,7 @@
 import '../../domain/entities/home_data.dart';
 import '../../domain/repositories/home_repository.dart';
 import '../datasources/home_remote_datasource.dart';
+import '../models/home_response_model.dart';
 
 class HomeRepositoryImpl implements HomeRepository {
   final HomeRemoteDataSource remote;
@@ -8,17 +9,39 @@ class HomeRepositoryImpl implements HomeRepository {
   HomeRepositoryImpl(this.remote);
 
   @override
-  Future<HomeData> getHomeData() async {
-    final categories = await remote.getCategories();
-    final serviceGroups = await remote.getServiceGroups();
-    final stores = await remote.getStores();
-    final vouchers = await remote.getVouchers();
+  Future<HomeData> getHomeData(double lat, double lon) async {
+
+    final HomeResponseModel remoteHome =
+        await remote.getHome(lat, lon);
+
+    final categories =
+        remoteHome.categories.map((e) => e.toEntity()).toList();
+
+    final serviceGroups =
+        remoteHome.serviceGroups.map((e) => e.toEntity()).toList();
+
+    final stores =
+        remoteHome.stores.map((e) => e.toEntity()).toList();
+
+    final nearbyStores =
+        remoteHome.nearbyStores.map((e) => e.toEntity()).toList();
+
+    final topRatedStores =
+        remoteHome.topRatedStores.map((e) => e.toEntity()).toList();
+
+    final vouchers =
+        remoteHome.vouchers.map((e) => e.toEntity()).toList();
+    
+    final systemContents = remoteHome.systemContents;
 
     return HomeData(
-      categories: categories.map((e) => e.toEntity()).toList(),
-      serviceGroups: serviceGroups.map((e) => e.toEntity()).toList(),
-      stores: stores.map((e) => e.toEntity()).toList(),
-      vouchers: vouchers.map((e) => e.toEntity()).toList(),
+        categories: categories,
+        serviceGroups: serviceGroups,
+        stores: nearbyStores,
+        nearbyStores: nearbyStores,
+        topRatedStores: topRatedStores,
+        vouchers: vouchers,
+        systemContents: systemContents,
     );
   }
 }

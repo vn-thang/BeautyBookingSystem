@@ -15,6 +15,12 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         {
             _context = context;
         }
+        public async Task<Store?> GetStoreProfileAsync(int storeId)
+        {
+            return await _context.Stores
+                .Include(s => s.OperatingHours)
+                .FirstOrDefaultAsync(s => s.Id == storeId);
+        }
 
         public async Task<List<Store>> GetApprovedAsync()
         {
@@ -29,7 +35,14 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
                 .Include(x => x.ServiceGroups)
                 .Include(x => x.Services)
                 .Include(x => x.Reviews)
+                .Include(x => x.Banners)
+                .Include(x => x.OperatingHours)
                 .FirstOrDefaultAsync(x => x.Id == id);
+        }
+
+        public Task<List<Store>> GetAllActiveAsync()
+        {
+            throw new NotImplementedException();
         }
     }
 }

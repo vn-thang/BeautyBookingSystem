@@ -16,6 +16,8 @@ namespace BeautyBookingSystem.Infrastructure.Data
         public DbSet<User> Users { get; set; }
 
         public DbSet<Store> Stores { get; set; }
+        public DbSet<StoreBanner> StoreBanners { get; set; }
+
         public DbSet<StoreOperatingHour> StoreOperatingHours { get; set; }
         public DbSet<Staff> Staffs { get; set; }
 

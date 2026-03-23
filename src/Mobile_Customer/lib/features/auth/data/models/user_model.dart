@@ -1,46 +1,24 @@
-import '../../domain/entities/user_entity.dart';
+import '../../domain/entities/user.dart';
 
-class UserModel {
-  final int id;
-  final String fullName;
-  final String phone;
-  final String? email;
-  final int role;
-  final int status;
-  final bool isPhoneVerified;
+class UserModel extends User {
 
   UserModel({
-    required this.id,
-    required this.fullName,
-    required this.phone,
-    this.email,
-    required this.role,
-    required this.status,
-    required this.isPhoneVerified,
+    required super.id,
+    required super.email,
+    super.name,
+    super.phone,
+    super.avatarUrl,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      id: json['id'],
-      fullName: json['fullName'],
-      phone: json['phone'],
-      email: json['email'],
-      role: json['role'],
-      status: json['status'],
-      isPhoneVerified: json['isPhoneVerified'],
-    );
-  }
 
-  /// 🔥 THÊM CÁI NÀY
-  UserEntity toEntity() {
-    return UserEntity(
-      id: id,
-      fullName: fullName,
-      phone: phone,
-      email: email,
-      role: role,
-      status: status,
-      isPhoneVerified: isPhoneVerified,
+    return UserModel(
+      id: json['id'] ?? 0,
+      email: json['email'] ?? '',
+      name: json['fullName'] ?? json['name'],
+      phone: json['phone'],
+      avatarUrl: json['avatarUrl'],
     );
+
   }
 }

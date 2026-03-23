@@ -45,6 +45,9 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Property<string>("CustomerNote")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal>("DepositAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -467,6 +470,49 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.ToTable("Stores");
                 });
 
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.StoreBanner", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("StoreBanners");
+                });
+
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.StoreOperatingHour", b =>
                 {
                     b.Property<int>("Id")
@@ -633,11 +679,17 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("MaxDiscount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("MinOrderValue")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("ServiceId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
@@ -652,6 +704,8 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ServiceId");
 
                     b.HasIndex("StoreId");
 
@@ -854,6 +908,17 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.StoreBanner", b =>
+                {
+                    b.HasOne("BeautyBookingSystem.Domain.Entities.Store", "Store")
+                        .WithMany("Banners")
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Store");
+                });
+
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.StoreOperatingHour", b =>
                 {
                     b.HasOne("BeautyBookingSystem.Domain.Entities.Store", "Store")
@@ -886,11 +951,18 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.Voucher", b =>
                 {
+                    b.HasOne("BeautyBookingSystem.Domain.Entities.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("BeautyBookingSystem.Domain.Entities.Store", "Store")
                         .WithMany("Vouchers")
                         .HasForeignKey("StoreId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Service");
 
                     b.Navigation("Store");
                 });
@@ -926,6 +998,8 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.Store", b =>
                 {
+                    b.Navigation("Banners");
+
                     b.Navigation("Bookings");
 
                     b.Navigation("OperatingHours");

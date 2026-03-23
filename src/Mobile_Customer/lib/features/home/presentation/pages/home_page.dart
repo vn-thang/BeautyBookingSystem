@@ -5,14 +5,28 @@ import '../bloc/home_bloc.dart';
 import 'home_view.dart';
 import '../bloc/home_event.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late final HomeBloc _bloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _bloc = sl<HomeBloc>();
+    _bloc.add(LoadHomeEvent());
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => sl<HomeBloc>()..add(LoadHomeEvent()),
-      child: HomeView(),
+    return BlocProvider.value(
+      value: _bloc,
+      child: const HomeView(),
     );
   }
 }

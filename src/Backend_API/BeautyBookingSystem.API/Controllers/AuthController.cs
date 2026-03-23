@@ -2,9 +2,9 @@
 using BeautyBookingSystem.Application.DTOs.Common;
 using BeautyBookingSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace BeautyBookingSystem.API.Controllers
 {
@@ -23,113 +23,102 @@ namespace BeautyBookingSystem.API.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             var result = await _authService.RegisterAsync(request);
-            return Ok(ApiResponse<TokenResponse>.Ok(result, "Đăng ký thành công!"));
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var result = await _authService.LoginAsync(request);
-            return Ok(ApiResponse<TokenResponse>.Ok(result, "Đăng nhập thành công!"));
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             var result = await _authService.RefreshTokenAsync(request);
-            return Ok(ApiResponse<TokenResponse>.Ok(result, "Làm mới token thành công!"));
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpPut("change-password")]
-        [Authorize] 
+        [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            try
-            {
-               
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+             ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized("Token không hợp lệ hoặc không chứa ID.");
-                }
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(ApiResponse<bool>.Fail("Token không hợp lệ"));
 
-                var result = await _authService.ChangePasswordAsync(userId, request);
+            var result = await _authService.ChangePasswordAsync(userId, request);
 
-                return Ok(new { message = "Đổi mật khẩu thành công!" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
+
         [HttpPost("logout")]
-        [Authorize] 
+        [Authorize]
         public async Task<IActionResult> Logout()
         {
-            try
-            {
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return Unauthorized(new { message = "Token không hợp lệ!" });
-                }
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(ApiResponse<bool>.Fail("Token không hợp lệ"));
 
-                await _authService.LogoutAsync(userId);
+            var result = await _authService.LogoutAsync(userId);
 
-                return Ok(new { message = "Đăng xuất thành công!" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
-            try
-            {
-                await _authService.ForgotPasswordAsync(request);
-                return Ok(new { message = "Mã OTP đã được gửi đến Email của bạn!" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
+            var result = await _authService.ForgotPasswordAsync(request);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
-            try
-            {
-                await _authService.ResetPasswordAsync(request);
-                return Ok(new { message = "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
+            var result = await _authService.ResetPasswordAsync(request);
+
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
+
         [HttpPost("register-partner")]
         public async Task<IActionResult> RegisterPartner([FromBody] RegisterPartnerRequest request)
         {
-            try
-            {
-                await _authService.RegisterPartnerAsync(request);
+            var result = await _authService.RegisterPartnerAsync(request);
 
-                return Ok(new
-                {
-                    message = "Đăng ký tài khoản Đối tác thành công! Cửa hàng của bạn đang ở trạng thái Chờ phê duyệt. " +
-                    "Bạn có thể đăng nhập vào App Đối tác ngay bây giờ."
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
+            if (!result.Success)
+                return BadRequest(result);
+
+            return Ok(result);
         }
+
     }
 }

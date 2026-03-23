@@ -15,17 +15,20 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
             _context = context;
         }
 
-        public async Task<List<ServiceGroup>> GetAllAsync()
+        public async Task<List<ServiceGroup>> GetAllOrderedAsync()
         {
-            return await _context.ServiceGroups.ToListAsync();
-        }
-
-        public async Task<List<ServiceGroup>> GetByStoreIdAsync(int storeId)
-        {
-            return await _context.ServiceGroups
-                .Where(x => x.StoreId == storeId)
+            return await _context.Set<ServiceGroup>()
+                .OrderBy(x => x.SortOrder)
                 .ToListAsync();
         }
-        
+
+        public async Task<List<ServiceGroup>> GetByStoreAsync(int storeId)
+        {
+            return await _context.Set<ServiceGroup>()
+                .Where(x => x.StoreId == storeId)
+                .OrderBy(x => x.SortOrder)
+                .ToListAsync();
+        }
+
     }
 }

@@ -17,6 +17,37 @@ namespace BeautyBookingSystem.API.Controllers
         {
             _storeService = storeService;
         }
+        [HttpGet]
+        public async Task<IActionResult> GetAllStores()
+        {
+            var result = await _storeService.GetAllStoresAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetStoreById(int id)
+        {
+            var result = await _storeService.GetStoreByIdAsync(id);
+
+            if (result == null)
+                return NotFound();
+
+            return Ok(result);
+        }
+
+        [HttpGet("by-category")]
+        public async Task<IActionResult> GetStores([FromQuery] StoreQueryParams query)
+        {
+            var result = await _storeService.GetStoresByCategoryAsync(query);
+
+            return Ok(result);
+        }
+        [HttpGet("by-group")]
+        public async Task<IActionResult> GetStoresByGroup([FromQuery] StoreQueryParams query)
+        {
+            var result = await _storeService.GetStoresByGroupAsync(query);
+            return Ok(result);
+        }
 
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
