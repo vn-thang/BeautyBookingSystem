@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
+import 'package:mobile_customer/features/customer_favorite/presentation/bloc/customer_favorite_bloc.dart';
+import 'package:mobile_customer/features/customer_favorite/presentation/widgets/customer_favorite_button.dart';
+import '../../../store_reviews/presentation/bloc/store_reviews_bloc.dart';
+import '../../data/models/store_model.dart';
 import '../bloc/store_detail_bloc.dart';
 import '../bloc/store_detail_event.dart';
 import '../bloc/store_detail_state.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_decorations.dart';
 
 class StoreDetailPage extends StatefulWidget {
   final int storeId;
@@ -23,13 +32,25 @@ class StoreDetailPage extends StatefulWidget {
 class _StoreDetailPageState extends State<StoreDetailPage> {
   final PageController _bannerController = PageController();
   int _bannerIndex = 0;
+  bool _favoriteChanged = false;
+  bool _loaded = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+
+    if (!_loaded) {
+      _loaded = true;
       context.read<StoreDetailBloc>().add(FetchStoreDetail(widget.storeId));
-    });
+    }
+
+    context.read<StoreReviewsBloc>().add(
+          LoadStoreReviews(
+            storeId: widget.storeId,
+            page: 1,
+            pageSize: 5,
+          ),
+        );
   }
 
   @override
@@ -38,26 +59,281 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
     super.dispose();
   }
 
+  int _apiDayOfWeek(DateTime now) {
+    return now.weekday == DateTime.sunday ? 0 : now.weekday;
+  }
+
+  int _timeToMinutes(String time) {
+    final parts = time.trim().split(':');
+    if (parts.length < 2) return 0;
+    final h = int.tryParse(parts[0]) ?? 0;
+    final m = int.tryParse(parts[1]) ?? 0;
+    return h * 60 + m;
+  }
+
+  String _formatTime(String time) {
+    final t = time.trim();
+    if (t.isEmpty) return 'Chưa cập nhật';
+    final parts = t.split(':');
+    if (parts.length >= 2) {
+      return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+    }
+    return t;
+  }
+
+  String _dayName(int day) {
+    switch (day) {
+      case 1:
+        return 'Thứ 2';
+      case 2:
+        return 'Thứ 3';
+      case 3:
+        return 'Thứ 4';
+      case 4:
+        return 'Thứ 5';
+      case 5:
+        return 'Thứ 6';
+      case 6:
+        return 'Thứ 7';
+      case 0:
+        return 'Chủ nhật';
+      default:
+        return 'Không rõ';
+    }
+  }
+
+  int _sortDay(int day) => day == 0 ? 7 : day;
+
+  OperatingHourModel? _todayOperatingHour(List<OperatingHourModel> hours) {
+    final today = _apiDayOfWeek(DateTime.now());
+    for (final h in hours) {
+      if (h.dayOfWeek == today) return h;
+    }
+    return null;
+  }
+
+  bool _isStoreOpenNow(List<OperatingHourModel> hours) {
+    final todayHour = _todayOperatingHour(hours);
+    if (todayHour == null) return false;
+
+    final now = DateTime.now();
+    final currentMinutes = now.hour * 60 + now.minute;
+    final openMinutes = _timeToMinutes(todayHour.openTime);
+    final closeMinutes = _timeToMinutes(todayHour.closeTime);
+
+    if (closeMinutes > openMinutes) {
+      return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+    } else if (closeMinutes < openMinutes) {
+      return currentMinutes >= openMinutes || currentMinutes < closeMinutes;
+    }
+    return false;
+  }
+
+  String _todayRange(List<OperatingHourModel> hours) {
+    final todayHour = _todayOperatingHour(hours);
+    if (todayHour == null) return 'Chưa cập nhật';
+    return '${_formatTime(todayHour.openTime)} - ${_formatTime(todayHour.closeTime)}';
+  }
+
+  String _openStatusText(List<OperatingHourModel> hours) {
+    return _isStoreOpenNow(hours) ? 'Đang mở cửa' : 'Đang đóng cửa';
+  }
+
+  final NumberFormat _moneyFormat = NumberFormat('#,##0', 'vi_VN');
+
+  String _formatMoney(num value) {
+    return '${_moneyFormat.format(value)} đ';
+  }
+
+  void _showOperatingHoursSheet(
+    BuildContext context,
+    List<OperatingHourModel> hours,
+  ) {
+    final sortedHours = [...hours]
+      ..sort((a, b) => _sortDay(a.dayOfWeek).compareTo(_sortDay(b.dayOfWeek)));
+
+    final isOpenNow = _isStoreOpenNow(hours);
+    final todayHour = _todayOperatingHour(hours);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) {
+        final sheetHeight = MediaQuery.of(context).size.height * 2 / 3;
+
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            height: sheetHeight,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: AppColors.borderSoft,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Giờ hoạt động của shop',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isOpenNow
+                          ? AppColors.success.withOpacity(0.12)
+                          : AppColors.danger.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isOpenNow
+                            ? AppColors.success.withOpacity(0.22)
+                            : AppColors.danger.withOpacity(0.22),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isOpenNow
+                              ? Icons.check_circle_rounded
+                              : Icons.cancel_rounded,
+                          color:
+                              isOpenNow ? AppColors.success : AppColors.danger,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            isOpenNow
+                                ? 'Shop đang mở cửa'
+                                : 'Shop hiện đang đóng cửa',
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: isOpenNow
+                                  ? AppColors.success
+                                  : AppColors.danger,
+                            ),
+                          ),
+                        ),
+                        if (todayHour != null)
+                          Text(
+                            '${_formatTime(todayHour.openTime)} - ${_formatTime(todayHour.closeTime)}',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: sortedHours.isEmpty
+                        ? Center(
+                            child: Text(
+                              'Chưa cập nhật giờ hoạt động',
+                              style: AppTextStyles.bodyMuted,
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: sortedHours.length,
+                            itemBuilder: (context, index) {
+                              final e = sortedHours[index];
+                              final isToday =
+                                  e.dayOfWeek == _apiDayOfWeek(DateTime.now());
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: isToday
+                                      ? AppColors.surfaceSoft
+                                      : AppColors.surface,
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: isToday
+                                        ? AppColors.border
+                                        : AppColors.borderSoft,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.placeholderStart
+                                            .withOpacity(0.28),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(
+                                        Icons.schedule_rounded,
+                                        size: 20,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        _dayName(e.dayOfWeek),
+                                        style: AppTextStyles.body.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${_formatTime(e.openTime)} - ${_formatTime(e.closeTime)}',
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFF7FB),
-              Color(0xFFFFEEF5),
-              Color(0xFFFFFFFF),
-            ],
-          ),
+          gradient: AppDecorations.pageGradient,
         ),
         child: SafeArea(
           child: BlocBuilder<StoreDetailBloc, StoreDetailState>(
             builder: (context, state) {
               if (state is StoreDetailLoading) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: CircularProgressIndicator(
+                    color: AppColors.primary,
+                  ),
+                );
               }
 
               if (state is StoreDetailError) {
@@ -67,10 +343,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                     child: Text(
                       state.message,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppTextStyles.error,
                     ),
                   ),
                 );
@@ -94,25 +367,30 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                                 s.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF4A4A4A),
-                                ),
+                                style: AppTextStyles.pageTitle,
                               ),
                             ),
                             const SizedBox(width: 12),
-                            _iconCircle(
-                              icon: Icons.share_outlined,
-                              onTap: () {},
+                            CustomerFavoriteButton(
+                              type: CustomerFavoriteType.store,
+                              targetId: widget.storeId,
+                              initialIsFavorite: s.isFavorite ?? false,
+                              removeConfirmTitle: 'Bỏ yêu thích',
+                              removeConfirmMessage:
+                                  'Bạn có chắc muốn bỏ store này khỏi danh sách yêu thích không?',
+                              onChanged: () {
+                                _favoriteChanged = true;
+                                if (mounted) {
+                                  context
+                                      .read<StoreDetailBloc>()
+                                      .add(FetchStoreDetail(widget.storeId));
+                                }
+                              },
                             ),
                           ],
                         ),
                       ),
                     ),
-
-                    /// BANNER SLIDER
-                    /// BANNER SLIDER
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
@@ -120,13 +398,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                           height: 210,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(28),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 22,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
+                            boxShadow: AppDecorations.cardShadow,
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(28),
@@ -161,8 +433,8 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                                                 end: Alignment.bottomCenter,
                                                 colors: [
                                                   Colors.transparent,
-                                                  Colors.black
-                                                      .withOpacity(0.28),
+                                                  AppColors.overlay
+                                                      .withOpacity(0.30),
                                                 ],
                                               ),
                                             ),
@@ -191,27 +463,16 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                         ),
                       ),
                     ),
-
-                    /// AVATAR + NAME
-                    /// AVATAR + NAME
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.92),
+                            color: AppColors.surface.withOpacity(0.92),
                             borderRadius: BorderRadius.circular(28),
-                            border: Border.all(
-                              color: const Color(0xFFFFDDE8),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
+                            border: Border.all(color: AppColors.borderSoft),
+                            boxShadow: AppDecorations.cardShadow,
                           ),
                           child: Row(
                             children: [
@@ -228,22 +489,17 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                                       s.name,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w800,
-                                        color: Color(0xFF1F1F24),
-                                        height: 1.2,
-                                      ),
+                                      style: AppTextStyles.sectionTitle,
                                     ),
                                     const SizedBox(height: 6),
                                     Row(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.storefront_rounded,
                                           size: 16,
-                                          color: Colors.pink.shade400,
+                                          color: AppColors.primary,
                                         ),
                                         const SizedBox(width: 6),
                                         Expanded(
@@ -251,13 +507,32 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                                             s.address,
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 13.5,
-                                              height: 1.35,
-                                              color: Colors.grey.shade700,
-                                              fontWeight: FontWeight.w500,
-                                            ),
+                                            style: AppTextStyles.bodyMuted,
                                           ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.star_rounded,
+                                          size: 18,
+                                          color: AppColors.warning,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          s.averageRating != null
+                                              ? '${s.averageRating!.toStringAsFixed(1)} / 5'
+                                              : 'Chưa có đánh giá',
+                                          style: AppTextStyles.body.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '• ${s.totalReviews ?? 0} lượt',
+                                          style: AppTextStyles.caption,
                                         ),
                                       ],
                                     ),
@@ -269,29 +544,73 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                         ),
                       ),
                     ),
-
-                    /// CONTENT
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if ((s.description ?? '').trim().isNotEmpty) ...[
-                              _sectionHeader('Giới thiệu'),
-                              const SizedBox(height: 10),
+                            _sectionHeader('Dịch vụ'),
+                            const SizedBox(height: 10),
+                            if (s.services.isEmpty)
                               _sectionCard(
-                                child: Text(
-                                  s.description!.trim(),
-                                  style: TextStyle(
-                                    fontSize: 14.5,
-                                    height: 1.6,
-                                    color: Colors.grey.shade800,
+                                child: Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 18,
+                                    ),
+                                    child: Text(
+                                      'Hiện chưa có dịch vụ nào',
+                                      style: AppTextStyles.bodyMuted,
+                                    ),
                                   ),
                                 ),
+                              )
+                            else
+                              Column(
+                                children: s.services.map((sv) {
+                                  return Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surface,
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: AppColors.borderSoft,
+                                      ),
+                                      boxShadow: AppDecorations.softShadow,
+                                    ),
+                                    child: ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 10,
+                                      ),
+                                      title: Text(
+                                        sv.name,
+                                        style: AppTextStyles.body.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      subtitle: Padding(
+                                        padding: const EdgeInsets.only(top: 6),
+                                        child: Text(
+                                          '${_formatMoney(sv.price)} • ${sv.durationMinutes} phút',
+                                          style: AppTextStyles.caption,
+                                        ),
+                                      ),
+                                      trailing: const Icon(
+                                        Icons.chevron_right_rounded,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      onTap: () {
+                                        context
+                                            .push('/service-detail/${sv.id}');
+                                      },
+                                    ),
+                                  );
+                                }).toList(),
                               ),
-                              const SizedBox(height: 18),
-                            ],
+                            const SizedBox(height: 18),
                             _sectionHeader('Thông tin liên hệ'),
                             const SizedBox(height: 10),
                             _sectionCard(
@@ -314,105 +633,262 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                                         : 'Chưa cập nhật',
                                   ),
                                   const SizedBox(height: 14),
-                                  _detailRow(
-                                    icon: Icons.star_rounded,
-                                    title: 'Đánh giá',
-                                    value: s.averageRating != null
-                                        ? '${s.averageRating!.toStringAsFixed(1)} / 5 • ${s.totalReviews ?? 0} lượt'
-                                        : 'Chưa có đánh giá',
-                                  ),
-                                  const SizedBox(height: 14),
-                                  _detailRow(
-                                    icon: s.isOpen == true
-                                        ? Icons.check_circle_rounded
-                                        : Icons.cancel_rounded,
-                                    title: 'Giờ hoạt động',
-                                    value: s.isOpen == true
-                                        ? 'Đang mở cửa'
-                                        : 'Đang đóng cửa',
-                                    valueColor: s.isOpen == true
-                                        ? const Color(0xFF1E8E3E)
-                                        : const Color(0xFFE25555),
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(14),
+                                    onTap: () {
+                                      _showOperatingHoursSheet(
+                                        context,
+                                        s.operatingHours,
+                                      );
+                                    },
+                                    child: _detailRow(
+                                      icon: Icons.schedule_rounded,
+                                      title: 'Giờ hoạt động',
+                                      value:
+                                          '${_openStatusText(s.operatingHours)} • ${_todayRange(s.operatingHours)}',
+                                      valueColor:
+                                          _isStoreOpenNow(s.operatingHours)
+                                              ? AppColors.success
+                                              : AppColors.danger,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                             const SizedBox(height: 18),
-                            _sectionHeader('Dịch vụ'),
-                            const SizedBox(height: 10),
-                            if (s.services.isEmpty)
-                              _sectionCard(
-                                child: Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 18,
-                                    ),
-                                    child: Text(
-                                      'Hiện chưa có dịch vụ nào',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontWeight: FontWeight.w600,
+                            BlocBuilder<StoreReviewsBloc, StoreReviewsState>(
+                              builder: (context, reviewState) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _sectionHeader('Đánh giá từ booking'),
+                                    const SizedBox(height: 10),
+                                    _sectionCard(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              const Expanded(
+                                                child: Text(
+                                                  'Đánh giá gần nhất',
+                                                  style: TextStyle(
+                                                    fontSize: 14.5,
+                                                    fontWeight: FontWeight.w800,
+                                                    color:
+                                                        AppColors.textPrimary,
+                                                  ),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  context.push(
+                                                    '/store-reviews/${widget.storeId}?name=${Uri.encodeComponent(s.name)}',
+                                                  );
+                                                },
+                                                child: const Text('Xem tất cả'),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          if (reviewState
+                                              is StoreReviewsLoading)
+                                            const Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                vertical: 12,
+                                              ),
+                                              child: Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  color: AppColors.primary,
+                                                ),
+                                              ),
+                                            )
+                                          else if (reviewState
+                                              is StoreReviewsError)
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 12,
+                                              ),
+                                              child: Text(
+                                                reviewState.message,
+                                                style: TextStyle(
+                                                  color: AppColors.danger,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            )
+                                          else if (reviewState
+                                                  is StoreReviewsLoaded &&
+                                              reviewState.items.isNotEmpty)
+                                            Column(
+                                              children: reviewState.items
+                                                  .take(5)
+                                                  .map((r) {
+                                                return Container(
+                                                  margin: const EdgeInsets.only(
+                                                    bottom: 10,
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.all(12),
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        AppColors.surfaceSoft,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      16,
+                                                    ),
+                                                    border: Border.all(
+                                                      color:
+                                                          AppColors.borderSoft,
+                                                    ),
+                                                  ),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Row(
+                                                        children: [
+                                                          CircleAvatar(
+                                                            radius: 16,
+                                                            backgroundColor:
+                                                                AppColors
+                                                                    .placeholderStart
+                                                                    .withOpacity(
+                                                              0.35,
+                                                            ),
+                                                            backgroundImage: (r
+                                                                            .customer
+                                                                            .avatarUrl !=
+                                                                        null &&
+                                                                    r.customer
+                                                                        .avatarUrl!
+                                                                        .trim()
+                                                                        .isNotEmpty)
+                                                                ? NetworkImage(
+                                                                    r.customer
+                                                                        .avatarUrl!
+                                                                        .trim(),
+                                                                  )
+                                                                : null,
+                                                            child: (r.customer
+                                                                            .avatarUrl ==
+                                                                        null ||
+                                                                    r.customer
+                                                                        .avatarUrl!
+                                                                        .trim()
+                                                                        .isEmpty)
+                                                                ? Text(
+                                                                    _initials(
+                                                                      r.customer
+                                                                          .fullName,
+                                                                    ),
+                                                                    style:
+                                                                        const TextStyle(
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w800,
+                                                                      color: AppColors
+                                                                          .primary,
+                                                                    ),
+                                                                  )
+                                                                : null,
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 10,
+                                                          ),
+                                                          Expanded(
+                                                            child: Text(
+                                                              r.customer
+                                                                  .fullName,
+                                                              style:
+                                                                  const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w700,
+                                                                color: AppColors
+                                                                    .textPrimary,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          const Icon(
+                                                            Icons.star_rounded,
+                                                            size: 18,
+                                                            color: AppColors
+                                                                .warning,
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 4,
+                                                          ),
+                                                          Text(
+                                                            r.rating.toString(),
+                                                            style:
+                                                                const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w700,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      if ((r.comment ?? '')
+                                                          .trim()
+                                                          .isNotEmpty) ...[
+                                                        const SizedBox(
+                                                          height: 8,
+                                                        ),
+                                                        Text(
+                                                          r.comment!.trim(),
+                                                          maxLines: 3,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: AppTextStyles
+                                                              .bodyMuted,
+                                                        ),
+                                                      ],
+                                                    ],
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            )
+                                          else
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 12,
+                                              ),
+                                              child: Text(
+                                                'Chưa có đánh giá nào',
+                                                style: AppTextStyles.bodyMuted,
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                     ),
-                                  ),
+                                  ],
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 18),
+                            _sectionHeader('Giới thiệu'),
+                            const SizedBox(height: 10),
+                            if ((s.description ?? '').trim().isNotEmpty)
+                              _sectionCard(
+                                child: Text(
+                                  s.description!.trim(),
+                                  style: AppTextStyles.body,
                                 ),
                               )
                             else
-                              Column(
-                                children: s.services.map((sv) {
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: const Color(0xFFFFDDE8),
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.04),
-                                          blurRadius: 14,
-                                          offset: const Offset(0, 6),
-                                        ),
-                                      ],
-                                    ),
-                                    child: ListTile(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 10,
-                                      ),
-                                      title: Text(
-                                        sv.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF1F1F24),
-                                        ),
-                                      ),
-                                      subtitle: Padding(
-                                        padding: const EdgeInsets.only(top: 6),
-                                        child: Text(
-                                          '${sv.price} đ • ${sv.durationMinutes} phút',
-                                          style: TextStyle(
-                                            color: Colors.grey.shade700,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                      trailing: const Icon(
-                                        Icons.chevron_right_rounded,
-                                        color: Color(0xFFE85E9C),
-                                      ),
-                                      onTap: () {
-                                        context.push(
-                                          '/service-detail/${sv.id}',
-                                        );
-                                      },
-                                    ),
-                                  );
-                                }).toList(),
+                              _sectionCard(
+                                child: Text(
+                                  'Chưa có giới thiệu cho shop này',
+                                  style: AppTextStyles.bodyMuted,
+                                ),
                               ),
-                            const SizedBox(height: 10),
                           ],
                         ),
                       ),
@@ -440,7 +916,9 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
           width: active ? 16 : 6,
           height: 6,
           decoration: BoxDecoration(
-            color: active ? Colors.white : Colors.white.withOpacity(0.45),
+            color: active
+                ? AppColors.surface
+                : AppColors.surface.withOpacity(0.45),
             borderRadius: BorderRadius.circular(999),
           ),
         );
@@ -463,18 +941,12 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFFFFF4F8),
-            Color(0xFFFFE1EC),
+            AppColors.placeholderStart,
+            AppColors.placeholderEnd,
           ],
         ),
-        border: Border.all(color: const Color(0xFFFFD1E3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppDecorations.avatarShadow,
       ),
       child: ClipOval(
         child: hasLogo
@@ -491,14 +963,14 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
   Widget _avatarFallback(String name) {
     final initials = _initials(name);
     return Container(
-      color: const Color(0xFFFFEEF5),
+      color: AppColors.surfaceSoft,
       alignment: Alignment.center,
       child: Text(
         initials,
         style: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w800,
-          color: Color(0xFFFF6FAF),
+          color: AppColors.primary,
         ),
       ),
     );
@@ -522,11 +994,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
       padding: const EdgeInsets.only(left: 4),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
-          color: Color(0xFF1F1F24),
-        ),
+        style: AppTextStyles.sectionTitle,
       ),
     );
   }
@@ -538,80 +1006,12 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92),
+        color: AppColors.surface.withOpacity(0.92),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFFFDDE8)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: AppColors.borderSoft),
+        boxShadow: AppDecorations.softShadow,
       ),
       child: child,
-    );
-  }
-
-  Widget _metricTile({
-    required IconData icon,
-    required String label,
-    required String value,
-    Color? valueColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFBFD),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFFFE1EC)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF1F6),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: const Color(0xFFE85E9C),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    color: valueColor ?? const Color(0xFF333333),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -628,12 +1028,12 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF4F8),
+            color: AppColors.surfaceSoft,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Icon(
             icon,
-            color: const Color(0xFFE85E9C),
+            color: AppColors.primary,
             size: 22,
           ),
         ),
@@ -644,19 +1044,13 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
             children: [
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTextStyles.caption,
               ),
               const SizedBox(height: 5),
               Text(
                 value,
-                style: TextStyle(
-                  fontSize: 14.5,
-                  height: 1.4,
-                  color: valueColor ?? const Color(0xFF333333),
+                style: AppTextStyles.body.copyWith(
+                  color: valueColor ?? AppColors.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -670,60 +1064,26 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
   Widget _backButton(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () => context.pop(),
+      onTap: () {
+        if (context.canPop()) {
+          context.pop(_favoriteChanged);
+        } else {
+          context.go('/');
+        }
+      },
       child: Container(
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: AppColors.surface.withOpacity(0.9),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFFD1E3)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(color: AppColors.borderSoft),
+          boxShadow: AppDecorations.topBarShadow,
         ),
         child: const Icon(
           Icons.arrow_back_ios_new_rounded,
           size: 16,
-          color: Color(0xFFFF6FAF),
-        ),
-      ),
-    );
-  }
-
-  Widget _iconCircle({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFFD1E3)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: const Color(0xFFE85E9C),
-          ),
+          color: AppColors.primary,
         ),
       ),
     );
@@ -732,19 +1092,12 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
   Widget _bannerPlaceholder() {
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFDE2EC),
-            Color(0xFFFAD1DE),
-          ],
-        ),
+        gradient: AppDecorations.heroGradient,
       ),
       child: const Center(
         child: Icon(
           Icons.storefront_rounded,
-          color: Color(0xFFB54C72),
+          color: AppColors.primary,
           size: 44,
         ),
       ),

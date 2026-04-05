@@ -1,15 +1,19 @@
-// lib/features/home/presentation/pages/home_view.dart
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_customer/features/home/data/datasources/home_remote_datasource_impl.dart';
+import 'package:intl/intl.dart';
 
+import '../../../auth/presentation/bloc/auth_bloc.dart';
+import '../../../auth/presentation/bloc/auth_state.dart';
 import '../bloc/home_bloc.dart';
+import '../bloc/home_event.dart';
 import '../bloc/home_state.dart';
 import '../../../../core/widgets/network_image_widget.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/theme/app_text_styles.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -19,9 +23,7 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  static const Color _pink1 = Color(0xFFFF5C8A);
-  static const Color _pink2 = Color(0xFFFF7DA8);
-  static const Color _bg = Color(0xFFFFF5F7);
+  StreamSubscription? _authSub;
 
   final PageController _bannerController =
       PageController(viewportFraction: 0.92);
@@ -29,14 +31,29 @@ class _HomeViewState extends State<HomeView> {
   int _currentIndex = 0;
   int _bannerLength = 0;
 
+  final NumberFormat _vndFormat = NumberFormat.currency(
+    locale: 'vi_VN',
+    symbol: 'đ',
+    decimalDigits: 0,
+  );
+
   String _resolveImage(String? url) {
     if (url == null || url.isEmpty) return '';
-    return url; // backend trả full URL Cloudinary
+    return url;
   }
 
   @override
   void initState() {
     super.initState();
+
+    context.read<HomeBloc>().add(LoadHomeEvent());
+
+    final authBloc = context.read<AuthBloc>();
+    _authSub = authBloc.stream.listen((state) {
+      if (state is AuthAuthenticated) {
+        context.read<HomeBloc>().add(LoadHomeEvent(forceRefresh: true));
+      }
+    });
 
     _timer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!_bannerController.hasClients || _bannerLength <= 1) return;
@@ -52,6 +69,7 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   void dispose() {
+    _authSub?.cancel();
     _timer?.cancel();
     _bannerController.dispose();
     super.dispose();
@@ -63,17 +81,30 @@ class _HomeViewState extends State<HomeView> {
       child: BlocBuilder<HomeBloc, HomeState>(
         builder: (context, state) {
           if (state is HomeLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is HomeLoaded) {
-            return _buildContent(context, state);
-          } else if (state is HomeError) {
-            return Center(
-              child: Text(
-                state.message,
-                style: const TextStyle(color: Colors.red),
+            return const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
               ),
             );
           }
+
+          if (state is HomeLoaded) {
+            return _buildContent(context, state);
+          }
+
+          if (state is HomeError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  state.message,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.error,
+                ),
+              ),
+            );
+          }
+
           return const SizedBox.shrink();
         },
       ),
@@ -84,35 +115,44 @@ class _HomeViewState extends State<HomeView> {
     final data = state.data;
 
     return Container(
-      color: _bg,
+      decoration: const BoxDecoration(
+        gradient: AppDecorations.pageGradient,
+      ),
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(child: _buildHeader(context, state.locationName)),
-          const SliverToBoxAdapter(child: SizedBox(height: 8)),
-          SliverToBoxAdapter(
-              child: _buildBanners(context, data.systemContents)),
           const SliverToBoxAdapter(child: SizedBox(height: 10)),
-          SliverToBoxAdapter(child: _buildSearchBar(context)),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Danh mục', style: _sectionTitleStyle()),
-            ),
+            child: _buildBanners(context, data.systemContents),
           ),
+          const SliverToBoxAdapter(child: SizedBox(height: 14)),
+          SliverToBoxAdapter(child: _buildSearchBar(context)),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          SliverToBoxAdapter(child: _sectionHeader(context, 'Danh mục')),
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
           SliverToBoxAdapter(child: _buildCategories(context, data.categories)),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          const SliverToBoxAdapter(child: SizedBox(height: 18)),
+          SliverToBoxAdapter(child: _sectionHeader(context, 'Dịch vụ')),
+          const SliverToBoxAdapter(child: SizedBox(height: 10)),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Dịch vụ', style: _sectionTitleStyle()),
+            child: _buildServiceScroller(context, data.serviceGroups),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 18)),
+          SliverToBoxAdapter(
+            child: _buildStoreHorizontalSection(
+              context,
+              title: 'Cửa hàng yêu thích',
+              stores: data.favoriteStores,
+              showViewAll: false,
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 8)),
           SliverToBoxAdapter(
-              child: _buildServiceScroller(context, data.serviceGroups)),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            child: _buildServiceHorizontalSection(
+              context,
+              title: 'Dịch vụ yêu thích',
+              services: data.favoriteServices,
+            ),
+          ),
           SliverToBoxAdapter(
             child: _buildStoreHorizontalSection(
               context,
@@ -121,9 +161,7 @@ class _HomeViewState extends State<HomeView> {
               onViewAll: () {
                 context.push(
                   '/search',
-                  extra: {
-                    'sortMode': 'nearest',
-                  },
+                  extra: {'sortMode': 'nearest'},
                 );
               },
             ),
@@ -136,29 +174,128 @@ class _HomeViewState extends State<HomeView> {
               onViewAll: () {
                 context.push(
                   '/search',
-                  extra: {
-                    'sortMode': 'topRated',
-                  },
+                  extra: {'sortMode': 'topRated'},
                 );
               },
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Khuyến mãi', style: _sectionTitleStyle()),
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          SliverToBoxAdapter(
-            child: _buildVouchers(
-              context,
-              data.vouchers,
-            ),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 18)),
+          SliverToBoxAdapter(child: _sectionHeader(context, 'Khuyến mãi')),
+          const SliverToBoxAdapter(child: SizedBox(height: 14)),
+          SliverToBoxAdapter(child: _buildVouchers(context, data.vouchers)),
           const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
+      ),
+    );
+  }
+
+  Widget _sectionHeader(BuildContext context, String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Text(title, style: AppTextStyles.sectionTitle),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, String? locationNameFromHome) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(0, 0, 0, 2),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: const BoxDecoration(
+        gradient: AppDecorations.heroGradient,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(22),
+          bottomRight: Radius.circular(22),
+        ),
+        boxShadow: AppDecorations.topBarShadow,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            margin: const EdgeInsets.only(top: 2),
+            decoration: BoxDecoration(
+              color: AppColors.surface.withOpacity(0.96),
+              borderRadius: BorderRadius.circular(11),
+              boxShadow: AppDecorations.avatarShadow,
+            ),
+            child: const Icon(
+              Icons.place_rounded,
+              color: AppColors.primary,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.surface.withOpacity(0.72),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.borderSoft),
+              ),
+              child: Text(
+                locationNameFromHome ?? 'Bạn đang ở đâu?',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  height: 1.15,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: GestureDetector(
+        onTap: () => context.push('/search'),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.borderSoft),
+            boxShadow: AppDecorations.softShadow,
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.search_rounded,
+                color: AppColors.textSecondary,
+                size: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Tìm theo tên cửa hàng, dịch vụ...',
+                  style: AppTextStyles.bodyMuted,
+                ),
+              ),
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderSoft),
+                ),
+                child: const Icon(
+                  Icons.mic_none_rounded,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -175,7 +312,7 @@ class _HomeViewState extends State<HomeView> {
     if (banners.isEmpty) return const SizedBox.shrink();
 
     return SizedBox(
-      height: 150,
+      height: 160,
       child: PageView.builder(
         controller: _bannerController,
         itemCount: banners.length,
@@ -191,28 +328,25 @@ class _HomeViewState extends State<HomeView> {
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 12,
-                    offset: Offset(0, 6),
-                  ),
-                ],
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: AppDecorations.cardShadow,
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
                 child: Image.network(
                   _resolveImage(url),
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: double.infinity,
                   errorBuilder: (_, __, ___) => Container(
-                    color: const Color(0xFFFFF0F2),
+                    decoration: const BoxDecoration(
+                      gradient: AppDecorations.heroGradient,
+                    ),
                     alignment: Alignment.center,
                     child: const Icon(
                       Icons.image_not_supported_outlined,
-                      color: _pink1,
+                      color: AppColors.primary,
+                      size: 30,
                     ),
                   ),
                 ),
@@ -224,86 +358,15 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, String? locationNameFromHome) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [_pink1, _pink2]),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(18),
-          bottomRight: Radius.circular(18),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white24,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.place, color: Colors.white, size: 16),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    locationNameFromHome ?? 'Bạn đang ở đâu?',
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: GestureDetector(
-        onTap: () => context.push('/search'),
-        child: Material(
-          elevation: 3,
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.search, color: Colors.grey),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Tìm theo tên cửa hàng, dịch vụ...',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-                Icon(Icons.mic, color: Colors.grey),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildCategories(BuildContext context, List categories) {
     return SizedBox(
-      height: 92,
+      height: 98,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         scrollDirection: Axis.horizontal,
         itemBuilder: (_, index) {
           final item = categories[index];
+
           return GestureDetector(
             onTap: () {
               context.pushNamed(
@@ -313,44 +376,39 @@ class _HomeViewState extends State<HomeView> {
               );
             },
             child: SizedBox(
-              width: 72,
+              width: 76,
               child: Column(
                 children: [
                   Container(
-                    width: 56,
-                    height: 56,
+                    width: 58,
+                    height: 58,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Colors.white, Color(0xFFFFF0F2)],
+                        colors: [
+                          AppColors.surface,
+                          AppColors.surfaceSoft,
+                        ],
                       ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 10,
-                          offset: Offset(0, 6),
-                        ),
-                        BoxShadow(
-                          color: Colors.white.withOpacity(0.6),
-                          blurRadius: 0,
-                          offset: Offset(0, -1),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.borderSoft),
+                      boxShadow: AppDecorations.softShadow,
                     ),
                     child: Center(
                       child: Padding(
-                        padding: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(8),
                         child: NetworkImageWidget(
                           imageUrl: _resolveImage(item.iconUrl),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 7),
                   Text(
                     item.name,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 11),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -366,12 +424,12 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Widget _buildServiceScroller(BuildContext context, List serviceGroups) {
-    if (serviceGroups == null || serviceGroups.isEmpty) {
+    if (serviceGroups.isEmpty) {
       return const SizedBox.shrink();
     }
 
     return SizedBox(
-      height: 40,
+      height: 42,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
@@ -385,17 +443,13 @@ class _HomeViewState extends State<HomeView> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF0F2),
+                  color: AppColors.surfaceSoft,
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: _pink1.withOpacity(0.18)),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: const Text(
                   'Tất cả',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: _pink1,
-                  ),
+                  style: AppTextStyles.chip,
                 ),
               ),
             );
@@ -411,18 +465,19 @@ class _HomeViewState extends State<HomeView> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: Colors.black12),
+                border: Border.all(color: AppColors.borderSoft),
+                boxShadow: AppDecorations.softShadow,
               ),
               child: Text(
                 g.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: AppTextStyles.bodyMuted.copyWith(
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
                 ),
               ),
             ),
@@ -438,9 +493,9 @@ class _HomeViewState extends State<HomeView> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
         return DraggableScrollableSheet(
@@ -450,24 +505,23 @@ class _HomeViewState extends State<HomeView> {
           maxChildSize: 0.95,
           builder: (context, scrollController) {
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               child: Column(
                 children: [
                   Container(
-                    width: 40,
+                    width: 44,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.black26,
-                      borderRadius: BorderRadius.circular(4),
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(999),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  const Align(
+                  const SizedBox(height: 14),
+                  Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
                       'Tất cả dịch vụ',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                      style: AppTextStyles.sectionTitle,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -496,21 +550,19 @@ class _HomeViewState extends State<HomeView> {
                           child: Container(
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.black12),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 6,
-                                  offset: Offset(0, 3),
-                                ),
-                              ],
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppColors.borderSoft),
+                              boxShadow: AppDecorations.softShadow,
                             ),
                             child: Text(
                               g.name,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600),
+                              style: AppTextStyles.bodyMuted.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         );
@@ -526,78 +578,72 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _storeCard(BuildContext context, dynamic s) {
-    return GestureDetector(
-      onTap: () => context.push('/store/${s.id}'),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 4),
+  Widget _buildHorizontalSection({
+    required BuildContext context,
+    required String title,
+    required List items,
+    required Widget Function(BuildContext context, dynamic item) itemBuilder,
+    bool showViewAll = false,
+    VoidCallback? onViewAll,
+  }) {
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    final displayItems = items.take(10).toList();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft.withOpacity(0.55),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppDecorations.softShadow, // làm mềm đường ngang nền
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(title, style: AppTextStyles.sectionTitle),
+                ),
+                if (showViewAll)
+                  TextButton(
+                    onPressed: onViewAll,
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      'Xem tất cả',
+                      style: AppTextStyles.chip.copyWith(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  width: 64,
-                  height: 64,
-                  child: NetworkImageWidget(
-                    imageUrl: _resolveImage(s.logoUrl),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      s.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      s.address ?? '',
-                      style: const TextStyle(
-                        color: Colors.black54,
-                        fontSize: 13,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _pink1.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  "${(s.distanceKm ?? 0).toStringAsFixed(1)} km",
-                  style: const TextStyle(
-                    color: _pink1,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
           ),
-        ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 225,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              itemCount: displayItems.length + (showViewAll ? 1 : 0),
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (_, index) {
+                if (showViewAll && index == displayItems.length) {
+                  return _viewAllStoreCard(onViewAll ?? () {});
+                }
+                return itemBuilder(context, displayItems[index]);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -606,42 +652,106 @@ class _HomeViewState extends State<HomeView> {
     BuildContext context, {
     required String title,
     required List stores,
-    required VoidCallback onViewAll,
+    bool showViewAll = true,
+    VoidCallback? onViewAll,
   }) {
-    if (stores.isEmpty) return const SizedBox.shrink();
+    return _buildHorizontalSection(
+      context: context,
+      title: title,
+      items: stores,
+      showViewAll: showViewAll,
+      onViewAll: onViewAll,
+      itemBuilder: (context, s) => _storeCardHorizontal(context, s),
+    );
+  }
 
-    final displayStores = stores.take(10).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: _sectionTitleStyle()),
-            ],
+  Widget _buildServiceHorizontalSection(
+    BuildContext context, {
+    required String title,
+    required List services,
+  }) {
+    return _buildHorizontalSection(
+      context: context,
+      title: title,
+      items: services,
+      itemBuilder: (context, s) {
+        return GestureDetector(
+          onTap: () async {
+            final changed = await context.push<bool>('/service-detail/${s.id}');
+            if (changed == true && context.mounted) {
+              context.read<HomeBloc>().add(LoadHomeEvent(forceRefresh: true));
+            }
+          },
+          child: Container(
+            width: 180,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppColors.borderSoft),
+              boxShadow: AppDecorations.cardShadow,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: 102,
+                    width: double.infinity,
+                    child: NetworkImageWidget(
+                      imageUrl: _resolveImage(s.imageUrl),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                s.name ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.body.copyWith(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                s.storeName ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.bodyMuted.copyWith(
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (s.price != null)
+                            Text(
+                              _vndFormat.format(s.price),
+                              style: AppTextStyles.body.copyWith(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 260, // tăng nhẹ
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding:
-                const EdgeInsets.fromLTRB(16, 4, 16, 16), // thêm bottom padding
-            itemCount: displayStores.length + 1,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (_, index) {
-              if (index == displayStores.length) {
-                return _viewAllStoreCard(onViewAll);
-              }
-              return _storeCardHorizontal(context, displayStores[index]);
-            },
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -651,23 +761,24 @@ class _HomeViewState extends State<HomeView> {
       child: Container(
         width: 110,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.black12),
+          border: Border.all(color: AppColors.borderSoft),
+          boxShadow: AppDecorations.softShadow,
         ),
         child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.arrow_forward_ios_rounded, color: _pink1),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppColors.primary,
+                size: 18,
+              ),
               SizedBox(height: 8),
               Text(
                 'Xem tất cả',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: _pink1,
-                ),
+                style: AppTextStyles.chip,
               ),
             ],
           ),
@@ -677,26 +788,31 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Widget _storeCardHorizontal(BuildContext context, dynamic s) {
-    final coverUrl = _resolveImage(
-      s.coverImageUrl ?? s.logoUrl,
-    );
+    final coverUrl = _resolveImage(s.coverImageUrl ?? s.logoUrl);
 
     final double rating = (s.averageRating ?? 0).toDouble();
     final int reviewCount = (s.totalReviews ?? 0);
-    final double distanceKm = (s.distanceKm ?? 0).toDouble();
+    final double? distanceKm = (s.distanceKm as num?)?.toDouble();
 
     return GestureDetector(
-      onTap: () => context.push('/store/${s.id}'),
+      onTap: () async {
+        final changed = await context.push<bool>('/store/${s.id}');
+        if (changed == true && context.mounted) {
+          context.read<HomeBloc>().add(LoadHomeEvent(forceRefresh: true));
+        }
+      },
       child: Container(
         width: 180,
+        height: 207,
         decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 4),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
+              spreadRadius: 1,
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -704,55 +820,67 @@ class _HomeViewState extends State<HomeView> {
           borderRadius: BorderRadius.circular(18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
             children: [
               SizedBox(
-                height: 110,
+                height: 94,
                 width: double.infinity,
                 child: NetworkImageWidget(imageUrl: coverUrl),
               ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      s.name ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(Icons.star, size: 14, color: Colors.amber),
-                        const SizedBox(width: 4),
-                        Text(
-                          rating.toStringAsFixed(1),
-                          style: const TextStyle(fontSize: 12),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Text(
+                        s.name ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.body.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '($reviewCount)',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 15,
+                            color: AppColors.warning,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            rating.toStringAsFixed(1),
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '($reviewCount)',
+                            style: AppTextStyles.caption,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            distanceKm != null
+                                ? '${s.address ?? ''} • ${distanceKm.toStringAsFixed(1)} km'
+                                : (s.address ?? ''),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.bodyMuted,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${s.address ?? ''} • ${distanceKm.toStringAsFixed(1)} km',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -768,147 +896,169 @@ class _HomeViewState extends State<HomeView> {
   ) {
     if (vouchers.isEmpty) return const SizedBox.shrink();
 
-    String formatMoney(num value) {
-      final s = value.toStringAsFixed(0);
-      final parts = s.split('.');
-      final integer = parts[0];
-      final buffer = StringBuffer();
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.only(top: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft.withOpacity(0.55),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppDecorations.softShadow,
+      ),
+      child: SizedBox(
+        height: 220,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: vouchers.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          itemBuilder: (_, index) {
+            final v = vouchers[index];
+            final String imageUrl = _resolveImage(v.imageUrl);
 
-      for (int i = 0; i < integer.length; i++) {
-        final reverseIndex = integer.length - i - 1;
-        buffer.write(integer[reverseIndex]);
-        if (i % 3 == 2 && i != integer.length - 1) {
-          buffer.write('.');
-        }
-      }
+            final String serviceName = (v.serviceName ?? '').toString();
+            final double originalPrice = (v.originalPrice ?? 0).toDouble();
+            final double discountValue = (v.discountValue ?? 0).toDouble();
 
-      return '${buffer.toString().split('').reversed.join()} đ';
-    }
+            final bool isPercent =
+                v.discountType == 0 || v.discountType == true;
 
-    const discountedColor = Color(0xFFE53935);
+            final double discountPercent = isPercent
+                ? discountValue
+                : (originalPrice > 0
+                    ? (discountValue / originalPrice) * 100
+                    : 0);
 
-    return SizedBox(
-      height: 220,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: vouchers.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (_, index) {
-          final v = vouchers[index];
-          final String imageUrl = _resolveImage(v.imageUrl);
+            final double finalPrice = isPercent
+                ? originalPrice * (1 - discountValue / 100)
+                : (originalPrice - discountValue).clamp(0, double.infinity);
 
-          final String serviceName = (v.serviceName ?? '').toString();
-          final double originalPrice = (v.originalPrice ?? 0).toDouble();
-          final double discountedPrice = (v.discountedPrice ?? 0).toDouble();
+            final String discountLabel =
+                '${discountPercent.toStringAsFixed(0)}%';
 
-          return GestureDetector(
-            onTap: () => context.push('/voucher/${v.id}'),
-            child: Container(
-              width: 220,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      height: 120,
-                      width: double.infinity,
-                      child: imageUrl.isNotEmpty
-                          ? Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: const Color(0xFFFFF0F2),
-                                alignment: Alignment.center,
-                                child: const Icon(
-                                  Icons.image_not_supported_outlined,
-                                  color: _pink1,
+            return GestureDetector(
+              onTap: () => context.push('/service-detail/${v.serviceId}'),
+              child: Container(
+                width: 220,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.borderSoft),
+                  boxShadow: AppDecorations.cardShadow,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 120,
+                        width: double.infinity,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            imageUrl.isNotEmpty
+                                ? Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      decoration: const BoxDecoration(
+                                        gradient: AppDecorations.heroGradient,
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: const Icon(
+                                        Icons.image_not_supported_outlined,
+                                        color: AppColors.primary,
+                                        size: 30,
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    decoration: const BoxDecoration(
+                                      gradient: AppDecorations.heroGradient,
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: const Icon(
+                                      Icons.local_offer_outlined,
+                                      color: AppColors.primary,
+                                      size: 34,
+                                    ),
+                                  ),
+                            if (discountPercent > 0)
+                              Positioned(
+                                top: 10,
+                                right: 10,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.danger.withOpacity(0.92),
+                                    borderRadius: BorderRadius.circular(999),
+                                    boxShadow: AppDecorations.softShadow,
+                                  ),
+                                  child: Text(
+                                    '-$discountLabel',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            )
-                          : Container(
-                              color: const Color(0xFFFFF0F2),
-                              alignment: Alignment.center,
-                              child: const Icon(
-                                Icons.local_offer_outlined,
-                                color: _pink1,
-                                size: 34,
-                              ),
-                            ),
-                    ),
-                    Expanded(
-                      child: Padding(
+                          ],
+                        ),
+                      ),
+                      Padding(
                         padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               serviceName.isNotEmpty ? serviceName : v.code,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
+                              style: AppTextStyles.body.copyWith(
+                                fontWeight: FontWeight.w800,
                                 fontSize: 13,
-                                color: Colors.black87,
+                                color: AppColors.textPrimary,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  formatMoney(originalPrice),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.black45,
-                                    decoration: TextDecoration.lineThrough,
-                                    decorationThickness: 1.5,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  formatMoney(discountedPrice),
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                    color: discountedColor,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                            const SizedBox(height: 8),
+                            Text(
+                              _vndFormat.format(originalPrice),
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.textSecondary,
+                                decoration: TextDecoration.lineThrough,
+                                decorationThickness: 1.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _vndFormat.format(finalPrice),
+                              style: AppTextStyles.body.copyWith(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.danger,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
-
-  TextStyle _sectionTitleStyle() => const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: Colors.black87,
-      );
 }

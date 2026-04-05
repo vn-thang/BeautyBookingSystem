@@ -1,16 +1,14 @@
 import '../../domain/entities/available_staff.dart';
 
 class AvailableStaffModel extends AvailableStaff {
-  final String avatarUrl;
-
   AvailableStaffModel({
     required int staffId,
     required String name,
-    required this.avatarUrl,
+    required String avatarUrl,
   }) : super(
           staffId: staffId,
           name: name,
-          avatarUrl: avatarUrl, 
+          avatarUrl: avatarUrl,
         );
 
   factory AvailableStaffModel.fromJson(Map<String, dynamic> json) {

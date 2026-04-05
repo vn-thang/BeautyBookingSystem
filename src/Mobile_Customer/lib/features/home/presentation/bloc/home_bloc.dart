@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/location/location_service.dart';
 
 import '../../domain/usecases/get_home_data.dart';
-import '../../domain/entities/home_data.dart';
-import '../../domain/entities/store.dart';
 
 import 'home_event.dart';
 import 'home_state.dart';
@@ -68,10 +66,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
       // USER NAME
       String userName = "";
-      final authState = authBloc.state;
 
-      if (authState is AuthAuthenticated) {
-        userName = authState.user.name ?? "";
+      if (authBloc.state is AuthAuthenticated) {
+        userName = (authBloc.state as AuthAuthenticated).user.name ?? "";
       }
 
       //LOCATION NAME CACHE

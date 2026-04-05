@@ -7,7 +7,11 @@ import '../bloc/category_store_event.dart';
 import '../bloc/category_store_state.dart';
 import '../../data/models/store_model.dart';
 
-class CategoryStoresView extends StatelessWidget {
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_decorations.dart';
+
+class CategoryStoresView extends StatefulWidget {
   final int categoryId;
   final String categoryName;
 
@@ -18,21 +22,24 @@ class CategoryStoresView extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    context.read<CategoryStoreBloc>().add(FetchCategoryStores(categoryId));
+  State<CategoryStoresView> createState() => _CategoryStoresViewState();
+}
 
+class _CategoryStoresViewState extends State<CategoryStoresView> {
+  @override
+  void initState() {
+    super.initState();
+    context
+        .read<CategoryStoreBloc>()
+        .add(FetchCategoryStores(widget.categoryId));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFF8FC),
-              Color(0xFFFFF1F7),
-              Color(0xFFFFFFFF),
-            ],
-          ),
+          gradient: AppDecorations.pageGradient,
         ),
         child: SafeArea(
           child: Column(
@@ -48,21 +55,15 @@ class CategoryStoresView extends StatelessWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.95),
+                          color: AppColors.surface.withOpacity(0.95),
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFFFD6E6)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
-                              blurRadius: 14,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
+                          border: Border.all(color: AppColors.borderSoft),
+                          boxShadow: AppDecorations.topBarShadow,
                         ),
                         child: const Icon(
                           Icons.arrow_back_ios_new_rounded,
                           size: 17,
-                          color: Color(0xFFFF6FAF),
+                          color: AppColors.primary,
                         ),
                       ),
                     ),
@@ -72,24 +73,15 @@ class CategoryStoresView extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            categoryName,
+                            widget.categoryName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 21,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF202024),
-                              height: 1.1,
-                            ),
+                            style: AppTextStyles.pageTitle,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Danh sách cửa hàng thuộc danh mục này',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: AppTextStyles.bodyMuted,
                           ),
                         ],
                       ),
@@ -101,7 +93,11 @@ class CategoryStoresView extends StatelessWidget {
                 child: BlocBuilder<CategoryStoreBloc, CategoryStoreState>(
                   builder: (context, state) {
                     if (state is CategoryStoreLoading) {
-                      return const Center(child: CircularProgressIndicator());
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      );
                     } else if (state is CategoryStoreLoaded) {
                       return _buildList(context, state.stores);
                     } else if (state is CategoryStoreError) {
@@ -111,10 +107,7 @@ class CategoryStoresView extends StatelessWidget {
                           child: Text(
                             state.message,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: AppTextStyles.error,
                           ),
                         ),
                       );
@@ -140,16 +133,10 @@ class CategoryStoresView extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.88),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: const Color(0xFFFFD6E6)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 24,
-                  offset: const Offset(0, 12),
-                ),
-              ],
+              color: AppColors.surface.withOpacity(0.88),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: AppColors.borderSoft),
+              boxShadow: AppDecorations.softShadow,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -158,40 +145,26 @@ class CategoryStoresView extends StatelessWidget {
                   width: 96,
                   height: 96,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFEEF5),
+                    gradient: AppDecorations.heroGradient,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF6FAF).withOpacity(0.12),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+                    boxShadow: AppDecorations.avatarShadow,
                   ),
                   child: const Icon(
                     Icons.storefront_rounded,
                     size: 48,
-                    color: Color(0xFFFF6FAF),
+                    color: AppColors.primary,
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   'Không có cửa hàng nào',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF2B2B30),
-                  ),
+                  style: AppTextStyles.sectionTitle,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Hiện tại chưa có cửa hàng nào thuộc danh mục này.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1.45,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: AppTextStyles.bodyMuted,
                 ),
               ],
             ),
@@ -219,30 +192,15 @@ class CategoryStoresView extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFFFFFF),
-            Color(0xFFFFF3F8),
-          ],
-        ),
-        border: Border.all(
-          color: const Color(0xFFFFD9E6),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.07),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(24),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.borderSoft),
+        boxShadow: AppDecorations.cardShadow,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(24),
           onTap: () {
             context.pushNamed(
               'store',
@@ -261,18 +219,12 @@ class CategoryStoresView extends StatelessWidget {
                       width: double.infinity,
                       height: 190,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(22),
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 14,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(20),
+                        color: AppColors.surfaceSoft,
+                        boxShadow: AppDecorations.softShadow,
                       ),
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius: BorderRadius.circular(20),
                         child: hasImage
                             ? Image.network(
                                 store.coverImageUrl!.trim(),
@@ -285,13 +237,16 @@ class CategoryStoresView extends StatelessWidget {
                                     (context, child, loadingProgress) {
                                   if (loadingProgress == null) return child;
                                   return Container(
-                                    color: const Color(0xFFFFEEF5),
+                                    decoration: const BoxDecoration(
+                                      gradient: AppDecorations.heroGradient,
+                                    ),
                                     alignment: Alignment.center,
                                     child: const SizedBox(
                                       width: 24,
                                       height: 24,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2.2,
+                                        color: AppColors.primary,
                                       ),
                                     ),
                                   );
@@ -309,8 +264,10 @@ class CategoryStoresView extends StatelessWidget {
                           vertical: 7,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.58),
+                          color: AppColors.surface.withOpacity(0.92),
                           borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: AppColors.borderSoft),
+                          boxShadow: AppDecorations.softShadow,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -318,16 +275,14 @@ class CategoryStoresView extends StatelessWidget {
                             const Icon(
                               Icons.star_rounded,
                               size: 15,
-                              color: Color(0xFFFFD86B),
+                              color: AppColors.warning,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               rating > 0 ? rating.toStringAsFixed(1) : '0.0',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.textPrimary,
                                 fontWeight: FontWeight.w700,
-                                height: 1,
                               ),
                             ),
                           ],
@@ -346,11 +301,9 @@ class CategoryStoresView extends StatelessWidget {
                         store.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: AppTextStyles.body.copyWith(
                           fontWeight: FontWeight.w800,
-                          fontSize: 17,
-                          height: 1.25,
-                          color: Color(0xFF1F1F24),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 9),
@@ -370,7 +323,7 @@ class CategoryStoresView extends StatelessWidget {
                                       ? Icons.star_half_rounded
                                       : Icons.star_border_rounded,
                               size: 17,
-                              color: const Color(0xFFFFB84D),
+                              color: AppColors.warning,
                             ),
                           );
                         }),
@@ -383,7 +336,7 @@ class CategoryStoresView extends StatelessWidget {
                             const Icon(
                               Icons.location_on_rounded,
                               size: 16,
-                              color: Color(0xFFE85E9C),
+                              color: AppColors.primary,
                             ),
                             const SizedBox(width: 5),
                             Expanded(
@@ -391,12 +344,7 @@ class CategoryStoresView extends StatelessWidget {
                                 store.address!,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12.8,
-                                  height: 1.38,
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: AppTextStyles.bodyMuted,
                               ),
                             ),
                           ],
@@ -404,11 +352,7 @@ class CategoryStoresView extends StatelessWidget {
                       else
                         Text(
                           'Đang cập nhật địa chỉ',
-                          style: TextStyle(
-                            fontSize: 12.8,
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: AppTextStyles.bodyMuted,
                         ),
                       const SizedBox(height: 12),
                       Row(
@@ -441,19 +385,12 @@ class CategoryStoresView extends StatelessWidget {
   Widget _placeholderImage() {
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFDE4EE),
-            Color(0xFFF8C8D8),
-          ],
-        ),
+        gradient: AppDecorations.heroGradient,
       ),
       child: const Center(
         child: Icon(
           Icons.store_rounded,
-          color: Color(0xFFB54C72),
+          color: AppColors.primary,
           size: 42,
         ),
       ),
@@ -467,10 +404,10 @@ class CategoryStoresView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.94),
+        color: AppColors.surfaceSoft,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: const Color(0xFFFFD6E4),
+          color: AppColors.borderSoft,
         ),
       ),
       child: Row(
@@ -479,15 +416,13 @@ class CategoryStoresView extends StatelessWidget {
           Icon(
             icon,
             size: 14,
-            color: Colors.pink.shade400,
+            color: AppColors.primary,
           ),
           const SizedBox(width: 5),
           Text(
             text,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF3A3A40),
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textPrimary,
             ),
           ),
         ],

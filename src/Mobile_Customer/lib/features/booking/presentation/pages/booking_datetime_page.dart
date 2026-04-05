@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'package:mobile_customer/features/booking/presentation/pages/booking_confirm_page.dart';
+import 'package:mobile_customer/core/theme/app_colors.dart';
+import 'package:mobile_customer/core/theme/app_decorations.dart';
+import 'package:mobile_customer/core/theme/app_text_styles.dart';
+
+import '../../data/models/operating_hour_model.dart';
 import 'booking_staff_page.dart';
 
 class BookingDateTimePage extends StatefulWidget {
@@ -10,6 +14,7 @@ class BookingDateTimePage extends StatefulWidget {
   final List<int> services;
   final List<String> serviceNames;
   final int totalDuration;
+  final List<OperatingHourViewDto> operatingHours;
 
   const BookingDateTimePage({
     super.key,
@@ -18,6 +23,7 @@ class BookingDateTimePage extends StatefulWidget {
     required this.services,
     required this.serviceNames,
     required this.totalDuration,
+    required this.operatingHours,
   });
 
   @override
@@ -28,39 +34,148 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
   DateTime? selectedDate;
   String? selectedSlot;
 
-  final List<String> slots = [
-    "09:00",
-    "09:30",
-    "10:00",
-    "10:30",
-    "11:00",
-    "11:30",
-    "13:00",
-    "13:30",
-    "14:00",
-    "14:30",
-    "15:00",
-    "15:30",
-    "16:00",
-    "16:30",
-  ];
+  DateTime _normalizeDate(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  bool _isSameDate(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  int _toDbDayOfWeek(DateTime date) {
+    return date.weekday == DateTime.sunday ? 0 : date.weekday;
+  }
+
+  OperatingHourViewDto? _getOperatingHourForDate(DateTime date) {
+    final dow = _toDbDayOfWeek(date);
+    for (final item in widget.operatingHours) {
+      if (item.dayOfWeek == dow) return item;
+    }
+    return null;
+  }
+
+  DateTime _timeOnDate(DateTime date, String hhmm) {
+    final parts = hhmm.split(':');
+    final hour = int.parse(parts[0]);
+    final minute = int.parse(parts[1]);
+    return DateTime(date.year, date.month, date.day, hour, minute);
+  }
+
+  DateTime _roundUpToNext30Minutes(DateTime dt) {
+    final minute = dt.minute;
+    final rounded = ((minute + 29) ~/ 30) * 30;
+
+    if (rounded == 60) {
+      return DateTime(dt.year, dt.month, dt.day, dt.hour + 1, 0);
+    }
+    return DateTime(dt.year, dt.month, dt.day, dt.hour, rounded);
+  }
+
+  List<String> _getAvailableSlots(DateTime date) {
+    final oh = _getOperatingHourForDate(date);
+    if (oh == null) return [];
+
+    final now = DateTime.now();
+    final openTime = _timeOnDate(date, oh.openTime);
+    final closeTime = _timeOnDate(date, oh.closeTime);
+
+    DateTime startTime = openTime;
+
+    if (_isSameDate(date, now)) {
+      final minAllowed = now.add(const Duration(hours: 1));
+      if (minAllowed.isAfter(startTime)) {
+        startTime = minAllowed;
+      }
+    }
+
+    startTime = _roundUpToNext30Minutes(startTime);
+
+    final lastStart =
+        closeTime.subtract(Duration(minutes: widget.totalDuration));
+    if (startTime.isAfter(lastStart)) return [];
+
+    final slots = <String>[];
+    var cursor = startTime;
+
+    while (!cursor.isAfter(lastStart)) {
+      slots.add(DateFormat('HH:mm').format(cursor));
+      cursor = cursor.add(const Duration(minutes: 30));
+    }
+
+    return slots;
+  }
+
+  DateTime? _firstSelectableDate(DateTime from) {
+    final start = _normalizeDate(from);
+    for (int i = 0; i <= 60; i++) {
+      final day = start.add(Duration(days: i));
+      if (_getAvailableSlots(day).isNotEmpty) {
+        return day;
+      }
+    }
+    return null;
+  }
+
+  String _formatDateLabel(DateTime date) {
+    const weekdays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+    final weekday =
+        weekdays[date.weekday == DateTime.sunday ? 6 : date.weekday - 1];
+    return '$weekday, ${DateFormat('dd/MM/yyyy').format(date)}';
+  }
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
+    final firstSelectable = _firstSelectableDate(now);
+
+    if (firstSelectable == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Hiện không có ngày nào còn khung giờ phù hợp'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final safeInitialDate =
+        selectedDate != null && _getAvailableSlots(selectedDate!).isNotEmpty
+            ? selectedDate!
+            : firstSelectable;
+
     final picked = await showDatePicker(
       context: context,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 60)),
-      initialDate: selectedDate ?? now,
+      firstDate: _normalizeDate(now),
+      lastDate: _normalizeDate(now.add(const Duration(days: 60))),
+      initialDate: safeInitialDate,
+      selectableDayPredicate: (day) {
+        final normalized = _normalizeDate(day);
+        return _getAvailableSlots(normalized).isNotEmpty;
+      },
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFFFF6FAF),
-              onPrimary: Colors.white,
-              onSurface: Color(0xFF1F1F24),
+              primary: AppColors.primary,
+              onPrimary: AppColors.surface,
+              onSurface: AppColors.textPrimary,
             ),
-            dialogBackgroundColor: Colors.white,
+            dialogBackgroundColor: AppColors.surface,
+            datePickerTheme: DatePickerThemeData(
+              backgroundColor: AppColors.surface,
+              headerBackgroundColor: AppColors.surfaceSoft,
+              headerForegroundColor: AppColors.textPrimary,
+              dividerColor: AppColors.borderSoft,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(22),
+              ),
+              dayStyle: const TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+              todayForegroundColor: const WidgetStatePropertyAll(
+                AppColors.primary,
+              ),
+              todayBorder: const BorderSide(color: AppColors.primary),
+            ),
           ),
           child: child!,
         );
@@ -69,7 +184,7 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
 
     if (picked != null) {
       setState(() {
-        selectedDate = picked;
+        selectedDate = _normalizeDate(picked);
         selectedSlot = null;
       });
     }
@@ -78,7 +193,10 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
   void _goToConfirm() {
     if (selectedDate == null || selectedSlot == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn ngày và giờ')),
+        const SnackBar(
+          content: Text('Vui lòng chọn ngày và giờ'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
@@ -99,63 +217,45 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
   @override
   Widget build(BuildContext context) {
     final dateLabel = selectedDate == null
-        ? 'Chọn ngày'
-        : DateFormat('EEE, dd MMM yyyy').format(selectedDate!);
+        ? 'Chưa chọn ngày'
+        : _formatDateLabel(selectedDate!);
+
+    final availableSlots =
+        selectedDate == null ? <String>[] : _getAvailableSlots(selectedDate!);
 
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFF7FB),
-              Color(0xFFFFEEF5),
-              Color(0xFFFFFFFF),
-            ],
-          ),
+          gradient: AppDecorations.pageGradient,
         ),
         child: SafeArea(
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
                 child: Row(
                   children: [
                     _backButton(context),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Chọn ngày giờ',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF4A4A4A),
-                            ),
+                            style: AppTextStyles.pageTitle,
                           ),
                           const SizedBox(height: 2),
                           Text(
                             widget.storeName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: AppTextStyles.bodyMuted,
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    _iconCircle(
-                      icon: Icons.calendar_month_rounded,
-                      onTap: () {},
                     ),
                   ],
                 ),
@@ -164,36 +264,18 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.92),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: const Color(0xFFFFDDE8)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+                    color: AppColors.surface.withOpacity(0.96),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: AppDecorations.softShadow,
                   ),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 54,
-                        height: 54,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF1F6),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: const Icon(
-                          Icons.design_services_rounded,
-                          color: Color(0xFFE85E9C),
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,37 +284,27 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
                               widget.serviceNames.isEmpty
                                   ? 'Chưa chọn dịch vụ'
                                   : '${widget.serviceNames.length} dịch vụ đã chọn',
-                              style: const TextStyle(
-                                fontSize: 15.5,
+                              style: AppTextStyles.body.copyWith(
+                                fontSize: 14.5,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF1F1F24),
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 3),
                             Text(
                               widget.serviceNames.isEmpty
-                                  ? 'Vui lòng quay lại chọn dịch vụ'
+                                  ? 'Quay lại để chọn dịch vụ'
                                   : widget.serviceNames.join(', '),
-                              maxLines: 2,
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 13,
-                                height: 1.35,
-                                color: Colors.grey.shade700,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: AppTextStyles.bodyMuted,
                             ),
-                            const SizedBox(height: 10),
-                            Row(
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
                               children: [
                                 _miniChip(
-                                  icon: Icons.timelapse_rounded,
                                   text: '${widget.totalDuration} phút',
-                                ),
-                                const SizedBox(width: 8),
-                                _miniChip(
-                                  icon: Icons.storefront_rounded,
-                                  text: 'Đặt lịch',
                                 ),
                               ],
                             ),
@@ -243,75 +315,39 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _sectionHeader('Ngày hẹn'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(18),
                   onTap: _pickDate,
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.92),
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: const Color(0xFFFFDDE8)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                      color: AppColors.surface.withOpacity(0.96),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: AppDecorations.softShadow,
                     ),
                     child: Row(
                       children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF4F8),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.calendar_month_rounded,
-                            color: Color(0xFFE85E9C),
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                selectedDate == null
-                                    ? 'Chọn ngày'
-                                    : 'Ngày đã chọn',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                'Ngày hẹn',
+                                style: AppTextStyles.caption,
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 dateLabel,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF1F1F24),
+                                style: AppTextStyles.sectionTitle.copyWith(
+                                  fontSize: 15.5,
                                 ),
                               ),
                             ],
@@ -319,27 +355,30 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
                         ),
                         const Icon(
                           Icons.chevron_right_rounded,
-                          color: Color(0xFFE85E9C),
+                          color: AppColors.primary,
+                          size: 20,
                         ),
                       ],
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    Expanded(child: _sectionHeader('Chọn khung giờ')),
+                    Expanded(
+                      child: Text(
+                        'Khung giờ trống',
+                        style:
+                            AppTextStyles.sectionTitle.copyWith(fontSize: 17),
+                      ),
+                    ),
                     if (selectedDate != null)
                       Text(
                         DateFormat('dd/MM/yyyy').format(selectedDate!),
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: AppTextStyles.caption,
                       ),
                   ],
                 ),
@@ -348,49 +387,60 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.builder(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 2.4,
-                    ),
-                    itemCount: slots.length,
-                    itemBuilder: (context, index) {
-                      final slot = slots[index];
-                      final selected = selectedSlot == slot;
+                  child: selectedDate == null
+                      ? _stateHint(
+                          message: 'Hãy chọn ngày để xem giờ còn trống',
+                        )
+                      : availableSlots.isEmpty
+                          ? _stateHint(
+                              message: 'Ngày này không còn khung giờ phù hợp',
+                            )
+                          : GridView.builder(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                                childAspectRatio: 2.8,
+                              ),
+                              itemCount: availableSlots.length,
+                              itemBuilder: (context, index) {
+                                final slot = availableSlots[index];
+                                final selected = selectedSlot == slot;
 
-                      return ChoiceChip(
-                        label: Text(slot),
-                        selected: selected,
-                        onSelected: (v) {
-                          setState(() {
-                            selectedSlot = v ? slot : null;
-                          });
-                        },
-                        labelStyle: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color:
-                              selected ? Colors.white : const Color(0xFF3A3A40),
-                        ),
-                        selectedColor: const Color(0xFFFF6FAF),
-                        backgroundColor: Colors.white,
-                        side: BorderSide(
-                          color: selected
-                              ? const Color(0xFFFF6FAF)
-                              : const Color(0xFFFFDDE8),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        showCheckmark: false,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                      );
-                    },
-                  ),
+                                return ChoiceChip(
+                                  label: Text(slot),
+                                  selected: selected,
+                                  onSelected: (v) {
+                                    setState(() {
+                                      selectedSlot = v ? slot : null;
+                                    });
+                                  },
+                                  labelStyle: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: selected
+                                        ? AppColors.surface
+                                        : AppColors.textMuted,
+                                  ),
+                                  selectedColor: AppColors.primary,
+                                  backgroundColor: AppColors.surface,
+                                  side: BorderSide(
+                                    color: selected
+                                        ? AppColors.primary
+                                        : AppColors.border,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  showCheckmark: false,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                );
+                              },
+                            ),
                 ),
               ),
             ],
@@ -399,19 +449,13 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.96),
-            border: const Border(
-              top: BorderSide(color: Color(0xFFFFDDE8)),
+            color: AppColors.surface.withOpacity(0.98),
+            border: Border(
+              top: BorderSide(color: AppColors.border),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 18,
-                offset: const Offset(0, -6),
-              ),
-            ],
+            boxShadow: AppDecorations.topBarShadow,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -435,18 +479,20 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
+                height: 44,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF6FAF),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: const Color(0xFFFFC7DC),
-                    disabledForegroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.surface,
+                    disabledBackgroundColor:
+                        AppColors.primary.withOpacity(0.35),
+                    disabledForegroundColor: AppColors.surface,
+                    padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     elevation: 0,
                   ),
@@ -456,7 +502,7 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
                   child: const Text(
                     'Tiếp tục',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -469,42 +515,22 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
     );
   }
 
-  Widget _sectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w800,
-        color: Color(0xFF1F1F24),
-      ),
-    );
-  }
-
   Widget _miniChip({
-    required IconData icon,
     required String text,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF4F8),
+        color: AppColors.surfaceSoft,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFFFD1E3)),
+        border: Border.all(color: AppColors.borderSoft),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: const Color(0xFFE85E9C)),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF3A3A40),
-            ),
-          ),
-        ],
+      child: Text(
+        text,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.textMuted,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -514,33 +540,54 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
     required String value,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBFD),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFFFE1EC)),
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSoft),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.w600,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 14.5,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.body.copyWith(
+              fontSize: 13.5,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF1F1F24),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _stateHint({
+    required String message,
+  }) {
+    return Center(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: AppColors.surface.withOpacity(0.96),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border),
+          boxShadow: AppDecorations.softShadow,
+        ),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: AppTextStyles.bodyMuted,
+        ),
       ),
     );
   }
@@ -553,55 +600,15 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: AppColors.surface.withOpacity(0.96),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFFD1E3)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(color: AppColors.border),
+          boxShadow: AppDecorations.topBarShadow,
         ),
         child: const Icon(
           Icons.arrow_back_ios_new_rounded,
           size: 16,
-          color: Color(0xFFFF6FAF),
-        ),
-      ),
-    );
-  }
-
-  Widget _iconCircle({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFFD1E3)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: const Color(0xFFE85E9C),
-          ),
+          color: AppColors.primary,
         ),
       ),
     );

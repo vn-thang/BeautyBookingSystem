@@ -50,11 +50,49 @@ import '../features/booking/domain/usecases/get_available_staff.dart';
 import '../features/booking/presentation/bloc/booking_bloc.dart';
 
 // Search feature
+import '../features/review/data/datasources/review_remote_datasource.dart';
+import '../features/review/data/repositories/review_repository_impl.dart';
+import '../features/review/domain/repositories/review_repository.dart';
+import '../features/review/domain/usecases/create_review.dart';
+import '../features/review/domain/usecases/get_my_reviews.dart';
+import '../features/review/presentation/bloc/review_bloc.dart';
 import '../features/search/data/datasources/search_remote_datasource.dart';
 import '../features/search/data/repositories/search_repository_impl.dart';
 import '../features/search/domain/repositories/search_repository.dart';
 import '../features/search/domain/usecases/search_usecase.dart';
 import '../features/search/presentation/bloc/search_bloc.dart';
+
+//Chat feature
+import '../features/chat/data/datasources/chat_remote_data_source.dart';
+import '../features/chat/data/repositories/chat_repository_impl.dart';
+import '../features/chat/domain/repositories/chat_repository.dart';
+import '../features/chat/domain/usecases/get_chat_history_usecase.dart';
+import '../features/chat/domain/usecases/send_chat_message_usecase.dart';
+import '../features/chat/presentation/bloc/chat_bloc.dart';
+
+//Customer Favorite feature
+import '../features/customer_favorite/data/datasources/customer_favorite_remote_datasource.dart';
+import '../features/customer_favorite/data/repositories/customer_favorite_repository_impl.dart';
+import '../features/customer_favorite/domain/repositories/customer_favorite_repository.dart';
+import '../features/customer_favorite/domain/usecases/favorite_service_usecase.dart';
+import '../features/customer_favorite/domain/usecases/favorite_store_usecase.dart';
+import '../features/customer_favorite/domain/usecases/unfavorite_service_usecase.dart';
+import '../features/customer_favorite/domain/usecases/unfavorite_store_usecase.dart';
+
+// Search History feature
+import '../features/search_history/data/datasources/search_history_remote_datasource.dart';
+import '../features/search_history/data/repositories/search_history_repository_impl.dart';
+import '../features/search_history/domain/repositories/search_history_repository.dart';
+import '../features/search_history/domain/usecases/delete_search_history.dart';
+import '../features/search_history/domain/usecases/get_recent_search_histories.dart';
+import '../features/search_history/domain/usecases/record_search_history.dart';
+import '../features/search_history/presentation/bloc/search_history_bloc.dart';
+import '../features/store_reviews/data/datasources/store_reviews_remote_data_source.dart';
+import '../features/store_reviews/data/repositories/store_reviews_repository_impl.dart';
+import '../features/store_reviews/domain/repositories/store_reviews_repository.dart';
+import '../features/store_reviews/domain/usecases/get_store_reviews_usecase.dart';
+import '../features/store_reviews/domain/usecases/get_top_store_reviews_usecase.dart';
+import '../features/store_reviews/presentation/bloc/store_reviews_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -156,4 +194,101 @@ Future<void> init() async {
       sl<LocationService>(),
     ),
   );
+
+  //Chat
+  sl.registerLazySingleton<ChatRemoteDataSource>(
+      () => ChatRemoteDataSource(sl()));
+  sl.registerLazySingleton<ChatRepository>(() => ChatRepositoryImpl(sl()));
+  sl.registerLazySingleton(() => SendChatMessageUseCase(sl()));
+  sl.registerLazySingleton(() => GetChatHistoryUseCase(sl()));
+  sl.registerFactory(
+    () => ChatBloc(
+      sl<ChatRemoteDataSource>(),
+      sl<LocationService>(),
+    ),
+  );
+
+  //Customer Favorite
+  sl.registerLazySingleton<CustomerFavoriteRemoteDataSource>(
+    () => CustomerFavoriteRemoteDataSource(sl()),
+  );
+
+  sl.registerLazySingleton<CustomerFavoriteRepository>(
+    () => CustomerFavoriteRepositoryImpl(
+      sl<CustomerFavoriteRemoteDataSource>(),
+    ),
+  );
+
+  sl.registerLazySingleton(() => FavoriteStoreUseCase(
+        sl<CustomerFavoriteRepository>(),
+      ));
+
+  sl.registerLazySingleton(() => UnfavoriteStoreUseCase(
+        sl<CustomerFavoriteRepository>(),
+      ));
+
+  sl.registerLazySingleton(() => FavoriteServiceUseCase(
+        sl<CustomerFavoriteRepository>(),
+      ));
+
+  sl.registerLazySingleton(() => UnfavoriteServiceUseCase(
+        sl<CustomerFavoriteRepository>(),
+      ));
+
+  //Review
+  sl.registerLazySingleton<ReviewRemoteDataSource>(
+    () => ReviewRemoteDataSource(sl<Dio>()),
+  );
+
+  sl.registerLazySingleton<ReviewRepository>(
+    () => ReviewRepositoryImpl(sl<ReviewRemoteDataSource>()),
+  );
+
+  sl.registerLazySingleton(() => GetMyReviews(sl<ReviewRepository>()));
+  sl.registerLazySingleton(() => CreateReview(sl<ReviewRepository>()));
+
+  sl.registerFactory(
+    () => ReviewBloc(
+      getMyReviews: sl<GetMyReviews>(),
+      createReview: sl<CreateReview>(),
+    ),
+  );
+
+  // Search History
+  sl.registerFactory<SearchHistoryRemoteDataSource>(
+    () => SearchHistoryRemoteDataSourceImpl(dio: sl()),
+  );
+
+  sl.registerFactory<SearchHistoryRepository>(
+    () => SearchHistoryRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  sl.registerFactory(() => GetRecentSearchHistories(sl()));
+  sl.registerFactory(() => RecordSearchHistory(sl()));
+  sl.registerFactory(() => DeleteSearchHistory(sl()));
+
+  sl.registerFactory<SearchHistoryBloc>(
+    () => SearchHistoryBloc(
+      getRecentSearchHistories: sl(),
+      recordSearchHistory: sl(),
+      deleteSearchHistory: sl(),
+    ),
+  );
+
+  // Store Reviews
+  sl.registerFactory<StoreReviewsBloc>(
+    () => StoreReviewsBloc(
+      sl<GetStoreReviewsUseCase>(),
+    ),
+  );
+  sl.registerLazySingleton<StoreReviewsRemoteDataSource>(
+    () => StoreReviewsRemoteDataSourceImpl(sl()),
+  );
+
+  sl.registerLazySingleton<StoreReviewsRepository>(
+    () => StoreReviewsRepositoryImpl(sl()),
+  );
+
+  sl.registerLazySingleton(() => GetStoreReviewsUseCase(sl()));
+  sl.registerLazySingleton(() => GetTopStoreReviewsUseCase(sl()));
 }

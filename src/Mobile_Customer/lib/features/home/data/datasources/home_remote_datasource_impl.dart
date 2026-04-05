@@ -113,7 +113,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   @override
   Future<List<VoucherModel>> getVouchersService(int serviceId,
       {int? storeId}) async {
-    final response = await dio.get('/api/voucher/service/home');
+    final response = await dio.get('/voucher/service/home');
 
     if (response.data is List) {
       return (response.data as List)
@@ -201,5 +201,27 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     return (response.data as List)
         .map((e) => StoreModel.fromJson(Map<String, dynamic>.from(e)))
         .toList();
+  }
+
+  Future<Map<String, dynamic>> getHomeFavorites({
+    double? latitude,
+    double? longitude,
+  }) async {
+    try {
+      final response = await dio.get(
+        '/customer-favorites/home',
+        queryParameters: {
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+        },
+      );
+
+      return Map<String, dynamic>.from(response.data as Map);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
+        return {};
+      }
+      rethrow;
+    }
   }
 }

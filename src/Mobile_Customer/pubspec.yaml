@@ -47,6 +47,8 @@ dependencies:
 
   app_links: ^3.4.1
 
+  flutter_markdown: any
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

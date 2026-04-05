@@ -2,6 +2,7 @@ class Service {
   final int id;
 
   final int storeId;
+  final String storeName;
   final int categoryId;
   final int? groupId;
 
@@ -15,10 +16,12 @@ class Service {
   final bool isActive;
   final bool isFeatured;
   final int sortOrder;
+  final bool isFavorite;
 
   Service({
     required this.id,
     required this.storeId,
+    required this.storeName,
     required this.categoryId,
     this.groupId,
     required this.name,
@@ -29,5 +32,6 @@ class Service {
     required this.isActive,
     required this.isFeatured,
     required this.sortOrder,
+    required this.isFavorite,
   });
 }

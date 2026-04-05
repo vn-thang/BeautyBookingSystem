@@ -14,4 +14,8 @@ abstract class HomeRemoteDataSource {
   Future<List<StoreModel>> getStoresByGroup(int groupId);
   Future<StoreModel> getStoreById(int id);
   Future<List<VoucherModel>> getVouchersService(int serviceId, {int? storeId});
+  Future<Map<String, dynamic>> getHomeFavorites({
+    double? latitude,
+    double? longitude,
+  });
 }

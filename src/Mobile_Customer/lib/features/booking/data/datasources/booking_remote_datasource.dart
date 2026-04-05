@@ -43,12 +43,14 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
     // API trả list JSON hoặc object list
     if (data is List) {
       return (data as List)
-          .map((e) => AvailableStaffModel.fromJson(Map<String, dynamic>.from(e)))
+          .map(
+              (e) => AvailableStaffModel.fromJson(Map<String, dynamic>.from(e)))
           .toList();
     }
     if (data is Map && data['availableStaffs'] is List) {
       return (data['availableStaffs'] as List)
-          .map((e) => AvailableStaffModel.fromJson(Map<String, dynamic>.from(e)))
+          .map(
+              (e) => AvailableStaffModel.fromJson(Map<String, dynamic>.from(e)))
           .toList();
     }
     return <AvailableStaffModel>[];

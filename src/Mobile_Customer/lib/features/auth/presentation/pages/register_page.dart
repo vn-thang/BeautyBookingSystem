@@ -5,6 +5,10 @@ import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/theme/app_text_styles.dart';
+
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -32,7 +36,7 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _register() {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(
             RegisterEvent(
               fullName: fullNameController.text.trim(),
@@ -46,25 +50,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    const pinkMain = Color(0xFFFF6FAF);
-    const pinkDeep = Color(0xFFE85E9C);
-    const pinkSoft = Color(0xFFFFEEF5);
-    const textDark = Color(0xFF4A4A4A);
     const registerBannerUrl =
         'https://res.cloudinary.com/dbie57o9w/image/upload/v1774166100/4bbf2fac-48e8-4e2d-92d0-dd94f17459fc.png';
 
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFF7FB),
-              Color(0xFFFFEEF5),
-              Color(0xFFFFFFFF),
-            ],
-          ),
+          gradient: AppDecorations.pageGradient,
         ),
         child: SafeArea(
           child: BlocListener<AuthBloc, AuthState>(
@@ -80,7 +72,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
               if (state is AuthError) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.message)),
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: AppColors.danger,
+                  ),
                 );
               }
             },
@@ -95,18 +90,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       vertical: 22,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.82),
+                      color: AppColors.surface.withOpacity(0.88),
                       borderRadius: BorderRadius.circular(30),
-                      border: Border.all(
-                        color: pinkMain.withOpacity(0.10),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 24,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
+                      border: Border.all(color: AppColors.borderSoft),
+                      boxShadow: AppDecorations.cardShadow,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,14 +105,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 140,
                             height: 140,
                             decoration: BoxDecoration(
+                              gradient: AppDecorations.heroGradient,
                               shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: pinkMain.withOpacity(0.12),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
+                              boxShadow: AppDecorations.avatarShadow,
                             ),
                             child: ClipOval(
                               child: Stack(
@@ -135,12 +117,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                     registerBannerUrl,
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, __, ___) => Container(
-                                      color: pinkSoft,
+                                      decoration: const BoxDecoration(
+                                        gradient: AppDecorations.heroGradient,
+                                      ),
                                       alignment: Alignment.center,
                                       child: const Icon(
                                         Icons.person_add_alt_1_rounded,
                                         size: 56,
-                                        color: pinkMain,
+                                        color: AppColors.primary,
                                       ),
                                     ),
                                   ),
@@ -150,8 +134,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                         colors: [
-                                          Colors.white.withOpacity(0.05),
-                                          pinkMain.withOpacity(0.10),
+                                          AppColors.surface.withOpacity(0.03),
+                                          AppColors.placeholderEnd
+                                              .withOpacity(0.25),
                                         ],
                                       ),
                                     ),
@@ -166,12 +151,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           child: Text(
                             "Tạo tài khoản mới",
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              color: textDark,
-                              letterSpacing: 0.2,
-                            ),
+                            style: AppTextStyles.pageTitle,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -179,13 +159,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           child: Text(
                             "Đăng ký để bắt đầu trải nghiệm dịch vụ của bạn",
                             textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              height: 1.4,
-                              color: Colors.grey.shade600,
-                            ),
+                            style: AppTextStyles.bodyMuted,
                           ),
                         ),
+                        const SizedBox(height: 22),
                         Form(
                           key: _formKey,
                           autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -249,7 +226,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                   }
 
                                   final emailRegex = RegExp(
-                                      r'^[\w\.-]+@([\w-]+\.)+[A-Za-z]{2,}$');
+                                    r'^[\w\.-]+@([\w-]+\.)+[A-Za-z]{2,}$',
+                                  );
                                   if (!emailRegex.hasMatch(v)) {
                                     return "Email không hợp lệ";
                                   }
@@ -268,7 +246,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                     obscure
                                         ? Icons.visibility_outlined
                                         : Icons.visibility_off_outlined,
-                                    color: pinkMain,
+                                    color: AppColors.primary,
                                   ),
                                   onPressed: () {
                                     setState(() => obscure = !obscure);
@@ -340,7 +318,7 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Icon(
           Icons.arrow_back_ios_new_rounded,
           size: 16,
-          color: Color(0xFFFF6FAF),
+          color: AppColors.primary,
         ),
       ),
     );
@@ -358,35 +336,25 @@ class _RegisterPageState extends State<RegisterPage> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        boxShadow: AppDecorations.softShadow,
       ),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
         obscureText: obscureText,
         validator: validator,
-        style: const TextStyle(
-          fontSize: 15,
-          color: Color(0xFF333333),
+        style: AppTextStyles.body.copyWith(
+          color: AppColors.textPrimary,
         ),
         decoration: InputDecoration(
           hintText: label,
           floatingLabelBehavior: FloatingLabelBehavior.never,
           errorMaxLines: 2,
-          hintStyle: TextStyle(
-            color: Colors.grey.shade500,
-            fontWeight: FontWeight.w400,
-          ),
-          prefixIcon: Icon(icon, color: const Color(0xFFFF6FAF)),
+          hintStyle: AppTextStyles.bodyMuted,
+          prefixIcon: Icon(icon, color: AppColors.primary),
           suffixIcon: suffixIcon,
           filled: true,
-          fillColor: Colors.white,
+          fillColor: AppColors.surface,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 18,
             vertical: 18,
@@ -398,14 +366,28 @@ class _RegisterPageState extends State<RegisterPage> {
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
             borderSide: BorderSide(
-              color: Colors.pink.shade100,
+              color: AppColors.borderSoft,
               width: 1.0,
             ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: const BorderSide(
-              color: Color(0xFFFF6FAF),
+          focusedBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(18)),
+            borderSide: BorderSide(
+              color: AppColors.primary,
+              width: 1.4,
+            ),
+          ),
+          errorBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(18)),
+            borderSide: BorderSide(
+              color: AppColors.danger,
+              width: 1.2,
+            ),
+          ),
+          focusedErrorBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(18)),
+            borderSide: BorderSide(
+              color: AppColors.danger,
               width: 1.4,
             ),
           ),
@@ -433,23 +415,11 @@ class _RegisterPageState extends State<RegisterPage> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0xFFFF8FC1),
-                Color(0xFFFF6FAF),
-                Color(0xFFE85E9C),
+                AppColors.placeholderStart,
+                AppColors.placeholderEnd,
               ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFFF6FAF).withOpacity(0.30),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
-              ),
-              BoxShadow(
-                color: Colors.white.withOpacity(0.85),
-                blurRadius: 8,
-                offset: const Offset(-2, -2),
-              ),
-            ],
+            boxShadow: AppDecorations.cardShadow,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -460,19 +430,18 @@ class _RegisterPageState extends State<RegisterPage> {
                   height: 18,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.2,
-                    color: Colors.white,
+                    color: AppColors.primary,
                   ),
                 )
               else ...[
-                Icon(icon, color: Colors.white, size: 20),
+                Icon(icon, color: AppColors.primary, size: 20),
                 const SizedBox(width: 10),
                 Text(
                   text,
-                  style: const TextStyle(
+                  style: AppTextStyles.body.copyWith(
                     fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: 0.2,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primary,
                   ),
                 ),
               ],
@@ -497,39 +466,20 @@ class _RegisterPageState extends State<RegisterPage> {
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white,
-                Color(0xFFFFF4F8),
-              ],
-            ),
-            border: Border.all(color: const Color(0xFFFFD1E3)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-              BoxShadow(
-                color: Colors.white.withOpacity(0.8),
-                blurRadius: 8,
-                offset: const Offset(-2, -2),
-              ),
-            ],
+            color: AppColors.surface,
+            border: Border.all(color: AppColors.borderSoft),
+            boxShadow: AppDecorations.softShadow,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 18, color: const Color(0xFFE85E9C)),
+              Icon(icon, size: 18, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
                 text,
-                style: const TextStyle(
-                  fontSize: 14,
+                style: AppTextStyles.bodyMuted.copyWith(
+                  color: AppColors.primary,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFFE85E9C),
                 ),
               ),
             ],

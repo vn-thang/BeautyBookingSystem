@@ -46,7 +46,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onCheckAuth(
       CheckAuthEvent event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("token");
 
@@ -57,6 +56,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     try {
       final user = await getProfile();
+
+      // k emit lại nếu giống nhau
+      if (state is AuthAuthenticated) {
+        final current = (state as AuthAuthenticated).user;
+        if (current.id == user.id) return;
+      }
+
       emit(AuthAuthenticated(user));
     } catch (e) {
       await prefs.remove("token");

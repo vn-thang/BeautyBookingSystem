@@ -1,7 +1,14 @@
+// store_card.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+
 import '../../domain/entities/search_store.dart';
+
+// chỉnh lại path theme cho đúng project của bạn
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/theme/app_text_styles.dart';
 
 class StoreCard extends StatelessWidget {
   final SearchStore store;
@@ -10,11 +17,13 @@ class StoreCard extends StatelessWidget {
     super.key,
     required this.store,
   });
+
   static final _currencyFormat = NumberFormat.currency(
     locale: 'vi_VN',
     symbol: '',
     decimalDigits: 0,
   );
+
   @override
   Widget build(BuildContext context) {
     final hasImage =
@@ -24,26 +33,13 @@ class StoreCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(22),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFFF7FA),
-            Color(0xFFFFEEF5),
-          ],
-        ),
         border: Border.all(
-          color: const Color(0xFFFFC5D8),
+          color: AppColors.borderSoft,
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.pink.withOpacity(0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        boxShadow: AppDecorations.cardShadow,
       ),
       child: Material(
         color: Colors.transparent,
@@ -67,12 +63,12 @@ class StoreCard extends StatelessWidget {
                       height: 72,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
-                        color: Colors.white,
-                        boxShadow: [
+                        color: AppColors.surfaceSoft,
+                        boxShadow: const [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Color(0x0A000000),
                             blurRadius: 10,
-                            offset: const Offset(0, 4),
+                            offset: Offset(0, 4),
                           ),
                         ],
                       ),
@@ -100,7 +96,7 @@ class StoreCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.55),
+                          color: AppColors.overlay,
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -121,23 +117,13 @@ class StoreCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              store.name,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 15,
-                                height: 1.2,
-                                color: Color(0xFF1F1F24),
-                              ),
-                            ),
-                          ),
-                        ],
+                      Text(
+                        store.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.sectionTitle.copyWith(
+                          fontSize: 15,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
@@ -145,11 +131,9 @@ class StoreCard extends StatelessWidget {
                         runSpacing: 6,
                         children: [
                           _infoChip(
-                            icon: Icons.location_on_rounded,
                             text: '${store.distanceKm.toStringAsFixed(1)} km',
                           ),
                           _infoChip(
-                            icon: Icons.star_rounded,
                             text: store.rating.toStringAsFixed(1),
                           ),
                         ],
@@ -165,9 +149,17 @@ class StoreCard extends StatelessWidget {
                                 '${service.name} • ${_currencyFormat.format(service.price)}đ',
                               ),
                             if (store.services.length > 3)
-                              _serviceChip(
-                                '+${store.services.length - 3} dịch vụ khác',
-                                muted: true,
+                              GestureDetector(
+                                onTap: () {
+                                  context.push(
+                                    '/store/${store.id}',
+                                    extra: store.name,
+                                  );
+                                },
+                                child: _serviceChip(
+                                  'Xem thêm',
+                                  muted: true,
+                                ),
                               ),
                           ],
                         ),
@@ -185,54 +177,33 @@ class StoreCard extends StatelessWidget {
   Widget _placeholderImage() {
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFDE2EC),
-            Color(0xFFFAD1DE),
-          ],
-        ),
+        gradient: AppDecorations.heroGradient,
       ),
       child: const Icon(
         Icons.store_rounded,
-        color: Color(0xFFB54C72),
+        color: AppColors.primary,
         size: 30,
       ),
     );
   }
 
   Widget _infoChip({
-    required IconData icon,
     required String text,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: AppColors.surfaceSoft,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: const Color(0xFFFFD6E4),
+          color: AppColors.border,
         ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 14,
-            color: Colors.pink.shade400,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF3A3A40),
-            ),
-          ),
-        ],
+      child: Text(
+        text,
+        style: AppTextStyles.caption.copyWith(
+          color: AppColors.textMuted,
+        ),
       ),
     );
   }
@@ -241,51 +212,18 @@ class StoreCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: muted ? const Color(0xFFF7F7FA) : Colors.white,
+        color: muted ? AppColors.surfaceSoft : AppColors.surface,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: muted ? const Color(0xFFE8E8EF) : const Color(0xFFFFD1E0),
+          color: muted ? AppColors.borderSoft : AppColors.border,
         ),
       ),
       child: Text(
         text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w600,
-          color: muted ? Colors.grey.shade700 : const Color(0xFF2E2E35),
-        ),
-      ),
-    );
-  }
-
-  Widget _pricePill(double price) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFFF6FA3),
-            Color(0xFFFF8BB2),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(999),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.pink.withOpacity(0.16),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Text(
-        '${_currencyFormat.format(price)}đ+',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 11.5,
-          fontWeight: FontWeight.w800,
-          height: 1,
+        style: AppTextStyles.caption.copyWith(
+          color: muted ? AppColors.textSecondary : AppColors.textMuted,
         ),
       ),
     );

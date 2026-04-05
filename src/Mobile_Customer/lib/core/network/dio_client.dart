@@ -64,24 +64,33 @@ class DioClient {
           final statusCode = error.response?.statusCode;
           final options = error.requestOptions;
 
-          final isRefreshCall = options.path.contains("/auth/refresh-token");
+          final isRefreshCall = options.path.contains("auth/refresh-token");
           final alreadyRetried = options.extra["retried"] == true;
+          final allowGuest = options.extra["allowGuest"] == true;
+
+          final prefs = await SharedPreferences.getInstance();
+          final token = prefs.getString("token");
 
           if (statusCode == 401 && !isRefreshCall && !alreadyRetried) {
+            // Chưa login hoặc endpoint cho phép guest => không logout
+            if (token == null || token.isEmpty || allowGuest) {
+              return handler.next(error);
+            }
+
             final refreshed = await _refreshToken();
 
             if (refreshed) {
               try {
                 options.extra["retried"] = true;
-
                 final response = await dio.fetch(options);
                 return handler.resolve(response);
               } catch (_) {
-                // nếu retry thất bại thì xử lý logout bên dưới
+                // retry fail thì logout bên dưới
               }
             }
 
             await _forceLogout();
+            return;
           }
 
           handler.next(error);

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 
+import 'package:mobile_customer/core/theme/app_colors.dart';
+import 'package:mobile_customer/core/theme/app_decorations.dart';
+import 'package:mobile_customer/core/theme/app_text_styles.dart';
 import 'package:mobile_customer/injection/service_locator.dart' as di;
-import 'package:mobile_customer/core/constants/app_config.dart';
 
 import 'booking_confirm_page.dart';
 
@@ -101,141 +103,100 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFFF7FB),
-              Color(0xFFFFEEF5),
-              Color(0xFFFFFFFF),
-            ],
-          ),
+          gradient: AppDecorations.pageGradient,
         ),
         child: SafeArea(
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                 child: Row(
                   children: [
                     _backButton(context),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Chọn nhân viên',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF4A4A4A),
-                            ),
+                            style: AppTextStyles.pageTitle,
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '$dateLabel • ${widget.startTime}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: AppTextStyles.bodyMuted,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    _iconCircle(
-                      icon: Icons.groups_rounded,
-                      onTap: () {},
-                    ),
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.92),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: const Color(0xFFFFDDE8)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 54,
-                        height: 54,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF1F6),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: const Icon(
-                          Icons.event_available_rounded,
-                          color: Color(0xFFE85E9C),
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Chọn nhân viên phù hợp',
-                              style: TextStyle(
-                                fontSize: 15.5,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF1F1F24),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Bạn có thể chọn bất kỳ nhân viên nào hoặc chọn người cụ thể nếu muốn.',
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 13,
-                                height: 1.35,
-                                color: Colors.grey.shade700,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               if (loading)
                 const Expanded(
-                  child: Center(child: CircularProgressIndicator()),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                    ),
+                  ),
                 )
               else if (error != null)
                 Expanded(
                   child: Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text(
-                        error!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w600,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 18, vertical: 20),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface.withOpacity(0.96),
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(color: AppColors.border),
+                          boxShadow: AppDecorations.cardShadow,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Không thể tải nhân viên',
+                              style: AppTextStyles.sectionTitle
+                                  .copyWith(fontSize: 17),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              error!,
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.bodyMuted
+                                  .copyWith(height: 1.45),
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 44,
+                              child: ElevatedButton(
+                                onPressed: _loadStaff,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: AppColors.surface,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: const Text(
+                                  'Thử lại',
+                                  style: TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -257,49 +218,42 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
                         },
                         child: Row(
                           children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFF4F8),
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: const Icon(
-                                Icons.person_rounded,
-                                color: Color(0xFFE85E9C),
-                                size: 28,
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     'Bất kỳ nhân viên nào',
-                                    style: TextStyle(
-                                      fontSize: 15.5,
+                                    style: AppTextStyles.body.copyWith(
+                                      fontSize: 14.5,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFF1F1F24),
                                     ),
                                   ),
-                                  SizedBox(height: 4),
+                                  const SizedBox(height: 4),
                                   Text(
-                                    'Hệ thống sẽ tự sắp xếp nhân viên phù hợp nhất cho bạn.',
-                                    style: TextStyle(
-                                      fontSize: 13,
+                                    'Hệ thống sẽ tự sắp xếp nhân viên phù hợp nhất.',
+                                    style: AppTextStyles.bodyMuted.copyWith(
                                       height: 1.35,
-                                      color: Color(0xFF666666),
-                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+                            const SizedBox(width: 10),
+                            Radio<int?>(
+                              value: null,
+                              groupValue: selectedStaffId,
+                              activeColor: AppColors.primary,
+                              onChanged: (_) {
+                                setState(() {
+                                  selectedStaffId = null;
+                                });
+                              },
+                            ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 16),
                       _sectionHeader('Danh sách nhân viên'),
                       const SizedBox(height: 10),
                       if (staffs.isEmpty)
@@ -310,11 +264,10 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
                           final String name = (s['name'] ?? '').toString();
                           final String avatar =
                               (s['avatarUrl'] ?? '').toString();
-
                           final bool selected = selectedStaffId == staffId;
 
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.only(bottom: 10),
                             child: _optionCard(
                               selected: selected,
                               onTap: () {
@@ -325,15 +278,15 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
                               child: Row(
                                 children: [
                                   Container(
-                                    width: 54,
-                                    height: 54,
+                                    width: 42,
+                                    height: 42,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: const Color(0xFFFFF1F6),
+                                      color: AppColors.surfaceSoft,
                                       border: Border.all(
                                         color: selected
-                                            ? const Color(0xFFFF6FAF)
-                                            : const Color(0xFFFFDDE8),
+                                            ? AppColors.primary
+                                            : AppColors.border,
                                       ),
                                     ),
                                     child: ClipOval(
@@ -347,7 +300,7 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
                                           : _avatarFallback(name),
                                     ),
                                   ),
-                                  const SizedBox(width: 14),
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment:
@@ -355,33 +308,30 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
                                       children: [
                                         Text(
                                           name,
-                                          style: const TextStyle(
-                                            fontSize: 15.5,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTextStyles.body.copyWith(
+                                            fontSize: 14.5,
                                             fontWeight: FontWeight.w800,
-                                            color: Color(0xFF1F1F24),
                                           ),
                                         ),
-                                        const SizedBox(height: 4),
+                                        const SizedBox(height: 3),
                                         Text(
-                                          selected
-                                              ? 'Đã chọn nhân viên này'
-                                              : 'Nhấn để chọn nhân viên',
-                                          style: TextStyle(
-                                            fontSize: 13,
+                                          selected ? 'Đã chọn' : 'Nhấn để chọn',
+                                          style:
+                                              AppTextStyles.bodyMuted.copyWith(
                                             color: selected
-                                                ? const Color(0xFFE85E9C)
-                                                : Colors.grey.shade700,
-                                            fontWeight: FontWeight.w500,
+                                                ? AppColors.primary
+                                                : AppColors.textSecondary,
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 10),
                                   Radio<int?>(
                                     value: staffId,
                                     groupValue: selectedStaffId,
-                                    activeColor: const Color(0xFFFF6FAF),
+                                    activeColor: AppColors.primary,
                                     onChanged: (v) {
                                       setState(() {
                                         selectedStaffId = v;
@@ -402,19 +352,13 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.96),
-            border: const Border(
-              top: BorderSide(color: Color(0xFFFFDDE8)),
+            color: AppColors.surface.withOpacity(0.98),
+            border: Border(
+              top: BorderSide(color: AppColors.border),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 18,
-                offset: const Offset(0, -6),
-              ),
-            ],
+            boxShadow: AppDecorations.topBarShadow,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -436,18 +380,17 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
+                height: 44,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF6FAF),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: const Color(0xFFFFC7DC),
-                    disabledForegroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.surface,
+                    padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     elevation: 0,
                   ),
@@ -455,7 +398,7 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
                   child: const Text(
                     'Tiếp tục',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 14.5,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -471,11 +414,7 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
   Widget _sectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w800,
-        color: Color(0xFF1F1F24),
-      ),
+      style: AppTextStyles.sectionTitle.copyWith(fontSize: 17),
     );
   }
 
@@ -487,28 +426,27 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(22),
+            color: AppColors.surface.withOpacity(0.96),
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color:
-                  selected ? const Color(0xFFFFB8D3) : const Color(0xFFFFDDE8),
-              width: selected ? 1.2 : 1,
+              color: selected ? AppColors.primary : AppColors.border,
+              width: selected ? 1.1 : 1,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: selected
-                    ? const Color(0xFFFF6FAF).withOpacity(0.10)
-                    : Colors.black.withOpacity(0.04),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : AppDecorations.softShadow,
           ),
           child: child,
         ),
@@ -521,30 +459,29 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
     required String value,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBFD),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFFFE1EC)),
+        color: AppColors.surfaceSoft,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderSoft),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.w600,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 14.5,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.body.copyWith(
+              fontSize: 13.5,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF1F1F24),
             ),
           ),
         ],
@@ -555,14 +492,13 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
   Widget _avatarFallback(String name) {
     final initials = _initials(name);
     return Container(
-      color: const Color(0xFFFFEEF5),
+      color: AppColors.primary.withOpacity(0.08),
       alignment: Alignment.center,
       child: Text(
         initials,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
-          color: Color(0xFFFF6FAF),
+        style: AppTextStyles.sectionTitle.copyWith(
+          fontSize: 14,
+          color: AppColors.primary,
         ),
       ),
     );
@@ -574,7 +510,6 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
 
     final parts =
         source.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
-
     if (parts.isEmpty) return source[0].toUpperCase();
     if (parts.length == 1) return parts.first[0].toUpperCase();
 
@@ -589,55 +524,15 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: AppColors.surface.withOpacity(0.96),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFFD1E3)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(color: AppColors.border),
+          boxShadow: AppDecorations.topBarShadow,
         ),
         child: const Icon(
           Icons.arrow_back_ios_new_rounded,
           size: 16,
-          color: Color(0xFFFF6FAF),
-        ),
-      ),
-    );
-  }
-
-  Widget _iconCircle({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFFD1E3)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: const Color(0xFFE85E9C),
-          ),
+          color: AppColors.primary,
         ),
       ),
     );
@@ -646,55 +541,17 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
   Widget _emptyCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.92),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFFFDDE8)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: AppColors.surface.withOpacity(0.96),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+        boxShadow: AppDecorations.softShadow,
       ),
-      child: Column(
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFF1F6),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.person_off_rounded,
-              color: Color(0xFFE85E9C),
-              size: 34,
-            ),
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'Chưa có nhân viên phù hợp',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1F1F24),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Hệ thống chưa tìm thấy nhân viên khả dụng cho khung giờ này.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              height: 1.4,
-              color: Colors.grey.shade600,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+      child: Text(
+        'Chưa có nhân viên phù hợp cho khung giờ này.',
+        textAlign: TextAlign.center,
+        style: AppTextStyles.bodyMuted.copyWith(height: 1.45),
       ),
     );
   }

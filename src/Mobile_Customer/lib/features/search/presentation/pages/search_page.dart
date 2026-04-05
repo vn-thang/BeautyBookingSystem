@@ -1,3 +1,4 @@
+// search_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,16 @@ import '../bloc/search_state.dart';
 import '../widgets/search_map.dart';
 import '../widgets/store_card.dart';
 import '../../../../injection/service_locator.dart';
+
+// Search history
+import '../../../search_history/presentation/bloc/search_history_bloc.dart';
+import '../../../search_history/presentation/bloc/search_history_event.dart';
+import '../../../search_history/presentation/bloc/search_history_state.dart';
+
+// chỉnh lại path theme cho đúng project của bạn
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/theme/app_text_styles.dart';
 
 enum SearchSortMode {
   nearest,
@@ -40,9 +51,12 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   late final SearchBloc _searchBloc;
+  late final SearchHistoryBloc _searchHistoryBloc;
+
   final DraggableScrollableController _resultSheetController =
       DraggableScrollableController();
   final TextEditingController _keywordController = TextEditingController();
+  final FocusNode _keywordFocusNode = FocusNode();
 
   SearchSortMode _sortMode = SearchSortMode.nearest;
   String _location = '';
@@ -55,11 +69,25 @@ class _SearchPageState extends State<SearchPage> {
       NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
   bool _initialized = false;
+  bool _showHistoryPanel = false;
 
   @override
   void initState() {
     super.initState();
     _searchBloc = sl<SearchBloc>();
+    _searchHistoryBloc = sl<SearchHistoryBloc>();
+
+    _searchHistoryBloc.add(const LoadRecentSearchHistories());
+
+    _keywordFocusNode.addListener(() {
+      if (!mounted) return;
+
+      if (!_keywordFocusNode.hasFocus) {
+        setState(() {
+          _showHistoryPanel = false;
+        });
+      }
+    });
   }
 
   @override
@@ -97,8 +125,10 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void dispose() {
     _keywordController.dispose();
+    _keywordFocusNode.dispose();
     _resultSheetController.dispose();
     _searchBloc.close();
+    _searchHistoryBloc.close();
     super.dispose();
   }
 
@@ -116,6 +146,10 @@ class _SearchPageState extends State<SearchPage> {
   void _submitSearch() {
     final keyword = _keywordController.text.trim();
 
+    if (keyword.isNotEmpty) {
+      _searchHistoryBloc.add(RecordSearchHistoryRequested(keyword));
+    }
+
     _searchBloc.add(
       SearchRequested(
         keyword: keyword.isEmpty ? null : keyword,
@@ -126,6 +160,26 @@ class _SearchPageState extends State<SearchPage> {
         maxPrice: _priceRange.end,
       ),
     );
+
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _showHistoryPanel = false;
+    });
+  }
+
+  void _showRecentHistories() {
+    _searchHistoryBloc.add(const LoadRecentSearchHistories());
+    setState(() {
+      _showHistoryPanel = true;
+    });
+  }
+
+  void _onTapHistoryKeyword(String keyword) {
+    _keywordController.text = keyword;
+    _keywordController.selection = TextSelection.fromPosition(
+      TextPosition(offset: keyword.length),
+    );
+    _submitSearch();
   }
 
   void _toggleResultSheet() {
@@ -178,9 +232,11 @@ class _SearchPageState extends State<SearchPage> {
               builder: (_, scrollController) {
                 return Container(
                   decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(28)),
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(28),
+                    ),
+                    boxShadow: AppDecorations.topBarShadow,
                   ),
                   child: Column(
                     children: [
@@ -189,7 +245,7 @@ class _SearchPageState extends State<SearchPage> {
                         width: 44,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
+                          color: AppColors.border,
                           borderRadius: BorderRadius.circular(999),
                         ),
                       ),
@@ -201,10 +257,7 @@ class _SearchPageState extends State<SearchPage> {
                             const Expanded(
                               child: Text(
                                 'Bộ lọc',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                                style: AppTextStyles.sectionTitle,
                               ),
                             ),
                             TextButton(
@@ -217,7 +270,10 @@ class _SearchPageState extends State<SearchPage> {
                                   tempLocation = '';
                                 });
                               },
-                              child: const Text('Đặt lại'),
+                              child: const Text(
+                                'Đặt lại',
+                                style: AppTextStyles.chip,
+                              ),
                             ),
                           ],
                         ),
@@ -233,12 +289,21 @@ class _SearchPageState extends State<SearchPage> {
                             TextFormField(
                               initialValue: tempLocation,
                               onChanged: (v) => tempLocation = v,
+                              style: AppTextStyles.body,
                               decoration: InputDecoration(
                                 hintText: 'Nhập quận, phường, đường...',
-                                prefixIcon:
-                                    const Icon(Icons.location_on_rounded),
+                                hintStyle: AppTextStyles.bodyMuted,
                                 filled: true,
-                                fillColor: const Color(0xFFF8F8FB),
+                                fillColor: AppColors.surfaceSoft,
+                                prefixIcon: const Icon(
+                                  Icons.location_on_outlined,
+                                  size: 20,
+                                  color: AppColors.textSecondary,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 14,
+                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide.none,
@@ -256,8 +321,9 @@ class _SearchPageState extends State<SearchPage> {
                                   label: 'Gần nhất',
                                   selected: tempSort == SearchSortMode.nearest,
                                   onTap: () {
-                                    setModalState(() =>
-                                        tempSort = SearchSortMode.nearest);
+                                    setModalState(() {
+                                      tempSort = SearchSortMode.nearest;
+                                    });
                                   },
                                 ),
                                 _choiceChip(
@@ -265,16 +331,18 @@ class _SearchPageState extends State<SearchPage> {
                                   selected:
                                       tempSort == SearchSortMode.byLocation,
                                   onTap: () {
-                                    setModalState(() =>
-                                        tempSort = SearchSortMode.byLocation);
+                                    setModalState(() {
+                                      tempSort = SearchSortMode.byLocation;
+                                    });
                                   },
                                 ),
                                 _choiceChip(
                                   label: 'Đánh giá cao',
                                   selected: tempSort == SearchSortMode.topRated,
                                   onTap: () {
-                                    setModalState(() =>
-                                        tempSort = SearchSortMode.topRated);
+                                    setModalState(() {
+                                      tempSort = SearchSortMode.topRated;
+                                    });
                                   },
                                 ),
                               ],
@@ -296,26 +364,18 @@ class _SearchPageState extends State<SearchPage> {
                                       tempMinRating = selected ? null : rating;
                                     });
                                   },
-                                  label: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.star_rounded,
-                                        size: 18,
-                                        color: selected
-                                            ? Colors.white
-                                            : Colors.amber,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text('$rating sao'),
-                                    ],
+                                  label: Text('$rating sao'),
+                                  selectedColor: AppColors.primary,
+                                  backgroundColor: AppColors.surfaceSoft,
+                                  side: BorderSide(
+                                    color: selected
+                                        ? AppColors.primary
+                                        : AppColors.border,
                                   ),
-                                  selectedColor: Colors.pink,
-                                  backgroundColor: const Color(0xFFF6F6F9),
                                   labelStyle: TextStyle(
                                     color: selected
                                         ? Colors.white
-                                        : Colors.black87,
+                                        : AppColors.textPrimary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 );
@@ -326,8 +386,9 @@ class _SearchPageState extends State<SearchPage> {
                             const SizedBox(height: 8),
                             Text(
                               '${_formatMoney(tempPriceRange.start)}  -  ${_formatMoney(tempPriceRange.end)}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600),
+                              style: AppTextStyles.bodyMuted.copyWith(
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                             RangeSlider(
                               values: tempPriceRange,
@@ -338,6 +399,8 @@ class _SearchPageState extends State<SearchPage> {
                                 _formatMoney(tempPriceRange.start),
                                 _formatMoney(tempPriceRange.end),
                               ),
+                              activeColor: AppColors.primary,
+                              inactiveColor: AppColors.borderSoft,
                               onChanged: (values) {
                                 setModalState(() {
                                   tempPriceRange = values;
@@ -348,7 +411,7 @@ class _SearchPageState extends State<SearchPage> {
                             SizedBox(
                               width: double.infinity,
                               height: 48,
-                              child: FilledButton(
+                              child: ElevatedButton(
                                 onPressed: () {
                                   Navigator.pop(
                                     sheetContext,
@@ -360,13 +423,21 @@ class _SearchPageState extends State<SearchPage> {
                                     ),
                                   );
                                 },
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.pink,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
+                                  elevation: 0,
                                 ),
-                                child: const Text('Áp dụng'),
+                                child: const Text(
+                                  'Áp dụng',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
@@ -401,10 +472,7 @@ class _SearchPageState extends State<SearchPage> {
   Widget _sectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w700,
-      ),
+      style: AppTextStyles.sectionTitle.copyWith(fontSize: 15),
     );
   }
 
@@ -417,27 +485,30 @@ class _SearchPageState extends State<SearchPage> {
       label: Text(label),
       selected: selected,
       onSelected: (_) => onTap(),
-      selectedColor: Colors.pink,
+      selectedColor: AppColors.primary,
       labelStyle: TextStyle(
-        color: selected ? Colors.white : Colors.black87,
+        color: selected ? Colors.white : AppColors.textPrimary,
         fontWeight: FontWeight.w600,
       ),
-      backgroundColor: const Color(0xFFF6F6F9),
+      backgroundColor: AppColors.surfaceSoft,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(999),
       ),
       side: BorderSide(
-        color: selected ? Colors.pink : Colors.transparent,
+        color: selected ? AppColors.primary : AppColors.border,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _searchBloc,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _searchBloc),
+        BlocProvider.value(value: _searchHistoryBloc),
+      ],
       child: Scaffold(
-        backgroundColor: const Color(0xFFFFF5F8),
+        backgroundColor: AppColors.background,
         body: SafeArea(
           child: BlocBuilder<SearchBloc, SearchState>(
             builder: (context, state) {
@@ -449,7 +520,13 @@ class _SearchPageState extends State<SearchPage> {
                   Positioned.fill(
                     child: GestureDetector(
                       behavior: HitTestBehavior.translucent,
-                      onTap: _collapseResultSheet,
+                      onTap: () {
+                        FocusScope.of(context).unfocus();
+                        setState(() {
+                          _showHistoryPanel = false;
+                        });
+                        _collapseResultSheet();
+                      },
                       child: const SizedBox.expand(),
                     ),
                   ),
@@ -476,9 +553,9 @@ class _SearchPageState extends State<SearchPage> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              Color(0x66FFFFFF),
+                              Color(0x55FFFFFF),
                               Color(0x00FFFFFF),
-                              Color(0x55FFF5F8),
+                              Color(0x44FFF7FB),
                             ],
                           ),
                         ),
@@ -512,17 +589,11 @@ class _SearchPageState extends State<SearchPage> {
 
                           return Container(
                             decoration: const BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.surface,
                               borderRadius: BorderRadius.vertical(
                                 top: Radius.circular(28),
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 20,
-                                  offset: Offset(0, -4),
-                                ),
-                              ],
+                              boxShadow: AppDecorations.topBarShadow,
                             ),
                             child: Column(
                               children: [
@@ -536,7 +607,7 @@ class _SearchPageState extends State<SearchPage> {
                                         width: 42,
                                         height: 4,
                                         decoration: BoxDecoration(
-                                          color: Colors.grey.shade300,
+                                          color: AppColors.border,
                                           borderRadius:
                                               BorderRadius.circular(999),
                                         ),
@@ -551,21 +622,36 @@ class _SearchPageState extends State<SearchPage> {
                                             const Expanded(
                                               child: Text(
                                                 'Kết quả tìm kiếm',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
+                                                style:
+                                                    AppTextStyles.sectionTitle,
                                               ),
                                             ),
-                                            if (_sortMode ==
-                                                SearchSortMode.nearest)
-                                              const Text('Gần nhất'),
-                                            if (_sortMode ==
-                                                SearchSortMode.byLocation)
-                                              const Text('Theo địa điểm'),
-                                            if (_sortMode ==
-                                                SearchSortMode.topRated)
-                                              const Text('Đánh giá cao'),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.surfaceSoft,
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                                border: Border.all(
+                                                  color: AppColors.borderSoft,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                _sortMode ==
+                                                        SearchSortMode.nearest
+                                                    ? 'Gần nhất'
+                                                    : _sortMode ==
+                                                            SearchSortMode
+                                                                .byLocation
+                                                        ? 'Theo địa điểm'
+                                                        : 'Đánh giá cao',
+                                                style: AppTextStyles.caption,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -589,12 +675,17 @@ class _SearchPageState extends State<SearchPage> {
                                         )
                                       : loaded == null
                                           ? const Center(
-                                              child: Text('Không có dữ liệu'),
+                                              child: Text(
+                                                'Không có dữ liệu',
+                                                style: AppTextStyles.bodyMuted,
+                                              ),
                                             )
                                           : loaded.stores.isEmpty
                                               ? const Center(
                                                   child: Text(
                                                     'Không tìm thấy cửa hàng phù hợp',
+                                                    style:
+                                                        AppTextStyles.bodyMuted,
                                                   ),
                                                 )
                                               : ListView.separated(
@@ -637,50 +728,178 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildSearchBar(bool isLoading) {
-    return Material(
-      color: Colors.white.withOpacity(0.96),
-      elevation: 8,
-      shadowColor: Colors.black12,
-      borderRadius: BorderRadius.circular(24),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Row(
-          children: [
-            IconButton(
-              onPressed: isLoading ? null : _openFilterSheet,
-              icon: const Icon(Icons.tune_rounded),
-              color: Colors.pink,
-              tooltip: 'Bộ lọc',
-            ),
-            Expanded(
-              child: TextField(
-                controller: _keywordController,
-                textInputAction: TextInputAction.search,
-                onSubmitted: (_) {
-                  if (!isLoading) _submitSearch();
-                },
-                decoration: const InputDecoration(
-                  hintText: 'Tìm theo dịch vụ hoặc cửa hàng',
-                  border: InputBorder.none,
-                  isDense: true,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.borderSoft),
+            boxShadow: AppDecorations.softShadow,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: isLoading ? null : _openFilterSheet,
+                  icon: const Icon(Icons.tune_rounded),
+                  color: AppColors.primary,
+                  tooltip: 'Bộ lọc',
                 ),
-              ),
+                Expanded(
+                  child: TextField(
+                    controller: _keywordController,
+                    focusNode: _keywordFocusNode,
+                    textInputAction: TextInputAction.search,
+                    onTap: _showRecentHistories,
+                    onChanged: (value) {
+                      if (value.trim().isEmpty) {
+                        _searchHistoryBloc
+                            .add(const LoadRecentSearchHistories());
+                      } else {
+                        _searchHistoryBloc
+                            .add(FilterSearchHistoriesRequested(value));
+                      }
+
+                      setState(() {
+                        _showHistoryPanel = true;
+                      });
+                    },
+                    onSubmitted: (_) {
+                      if (!isLoading) _submitSearch();
+                    },
+                    style: AppTextStyles.body,
+                    decoration: const InputDecoration(
+                      hintText: 'Tìm theo dịch vụ hoặc cửa hàng',
+                      hintStyle: AppTextStyles.bodyMuted,
+                      border: InputBorder.none,
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: isLoading ? null : _submitSearch,
+                  icon: isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.search_rounded),
+                  color: AppColors.primary,
+                  tooltip: 'Tìm kiếm',
+                ),
+              ],
             ),
-            IconButton(
-              onPressed: isLoading ? null : _submitSearch,
-              icon: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.search_rounded),
-              color: Colors.pink,
-              tooltip: 'Tìm kiếm',
-            ),
-          ],
+          ),
         ),
+        const SizedBox(height: 8),
+        if (_showHistoryPanel)
+          BlocBuilder<SearchHistoryBloc, SearchHistoryState>(
+            builder: (context, state) {
+              if (state is SearchHistoryLoading) {
+                return const _HistoryPanel(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                );
+              }
+
+              if (state is! SearchHistoryLoaded) {
+                return const SizedBox.shrink();
+              }
+
+              final items = state.filteredItems.take(5).toList();
+
+              if (items.isEmpty) {
+                return const _HistoryPanel(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'Không có lịch sử tìm kiếm',
+                      style: AppTextStyles.bodyMuted,
+                    ),
+                  ),
+                );
+              }
+
+              return _HistoryPanel(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 14, 16, 6),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Gợi ý gần đây',
+                              style: AppTextStyles.caption,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    for (final item in items)
+                      ListTile(
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 0,
+                        ),
+                        leading: const Icon(
+                          Icons.history_rounded,
+                          size: 20,
+                          color: AppColors.textSecondary,
+                        ),
+                        title: Text(
+                          item.keyword,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.body,
+                        ),
+                        onTap: () => _onTapHistoryKeyword(item.keyword),
+                        trailing: IconButton(
+                          onPressed: () {
+                            context
+                                .read<SearchHistoryBloc>()
+                                .add(DeleteSearchHistoryRequested(item.id));
+                          },
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+}
+
+class _HistoryPanel extends StatelessWidget {
+  final Widget child;
+
+  const _HistoryPanel({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderSoft),
+        boxShadow: AppDecorations.cardShadow,
       ),
+      child: child,
     );
   }
 }

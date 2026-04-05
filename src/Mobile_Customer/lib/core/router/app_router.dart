@@ -3,13 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/booking/data/models/booking_models.dart';
+import '../../features/booking/presentation/pages/booking_detail_page.dart';
+import '../../features/home/data/datasources/home_remote_datasource.dart';
+import '../../features/store_reviews/domain/usecases/get_store_reviews_usecase.dart';
+import '../../features/store_reviews/presentation/bloc/store_reviews_bloc.dart';
+import '../../features/store_reviews/presentation/pages/store_reviews_page.dart';
 import '../../injection/service_locator.dart' as di;
 import '../navigation/main_bottom_nav.dart';
 
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/booking/presentation/pages/booking_page.dart';
-import '../../features/history/presentation/pages/history_page.dart';
 import '../../features/auth/presentation/pages/profile_page.dart';
 
 import '../../features/search/presentation/pages/search_page.dart';
@@ -29,6 +34,8 @@ import '../../features/home/presentation/bloc/service_detail_bloc.dart';
 
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/bloc/auth_state.dart';
+
+import '../../features/chat/presentation/bloc/chat_bloc.dart';
 
 class AppRouter {
   static final router = GoRouter(
@@ -69,7 +76,6 @@ class AppRouter {
     },
 
     routes: [
-
       /// ============================
       /// SHELL ROUTE (BOTTOM NAV)
       /// ============================
@@ -82,7 +88,6 @@ class AppRouter {
           );
         },
         routes: [
-
           /// HOME
           GoRoute(
             path: "/",
@@ -95,16 +100,12 @@ class AppRouter {
             builder: (context, state) => const BookingPage(),
           ),
 
-          /// HISTORY
-          GoRoute(
-            path: "/history",
-            builder: (context, state) => const HistoryPage(),
-          ),
-
           /// PROFILE
           GoRoute(
             path: "/profile",
-            builder: (context, state) => const ProfilePage(),
+            builder: (context, state) => ProfilePage(
+              homeRemoteDataSource: di.sl<HomeRemoteDataSource>(),
+            ),
           ),
 
           /// SEARCH
@@ -116,7 +117,12 @@ class AppRouter {
           /// CHAT
           GoRoute(
             path: "/chat",
-            builder: (context, state) => const ChatPage(),
+            builder: (context, state) {
+              return BlocProvider(
+                create: (_) => di.sl<ChatBloc>(),
+                child: const ChatPage(),
+              );
+            },
           ),
 
           /// NOTIFICATION
@@ -136,8 +142,7 @@ class AppRouter {
               final categoryId =
                   int.tryParse(state.pathParameters["id"] ?? "0") ?? 0;
 
-              final categoryName =
-                  state.extra as String? ?? "Danh mục";
+              final categoryName = state.extra as String? ?? "Danh mục";
 
               return BlocProvider(
                 create: (_) => di.sl<CategoryStoreBloc>(),
@@ -160,8 +165,7 @@ class AppRouter {
               final groupId =
                   int.tryParse(state.pathParameters["id"] ?? "0") ?? 0;
 
-              final groupName =
-                  state.extra as String? ?? "Nhóm dịch vụ";
+              final groupName = state.extra as String? ?? "Nhóm dịch vụ";
 
               return BlocProvider(
                 create: (_) => di.sl<ServiceGroupStoreBloc>(),
@@ -183,15 +187,21 @@ class AppRouter {
             builder: (context, state) {
               final storeId =
                   int.tryParse(state.pathParameters["id"] ?? "0") ?? 0;
-
               final storeName = state.extra as String?;
 
-              return BlocProvider(
-                create: (_) {
-                  final bloc = di.sl<StoreDetailBloc>();
-                  bloc.add(FetchStoreDetail(storeId));
-                  return bloc;
-                },
+              return MultiBlocProvider(
+                providers: [
+                  BlocProvider<StoreDetailBloc>(
+                    create: (_) {
+                      final bloc = di.sl<StoreDetailBloc>();
+                      bloc.add(FetchStoreDetail(storeId));
+                      return bloc;
+                    },
+                  ),
+                  BlocProvider<StoreReviewsBloc>(
+                    create: (_) => di.sl<StoreReviewsBloc>(),
+                  ),
+                ],
                 child: StoreDetailPage(
                   storeId: storeId,
                   storeName: storeName,
@@ -208,8 +218,7 @@ class AppRouter {
             path: "/service-detail/:id",
             name: "service_detail",
             builder: (context, state) {
-              final serviceId =
-                  int.parse(state.pathParameters["id"]!);
+              final serviceId = int.parse(state.pathParameters["id"]!);
 
               return BlocProvider(
                 create: (_) => di.sl<ServiceDetailBloc>(),
@@ -231,6 +240,32 @@ class AppRouter {
         builder: (context, state) {
           final redirect = state.extra as String?;
           return LoginPage(redirectPath: redirect);
+        },
+      ),
+      GoRoute(
+        path: '/booking-detail/:id',
+        builder: (context, state) {
+          final bookingId = int.parse(state.pathParameters['id']!);
+          final extra = state.extra as BookingItem?;
+          return BookingDetailPage(
+            bookingId: bookingId,
+            initialBooking: extra,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/store-reviews/:storeId',
+        builder: (context, state) {
+          final storeId = int.parse(state.pathParameters['storeId']!);
+          final storeName = state.uri.queryParameters['name'] ?? 'Cửa hàng';
+
+          return BlocProvider<StoreReviewsBloc>(
+            create: (_) => di.sl<StoreReviewsBloc>(),
+            child: StoreReviewsPage(
+              storeId: storeId,
+              storeName: storeName,
+            ),
+          );
         },
       ),
     ],

@@ -1,6 +1,18 @@
 import 'service.dart';
 import 'store_banner.dart';
 
+class OperatingHour {
+  final int dayOfWeek; // 0 = Sunday ... 6 = Saturday
+  final String openTime;
+  final String closeTime;
+
+  const OperatingHour({
+    required this.dayOfWeek,
+    required this.openTime,
+    required this.closeTime,
+  });
+}
+
 class Store {
   final int id;
   final String name;
@@ -21,6 +33,7 @@ class Store {
   final double? distanceKm;
   final List<Service> services;
   final List<StoreBanner> banners;
+  final List<OperatingHour> operatingHours;
 
   const Store({
     required this.id,
@@ -39,9 +52,13 @@ class Store {
     this.distanceKm,
     this.services = const [],
     this.banners = const [],
+    this.operatingHours = const [],
   });
+
   Store copyWith({
     double? distanceKm,
+    List<OperatingHour>? operatingHours,
+    bool? isOpen,
   }) {
     return Store(
       id: id,
@@ -53,13 +70,14 @@ class Store {
       coverImageUrl: coverImageUrl,
       latitude: latitude,
       longitude: longitude,
-      isOpen: isOpen,
+      isOpen: isOpen ?? this.isOpen,
       averageRating: averageRating,
       totalReviews: totalReviews,
       minServicePrice: minServicePrice,
       distanceKm: distanceKm ?? this.distanceKm,
       services: services,
       banners: banners,
+      operatingHours: operatingHours ?? this.operatingHours,
     );
   }
 }

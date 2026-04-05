@@ -4,6 +4,7 @@ class ServiceModel {
   final int id;
 
   final int storeId;
+  final String storeName;
   final int categoryId;
   final int? groupId;
 
@@ -17,10 +18,12 @@ class ServiceModel {
   final bool isActive;
   final bool isFeatured;
   final int sortOrder;
+  final bool isFavorite;
 
   ServiceModel({
     required this.id,
     required this.storeId,
+    required this.storeName,
     required this.categoryId,
     this.groupId,
     required this.name,
@@ -31,6 +34,7 @@ class ServiceModel {
     required this.isActive,
     required this.isFeatured,
     required this.sortOrder,
+    required this.isFavorite,
   });
 
   factory ServiceModel.fromJson(Map<String, dynamic> json) {
@@ -58,10 +62,9 @@ class ServiceModel {
     return ServiceModel(
       id: parseInt(json['id']),
       storeId: parseInt(json['storeId']),
+      storeName: json['storeName']?.toString() ?? '',
       categoryId: parseInt(json['categoryId']),
-      groupId: json['groupId'] != null
-          ? parseInt(json['groupId'])
-          : null,
+      groupId: json['groupId'] != null ? parseInt(json['groupId']) : null,
       name: json['name']?.toString() ?? '',
       description: json['description']?.toString(),
       imageUrl: json['imageUrl']?.toString(),
@@ -70,12 +73,14 @@ class ServiceModel {
       isActive: parseBool(json['isActive']),
       isFeatured: parseBool(json['isFeatured']),
       sortOrder: parseInt(json['sortOrder']),
+      isFavorite: json['isFavorite'] as bool? ?? false,
     );
   }
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'storeId': storeId,
+        'storeName': storeName,
         'categoryId': categoryId,
         'groupId': groupId,
         'name': name,
@@ -86,12 +91,14 @@ class ServiceModel {
         'isActive': isActive,
         'isFeatured': isFeatured,
         'sortOrder': sortOrder,
+        'isFavorite': isFavorite,
       };
 
   Service toEntity() {
     return Service(
       id: id,
       storeId: storeId,
+      storeName: storeName,
       categoryId: categoryId,
       groupId: groupId,
       name: name,
@@ -102,6 +109,7 @@ class ServiceModel {
       isActive: isActive,
       isFeatured: isFeatured,
       sortOrder: sortOrder,
+      isFavorite: isFavorite,
     );
   }
 }

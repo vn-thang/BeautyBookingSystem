@@ -1,8 +1,13 @@
+// search_map.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../domain/entities/search_store.dart';
+
+// chỉnh lại path theme cho đúng project của bạn
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_decorations.dart';
 
 class SearchMap extends StatefulWidget {
   final double userLat;
@@ -55,11 +60,6 @@ class _SearchMapState extends State<SearchMap> {
     }
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
   List<Marker> _buildMarkers() {
     final markers = <Marker>[];
 
@@ -67,12 +67,20 @@ class _SearchMapState extends State<SearchMap> {
       markers.add(
         Marker(
           point: LatLng(widget.userLat, widget.userLng),
-          width: 40,
-          height: 40,
-          child: const Icon(
-            Icons.my_location,
-            color: Colors.blue,
-            size: 34,
+          width: 36,
+          height: 36,
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              shape: BoxShape.circle,
+              boxShadow: AppDecorations.avatarShadow,
+              border: Border.all(color: AppColors.borderSoft),
+            ),
+            child: const Icon(
+              Icons.my_location_rounded,
+              color: AppColors.primary,
+              size: 22,
+            ),
           ),
         ),
       );
@@ -95,8 +103,8 @@ class _SearchMapState extends State<SearchMap> {
             behavior: HitTestBehavior.opaque,
             onTap: () => widget.onStoreTap(store),
             child: Icon(
-              Icons.location_on,
-              color: isSelected ? Colors.pink : Colors.red,
+              Icons.location_on_rounded,
+              color: isSelected ? AppColors.primary : AppColors.danger,
               size: isSelected ? 44 : 40,
             ),
           ),
@@ -117,30 +125,33 @@ class _SearchMapState extends State<SearchMap> {
     return SizedBox(
       height: 250,
       child: RepaintBoundary(
-        child: FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            initialCenter: center,
-            initialZoom: 13,
-            interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.all,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: 13,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all,
+              ),
             ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.quan.beautybooking',
+                tileBuilder: (context, tileWidget, tile) {
+                  return ColoredBox(
+                    color: AppColors.surfaceSoft,
+                    child: tileWidget,
+                  );
+                },
+              ),
+              MarkerLayer(
+                markers: _buildMarkers(),
+              ),
+            ],
           ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.quan.beautybooking',
-              tileBuilder: (context, tileWidget, tile) {
-                return ColoredBox(
-                  color: Colors.grey.shade200,
-                  child: tileWidget,
-                );
-              },
-            ),
-            MarkerLayer(
-              markers: _buildMarkers(),
-            ),
-          ],
         ),
       ),
     );
