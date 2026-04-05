@@ -1,6 +1,7 @@
 ﻿using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Application.Interfaces.Repositories;
 using BeautyBookingSystem.Application.Services;
+using BeautyBookingSystem.Domain.Entities;
 using BeautyBookingSystem.Infrastructure.Data;
 using BeautyBookingSystem.Infrastructure.Repositories;
 using BeautyBookingSystem.Infrastructure.Services;
@@ -20,6 +21,7 @@ builder.Services.AddControllers();
 //builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpClient();
 
 builder.Services.AddScoped<IHomeService, HomeService>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -28,9 +30,11 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IStoreService, StoreService>();
+builder.Services.AddScoped<IStoreRepository, StoreRepository>();
 builder.Services.AddScoped<IGlobalCategoryService, GlobalCategoryService>();
 builder.Services.AddScoped<IServiceGroupService, ServiceGroupService>();
 builder.Services.AddScoped<IServiceService, ServiceService>();
+builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<IVoucherRepository, VoucherRepository>();
 builder.Services.AddScoped<IVoucherService, VoucherService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
@@ -39,6 +43,21 @@ builder.Services.AddScoped<IBookingDetailRepository, BookingDetailRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+
+// Chat – AI & Auto Reply Pipeline
+builder.Services.AddScoped<IChatKnowledgeProvider, ChatKnowledgeProvider>();
+builder.Services.AddScoped<IChatAiClient, GeminiChatClient>();
+builder.Services.AddScoped<IChatSessionRepository, ChatSessionRepository>();
+builder.Services.AddScoped<IChatAssistantService, ChatAssistantService>();
+
+builder.Services.AddScoped<ICustomerFavoriteRepository, CustomerFavoriteRepository>();
+builder.Services.AddScoped<ICustomerFavoriteService, CustomerFavoriteService>();
+
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<ReviewService>();
+
+builder.Services.AddScoped<ISearchHistoryService, SearchHistoryService>();
+
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 builder.Services.AddAuthentication(options =>

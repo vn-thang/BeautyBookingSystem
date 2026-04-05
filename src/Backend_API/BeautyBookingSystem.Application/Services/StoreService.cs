@@ -4,11 +4,6 @@ using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Entities;
 using BeautyBookingSystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BeautyBookingSystem.Application.Services
 {
@@ -20,6 +15,7 @@ namespace BeautyBookingSystem.Application.Services
         {
             _unitOfWork = unitOfWork;
         }
+
         public async Task<List<StoreListDto>> GetAllStoresAsync()
         {
             var stores = await _unitOfWork.StoreRepository
@@ -91,6 +87,7 @@ namespace BeautyBookingSystem.Application.Services
                 Items = items
             };
         }
+
         public async Task<PagedResult<StoreCardDto>> GetStoresByGroupAsync(StoreQueryParams p)
         {
             if (p.GroupId == null)
@@ -154,7 +151,8 @@ namespace BeautyBookingSystem.Application.Services
                 Items = items
             };
         }
-        public async Task<StoreDetailDto?> GetStoreByIdAsync(int storeId)
+
+        public async Task<StoreDetailDto?> GetStoreByIdAsync(int storeId, int? customerId = null)
         {
             var store = await _unitOfWork.StoreRepository
                 .GetQueryable()
@@ -164,6 +162,14 @@ namespace BeautyBookingSystem.Application.Services
                 .FirstOrDefaultAsync(s => s.Id == storeId);
 
             if (store == null) return null;
+
+            var isFavorite = false;
+
+            if (customerId.HasValue)
+            {
+                isFavorite = await _unitOfWork.CustomerFavoriteRepository
+                    .IsStoreFavoriteAsync(customerId.Value, store.Id);
+            }
 
             return new StoreDetailDto
             {
@@ -179,6 +185,7 @@ namespace BeautyBookingSystem.Application.Services
                 IsOpen = store.IsOpen,
                 AverageRating = store.AverageRating,
                 TotalReviews = store.TotalReviews,
+                IsFavorite = isFavorite,
 
                 Banners = store.Banners
                     .Where(b => b.IsActive)
@@ -216,10 +223,9 @@ namespace BeautyBookingSystem.Application.Services
 
         public async Task<StoreProfileDto?> GetStoreProfileAsync(int ownerId)
         {
-           
             var store = await _unitOfWork.StoreRepository
-                .GetQueryable().
-                Include(s => s.OperatingHours)
+                .GetQueryable()
+                .Include(s => s.OperatingHours)
                 .FirstOrDefaultAsync(s => s.OwnerId == ownerId);
 
             if (store == null) return null;
@@ -235,7 +241,7 @@ namespace BeautyBookingSystem.Application.Services
                 Latitude = store.Latitude,
                 Longitude = store.Longitude,
                 IsOpen = store.IsOpen,
-                AverageRating = store.AverageRating, 
+                AverageRating = store.AverageRating,
                 TotalReviews = store.TotalReviews,
                 OperatingHours = store.OperatingHours.Select(oh => new OperatingHourDto
                 {
@@ -248,7 +254,6 @@ namespace BeautyBookingSystem.Application.Services
 
         public async Task<string?> UpdateStoreProfileAsync(int ownerId, StoreProfileDto request)
         {
-            
             var store = await _unitOfWork.StoreRepository
                 .GetQueryable()
                 .Include(s => s.OperatingHours)
@@ -259,6 +264,7 @@ namespace BeautyBookingSystem.Application.Services
 
             if (request.OperatingHours == null || !request.OperatingHours.Any())
                 return "Cửa hàng phải có ít nhất 1 ngày làm việc.";
+
             var duplicateDays = request.OperatingHours.GroupBy(x => x.DayOfWeek).Any(g => g.Count() > 1);
             if (duplicateDays) return "Danh sách giờ làm việc có ngày bị lặp lại.";
 
@@ -292,12 +298,12 @@ namespace BeautyBookingSystem.Application.Services
                     OpenTime = openTime,
                     CloseTime = closeTime
                 });
-                
             }
+
             _unitOfWork.StoreRepository.Update(store);
             await _unitOfWork.SaveChangesAsync();
 
-            return null; 
+            return null;
         }
     }
 }

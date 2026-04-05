@@ -28,5 +28,6 @@ namespace BeautyBookingSystem.Application.DTOs.Service
 
         public bool IsActive { get; set; }
         public bool IsFeatured { get; set; }
+        public bool IsFavorite { get; set; }
     }
 }

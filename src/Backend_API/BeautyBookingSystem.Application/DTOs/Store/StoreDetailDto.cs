@@ -19,6 +19,7 @@
 
         public decimal AverageRating { get; set; }
         public int TotalReviews { get; set; }
+        public bool IsFavorite { get; set; }
 
         public List<StoreBannerDto> Banners { get; set; } = new();
         public List<ServiceItemDto> Services { get; set; } = new();

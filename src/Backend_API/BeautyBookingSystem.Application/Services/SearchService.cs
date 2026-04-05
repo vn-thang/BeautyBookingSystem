@@ -81,7 +81,6 @@ namespace BeautyBookingSystem.Application.Services
                         (!request.MinPrice.HasValue || sv.Price >= request.MinPrice.Value) &&
                         (!request.MaxPrice.HasValue || sv.Price <= request.MaxPrice.Value))
                     .OrderBy(sv => sv.Price)
-                    .Take(3)
                     .Select(sv => new SearchServiceResponse
                     {
                         Id = sv.Id,

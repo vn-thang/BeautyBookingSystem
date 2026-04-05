@@ -3,7 +3,6 @@ using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-
 public class ServiceService : IServiceService
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -27,7 +26,8 @@ public class ServiceService : IServiceService
 
     public async Task<List<Service>> GetAllAsync()
         => await _unitOfWork.ServiceRepository.GetAllActiveAsync();
-    public async Task<ServiceDetailDto?> GetByIdAsync(int id)
+
+    public async Task<ServiceDetailDto?> GetByIdAsync(int id, int? customerId = null)
     {
         var service = await _unitOfWork.ServiceRepository
             .GetQueryable()
@@ -37,6 +37,14 @@ public class ServiceService : IServiceService
             .FirstOrDefaultAsync(x => x.Id == id && x.IsActive);
 
         if (service == null) return null;
+
+        var isFavorite = false;
+
+        if (customerId.HasValue)
+        {
+            isFavorite = await _unitOfWork.CustomerFavoriteRepository
+                .IsServiceFavoriteAsync(customerId.Value, service.Id);
+        }
 
         return new ServiceDetailDto
         {
@@ -50,11 +58,11 @@ public class ServiceService : IServiceService
             IsActive = service.IsActive,
             StoreId = service.StoreId,
             StoreName = service.Store.Name,
-
             CategoryId = service.CategoryId,
             CategoryName = service.Category.Name,
             GroupId = service.GroupId,
-            GroupName = service.Group != null ? service.Group.Name : null
+            GroupName = service.Group != null ? service.Group.Name : null,
+            IsFavorite = isFavorite
         };
     }
 }

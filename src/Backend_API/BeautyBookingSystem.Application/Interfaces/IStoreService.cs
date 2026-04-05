@@ -13,7 +13,7 @@ namespace BeautyBookingSystem.Application.Interfaces
         Task<List<StoreListDto>> GetAllStoresAsync();
         Task<PagedResult<StoreCardDto>> GetStoresByCategoryAsync(StoreQueryParams p);
         Task<PagedResult<StoreCardDto>> GetStoresByGroupAsync(StoreQueryParams p);
-        Task<StoreDetailDto?> GetStoreByIdAsync(int storeId);
+        Task<StoreDetailDto?> GetStoreByIdAsync(int storeId, int? customerId = null);
         Task<StoreProfileDto?> GetStoreProfileAsync(int ownerId);
         Task<string?> UpdateStoreProfileAsync(int ownerId, StoreProfileDto request);
     }

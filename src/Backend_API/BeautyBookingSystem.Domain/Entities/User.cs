@@ -16,12 +16,9 @@ namespace BeautyBookingSystem.Domain.Entities
         public string Email { get; set; } = string.Empty;
         public string? AvatarUrl { get; set; }
         public string PasswordHash { get; set; } = string.Empty;
-
         public Role Role { get; set; }
         public UserStatus Status { get; set; }
         public bool IsPhoneVerified { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
 
@@ -37,5 +34,6 @@ namespace BeautyBookingSystem.Domain.Entities
         public virtual ICollection<SearchHistory> SearchHistories { get; set; } = new List<SearchHistory>();
         public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        public virtual ICollection<ChatSession> ChatSessions { get; set; } = new List<ChatSession>();
     }
 }

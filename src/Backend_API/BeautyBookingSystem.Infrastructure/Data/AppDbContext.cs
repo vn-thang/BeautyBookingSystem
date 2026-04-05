@@ -38,6 +38,8 @@ namespace BeautyBookingSystem.Infrastructure.Data
         public DbSet<Notification> Notifications { get; set; }
 
         public DbSet<SystemContent> SystemContents { get; set; }
+        public DbSet<ChatSession> ChatSessions { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -48,6 +50,28 @@ namespace BeautyBookingSystem.Infrastructure.Data
             {
                 relationship.DeleteBehavior = DeleteBehavior.Restrict;
             }
+
+            modelBuilder.Entity<ChatSession>(entity =>
+            {
+                entity.HasIndex(x => new { x.UserId, x.SessionKey }).IsUnique();
+
+                entity.HasOne(x => x.User)
+                    .WithMany(u => u.ChatSessions)
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(x => x.Messages)
+                    .WithOne(x => x.ChatSession)
+                    .HasForeignKey(x => x.ChatSessionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<ChatMessage>(entity =>
+            {
+                entity.Property(x => x.Content).HasColumnType("nvarchar(max)");
+                entity.Property(x => x.MetadataJson).HasColumnType("nvarchar(max)");
+                entity.Property(x => x.ToolName).HasMaxLength(100);
+            });
         }
     }
 }

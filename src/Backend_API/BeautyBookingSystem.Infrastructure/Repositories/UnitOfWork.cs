@@ -24,7 +24,11 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         public IBookingDetailRepository BookingDetailRepository { get; }
         public IPaymentRepository PaymentRepository { get; }
         public IStaffRepository StaffRepository { get; }
+        public ICustomerFavoriteRepository CustomerFavoriteRepository { get; }
         public IGenericRepository<SystemContent> SystemContentRepository { get; private set; }
+        public IReviewRepository ReviewRepository { get; }
+        public ISearchHistoryRepository SearchHistories { get; }
+
 
 
         public UnitOfWork(AppDbContext context)
@@ -40,7 +44,10 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
             BookingDetailRepository = new BookingDetailRepository(_context);
             PaymentRepository = new PaymentRepository(_context);
             StaffRepository = new StaffRepository(context);
+            CustomerFavoriteRepository = new CustomerFavoriteRepository(context);
             SystemContentRepository = new GenericRepository<SystemContent>(_context);
+            ReviewRepository = new ReviewRepository(_context);
+            SearchHistories = new SearchHistoryRepository(_context);
         }
 
         public async Task<int> SaveChangesAsync()

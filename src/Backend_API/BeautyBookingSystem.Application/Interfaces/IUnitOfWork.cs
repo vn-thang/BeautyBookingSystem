@@ -20,7 +20,10 @@ namespace BeautyBookingSystem.Application.Interfaces
         IBookingDetailRepository BookingDetailRepository { get; }
         IPaymentRepository PaymentRepository { get; }
         IStaffRepository StaffRepository { get; }
+        ICustomerFavoriteRepository CustomerFavoriteRepository { get; }
         IGenericRepository<SystemContent> SystemContentRepository { get; }
+        IReviewRepository ReviewRepository { get; }
+        ISearchHistoryRepository SearchHistories { get; }
         Task<int> SaveChangesAsync();
     }
 }

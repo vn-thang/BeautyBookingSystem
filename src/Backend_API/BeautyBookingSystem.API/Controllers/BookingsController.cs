@@ -17,51 +17,161 @@ public class BookingsController : ControllerBase
         _bookingService = bookingService;
     }
 
-    [HttpPost]
-    public async Task<IActionResult> CreateBooking(
-        CreateBookingRequest request)
+    private int GetUserId()
     {
-        var userId = int.Parse(
-            User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var booking = await _bookingService
-            .CreateBookingAsync(userId, request);
+        if (string.IsNullOrEmpty(userIdStr))
+            throw new UnauthorizedAccessException("User not authenticated");
 
-        return Ok(booking);
+        return int.Parse(userIdStr);
     }
-    // GET /api/bookings  -> list of current user's bookings
+
+    [HttpPost]
+    public async Task<IActionResult> CreateBooking(CreateBookingRequest request)
+    {
+        try
+        {
+            var userId = GetUserId();
+
+            var booking = await _bookingService.CreateBookingAsync(userId, request);
+
+            return Ok(booking);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
+    }
+
+
     [HttpGet]
     public async Task<IActionResult> GetMyBookings()
     {
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var list = await _bookingService.GetBookingsByCustomerAsync(userId);
-        return Ok(list);
+        try
+        {
+            var userId = GetUserId();
+            var list = await _bookingService.GetBookingsByCustomerAsync(userId);
+
+            return Ok(list);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
     }
 
-    // GET /api/bookings/{id}
+
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetBookingById(int id)
     {
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var booking = await _bookingService.GetBookingByIdAsync(userId, id);
-        if (booking == null) return NotFound();
-        return Ok(booking);
+        try
+        {
+            var userId = GetUserId();
+            var booking = await _bookingService.GetBookingByIdAsync(userId, id);
+
+            if (booking == null)
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Booking not found"
+                });
+
+            return Ok(booking);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
     }
 
-    // POST /api/bookings/{id}/cancel
     [HttpPost("{id:int}/cancel")]
-    public async Task<IActionResult> CancelBooking(int id, [FromBody] CancelBookingRequest req)
+    public async Task<IActionResult> CancelBooking(
+        int id,
+        [FromBody] CancelBookingRequest req)
     {
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        await _bookingService.CancelBookingAsync(userId, id, req?.Reason);
-        return Ok(new { message = "Booking cancelled" });
+        try
+        {
+            var userId = GetUserId();
+
+            var result = await _bookingService.CancelBookingAsync(
+                userId,
+                id,
+                req?.Reason
+            );
+
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // business rule error (VD: quá 24h)
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new
+            {
+                success = false,
+                message = "Booking not found"
+            });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(403, new
+            {
+                success = false,
+                message = "You are not allowed to cancel this booking"
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "Internal server error",
+                detail = ex.Message
+            });
+        }
     }
+
 
     [HttpPost("available-staff")]
-    public async Task<IActionResult> GetAvailableStaff([FromBody] GetAvailableStaffRequest request)
+    public async Task<IActionResult> GetAvailableStaff(GetAvailableStaffRequest request)
     {
-        var result = await _bookingService.GetAvailableStaffAsync(request);
+        try
+        {
+            var result = await _bookingService.GetAvailableStaffAsync(request);
 
-        return Ok(result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
     }
+}
+
+public class CancelBookingRequest
+{
+    public string? Reason { get; set; }
 }

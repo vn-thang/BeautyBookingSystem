@@ -16,6 +16,9 @@ namespace BeautyBookingSystem.Application.DTOs.Booking
         public decimal DiscountAmount { get; set; }
         public decimal FinalPrice { get; set; }
         public decimal DepositAmount { get; set; }
+        public decimal DepositPaidAmount { get; set; }
+        public decimal PaidAmount { get; set; }
+        public decimal RemainingAmount { get; set; }
         public BookingStatus Status { get; set; }
         public string? CustomerNote { get; set; }
         public string StoreName { get; set; } = string.Empty;
@@ -34,6 +37,7 @@ namespace BeautyBookingSystem.Application.DTOs.Booking
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
         public decimal Price { get; set; }
+
         public BookingDetailStatus Status { get; set; }
     }
 
@@ -42,6 +46,7 @@ namespace BeautyBookingSystem.Application.DTOs.Booking
         public int Id { get; set; }
         public decimal Amount { get; set; }
         public PaymentMethod PaymentMethod { get; set; }
+        public PaymentType PaymentType { get; set; }
         public PaymentStatus Status { get; set; }
         public DateTime? PaidAt { get; set; }
     }

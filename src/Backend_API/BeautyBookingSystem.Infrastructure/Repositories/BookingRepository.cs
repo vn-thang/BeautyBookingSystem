@@ -19,6 +19,11 @@ public class BookingRepository
         return await _context.Bookings
             .Where(b => b.CustomerId == customerId)
             .Include(b => b.Store)
+            .Include(b => b.BookingDetails)
+                .ThenInclude(d => d.Service)
+            .Include(b => b.BookingDetails)
+                .ThenInclude(d => d.Staff)
+            .Include(b => b.Payments)
             .OrderByDescending(b => b.CreatedAt)
             .ToListAsync();
     }

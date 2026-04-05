@@ -15,6 +15,6 @@ namespace BeautyBookingSystem.Application.Interfaces
         Task<List<Service>> GetByGroupAsync(int groupId);
         Task<List<Service>> GetFeaturedAsync();
         Task<List<Service>> GetAllAsync();
-        Task<ServiceDetailDto?> GetByIdAsync(int id);
+        Task<ServiceDetailDto?> GetByIdAsync(int id, int? customerId = null);
     }
 }

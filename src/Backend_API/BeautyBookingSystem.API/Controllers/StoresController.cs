@@ -1,7 +1,6 @@
 ﻿using BeautyBookingSystem.Application.DTOs.Store;
 using BeautyBookingSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -17,6 +16,7 @@ namespace BeautyBookingSystem.API.Controllers
         {
             _storeService = storeService;
         }
+
         [HttpGet]
         public async Task<IActionResult> GetAllStores()
         {
@@ -27,7 +27,8 @@ namespace BeautyBookingSystem.API.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetStoreById(int id)
         {
-            var result = await _storeService.GetStoreByIdAsync(id);
+            var customerId = GetCurrentCustomerId();
+            var result = await _storeService.GetStoreByIdAsync(id, customerId);
 
             if (result == null)
                 return NotFound();
@@ -39,9 +40,9 @@ namespace BeautyBookingSystem.API.Controllers
         public async Task<IActionResult> GetStores([FromQuery] StoreQueryParams query)
         {
             var result = await _storeService.GetStoresByCategoryAsync(query);
-
             return Ok(result);
         }
+
         [HttpGet("by-group")]
         public async Task<IActionResult> GetStoresByGroup([FromQuery] StoreQueryParams query)
         {
@@ -56,6 +57,7 @@ namespace BeautyBookingSystem.API.Controllers
             var result = await _storeService.GetStoreProfileAsync(ownerId);
             return result != null ? Ok(result) : NotFound();
         }
+
         [Authorize(Roles = "StoreOwner")]
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] StoreProfileDto request)
@@ -65,6 +67,12 @@ namespace BeautyBookingSystem.API.Controllers
 
             if (error != null) return BadRequest(new { message = error });
             return Ok(new { message = "Cập nhật thành công!" });
+        }
+
+        private int? GetCurrentCustomerId()
+        {
+            var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(claim, out var customerId) ? customerId : null;
         }
     }
 }

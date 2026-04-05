@@ -1,13 +1,12 @@
-﻿using System;
+﻿using BeautyBookingSystem.Domain.Common;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BeautyBookingSystem.Domain.Entities
 {
-    public class StoreBanner
+    public class StoreBanner : BaseEntity
     {
-        [Key]
-        public int Id { get; set; }
 
         [Required]
         public int StoreId { get; set; }
@@ -25,10 +24,6 @@ namespace BeautyBookingSystem.Domain.Entities
         public int SortOrder { get; set; } = 0;
 
         public bool IsActive { get; set; } = true;
-
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        public DateTime? UpdatedAt { get; set; }
 
         [ForeignKey("StoreId")]
         public Store Store { get; set; } = null!;
