@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/formatters.dart'; // Áp dụng Formatters
 import '../models/customer_profile_model.dart';
 
 class ServiceHistoryCard extends StatelessWidget {
@@ -9,11 +13,8 @@ class ServiceHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-    final dateFormat = DateFormat('dd/MM/yyyy');
-    
     String displayDate = history.appointmentDate != null 
-        ? dateFormat.format(history.appointmentDate!) 
+        ? Formatters.formatDateOnly(history.appointmentDate) 
         : 'Không rõ ngày';
 
     String displayTime = history.startTime;
@@ -23,13 +24,14 @@ class ServiceHistoryCard extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      color: AppColors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
+        side: BorderSide(color: AppColors.textSub.withValues(alpha: 0.2)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppDimens.paddingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -39,36 +41,46 @@ class ServiceHistoryCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
                   ),
                   child: Text(
                     '$displayTime - $displayDate',
-                    style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.w600, fontSize: 13),
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.primary, 
+                      fontWeight: FontWeight.w600, 
+                      fontSize: 13,
+                    ),
                   ),
                 ),
                 Text(
-                  currencyFormat.format(history.price),
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent),
+                  Formatters.formatCurrency(history.price), 
+                  style: AppTextStyles.bodyText.copyWith(
+                    fontWeight: FontWeight.bold, 
+                    color: AppColors.error,
+                  ),
                 ),
               ],
             ),
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Divider(height: 1),
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Divider(height: 1, color: AppColors.surface), 
             ),
             Text(
               history.serviceName,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: AppTextStyles.bodyText.copyWith(
+                fontWeight: FontWeight.bold, 
+                fontSize: 16,
+              ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.sm), 
             Row(
               children: [
-                const Icon(Icons.content_cut, size: 14, color: Colors.grey),
-                const SizedBox(width: 6),
+                const Icon(Icons.content_cut, size: 14, color: AppColors.textSub),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
                   'Thợ thực hiện: ${history.staffName}',
-                  style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                  style: AppTextStyles.labelSmall.copyWith(fontSize: 13),
                 ),
               ],
             ),

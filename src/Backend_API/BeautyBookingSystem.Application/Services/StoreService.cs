@@ -39,7 +39,6 @@ namespace BeautyBookingSystem.Application.Services
 
         public async Task<string?> UpdateStoreProfileAsync(int ownerId, StoreProfileDto request)
         {
-            // 1. Đã lấy sẵn OperatingHours từ DB lên đây rồi
             var store = await _unitOfWork.StoreRepository
                 .GetQueryable()
                 .Include(s => s.OperatingHours)
@@ -50,24 +49,20 @@ namespace BeautyBookingSystem.Application.Services
 
             ValidateOperatingHours(request.OperatingHours);
             ValidateCoordinates(request.Latitude, request.Longitude);
-
-            // 2. AutoMapper chạy mượt mà (đã tự động Ignore OperatingHours nhờ config của bạn)
+            ValidateDepositPercent(request.DepositPercent);
+            ValidateDepositThreshold(request.DepositThreshold);
+            ValidateBankInfo(request.BankName, request.BankAccountNumber, request.BankAccountName);
             _mapper.Map(request, store);
-
-            // 3. Xử lý giờ hoạt động tối ưu
             if (request.OperatingHours != null)
             {
-                // Dùng luôn store.OperatingHours, KHÔNG CẦN gọi FindAsync nữa
                 if (store.OperatingHours != null && store.OperatingHours.Any())
                 {
-                    // Phải dùng .ToList() trước khi lặp để tránh lỗi "Collection was modified" khi xóa
                     foreach (var oldHour in store.OperatingHours.ToList())
                     {
                         _unitOfWork.StoreOperatingHourRepository.Delete(oldHour);
                     }
                 }
 
-                // Thêm giờ mới
                 foreach (var item in request.OperatingHours)
                 {
                     await _unitOfWork.StoreOperatingHourRepository.AddAsync(new StoreOperatingHour
@@ -86,8 +81,6 @@ namespace BeautyBookingSystem.Application.Services
             }
 
             _unitOfWork.StoreRepository.Update(store);
-
-            // 4. Lưu tất cả thay đổi (Update thông tin + Delete giờ cũ + Insert giờ mới) trong 1 Transaction duy nhất
             await _unitOfWork.SaveChangesAsync();
 
             return null;
@@ -100,7 +93,6 @@ namespace BeautyBookingSystem.Application.Services
 
             if (hours.GroupBy(x => x.DayOfWeek).Any(g => g.Count() > 1))
                 throw new BadRequestException("Danh sách giờ làm việc có ngày bị lặp lại.");
-
             foreach (var item in hours)
             {
                 if (!TimeSpan.TryParse(item.OpenTime, out var open) || !TimeSpan.TryParse(item.CloseTime, out var close))
@@ -117,6 +109,33 @@ namespace BeautyBookingSystem.Application.Services
 
             if (lng.HasValue && (lng < -180 || lng > 180))
                 throw new BadRequestException("Kinh độ (Longitude) không hợp lệ (phải từ -180 đến 180).");
+        }
+
+        private void ValidateDepositPercent(int depositPercent)
+        {
+            int[] allowedPercents = { 0, 10, 20, 30, 40, 50 };
+
+            if (!allowedPercents.Contains(depositPercent))
+            {
+                throw new BadRequestException("Phần trăm cọc không hợp lệ. Chỉ chấp nhận các mức: 0, 10, 20, 30, 40, 50.");
+            }
+        }
+        private void ValidateDepositThreshold(decimal depositThreshold)
+        {
+            if (depositThreshold < 0)
+            {
+                throw new BadRequestException("Mức hóa đơn tối thiểu yêu cầu cọc không được nhỏ hơn 0.");
+            }
+        }
+        private void ValidateBankInfo(string? bankName, string? bankAccountNumber, string? bankAccountName)
+        {
+            bool hasBankName = !string.IsNullOrWhiteSpace(bankName);
+            bool hasBankAccNum = !string.IsNullOrWhiteSpace(bankAccountNumber);
+            bool hasBankAccName = !string.IsNullOrWhiteSpace(bankAccountName);
+            if ((hasBankName || hasBankAccNum || hasBankAccName) && !(hasBankName && hasBankAccNum && hasBankAccName))
+            {
+                throw new BadRequestException("Vui lòng nhập đầy đủ thông tin ngân hàng (Tên ngân hàng, Số tài khoản, Tên chủ tài khoản) hoặc để trống toàn bộ.");
+            }
         }
     }
 }

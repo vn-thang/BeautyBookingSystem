@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/formatters.dart'; // Sử dụng hàm format tiền tệ chung
 import '../models/voucher_model.dart';
 
 class VoucherTile extends StatelessWidget {
@@ -11,27 +15,27 @@ class VoucherTile extends StatelessWidget {
 
   Color _getStatusColor() {
     switch (voucher.status) {
-      case 'Đang diễn ra': return Colors.green;
-      case 'Sắp diễn ra': return Colors.orange;
-      default: return Colors.grey;
+      case 'Đang diễn ra': return AppColors.success;
+      case 'Sắp diễn ra': return AppColors.warning;
+      default: return AppColors.textSub;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final statusColor = _getStatusColor();
-    final formatter = NumberFormat('#,###');
     
     final discountText = voucher.discountType == 0 
-        ? '${formatter.format(voucher.discountValue)}đ' 
+        ? Formatters.formatCurrency(voucher.discountValue)
         : '${voucher.discountValue.toStringAsFixed(0)}%';
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMedium)),
       elevation: 2,
+      color: AppColors.white,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppDimens.paddingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -40,35 +44,64 @@ class VoucherTile extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
-                  child: Text(voucher.code, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 16)),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.1), 
+                    borderRadius: BorderRadius.circular(AppDimens.radiusSmall)
+                  ),
+                  child: Text(
+                    voucher.code, 
+                    style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, color: AppColors.error, fontSize: 16)
+                  ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                  child: Text(voucher.status, style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1), 
+                    borderRadius: BorderRadius.circular(AppDimens.radiusSmall)
+                  ),
+                  child: Text(
+                    voucher.status, 
+                    style: AppTextStyles.labelSmall.copyWith(color: statusColor, fontWeight: FontWeight.bold)
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Text(
-              'Giảm $discountText (Tối đa ${formatter.format(voucher.maxDiscount)}đ)', 
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)
+              'Giảm $discountText (Tối đa ${Formatters.formatCurrency(voucher.maxDiscount)})', 
+              style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.w600, fontSize: 15)
             ),
             const SizedBox(height: 4),
-            Text('Đơn tối thiểu: ${formatter.format(voucher.minOrderValue)}đ', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+            Text(
+              'Đơn tối thiểu: ${Formatters.formatCurrency(voucher.minOrderValue)}', 
+              style: AppTextStyles.labelSmall
+            ),
             const SizedBox(height: 4),
-            Text('HSD: ${DateFormat('dd/MM/yyyy HH:mm').format(voucher.endDate)}', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
-            const SizedBox(height: 8),
+            Text(
+              'HSD: ${Formatters.formatDateTime(voucher.endDate)}', // Dùng hàm format ngày
+              style: AppTextStyles.labelSmall
+            ),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Đã dùng: ${voucher.usedCount} / ${voucher.usageLimit}', style: const TextStyle(fontWeight: FontWeight.w500)),
+                Text(
+                  'Đã dùng: ${voucher.usedCount} / ${voucher.usageLimit}', 
+                  style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.w500)
+                ),
                 Row(
                   children: [
-                    IconButton(icon: const Icon(Icons.edit, color: Colors.blue, size: 20), onPressed: onEdit, constraints: const BoxConstraints()),
-                    const SizedBox(width: 8),
-                    IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 20), onPressed: onDelete, constraints: const BoxConstraints()),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Color(0xFF0068FF), size: 20), // Xanh dương
+                      onPressed: onEdit, 
+                      constraints: const BoxConstraints()
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: AppColors.error, size: 20), 
+                      onPressed: onDelete, 
+                      constraints: const BoxConstraints()
+                    ),
                   ],
                 )
               ],

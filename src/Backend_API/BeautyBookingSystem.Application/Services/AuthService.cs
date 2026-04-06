@@ -60,8 +60,6 @@ namespace BeautyBookingSystem.Application.Services
     {
         user.FcmToken = request.FcmToken;
     }
-
-    // 👇 1. TÌM STORE TRƯỚC ĐỂ LẤY ĐƯỢC STORE ID 👇
     int? currentStoreId = null;
     string? currentStoreStatus = null;
 
@@ -75,11 +73,7 @@ namespace BeautyBookingSystem.Application.Services
         }
     }
 
-    // 👇 2. TRUYỀN CURRENT STORE ID VÀO HÀM TẠO TOKEN 👇
-    // Lúc này hàm sẽ biết phải nhét số 1 (chẳng hạn) vào trong Token
     var tokenResponse = await GenerateTokensAndUpdateUserAsync(user, currentStoreId);
-
-    // 3. GẮN THÊM THÔNG TIN VÀO RESPONSE TRẢ VỀ CHO APP FLUTTER
     tokenResponse.Role = user.Role.ToString(); 
     
     if (currentStoreStatus != null)
@@ -111,7 +105,6 @@ namespace BeautyBookingSystem.Application.Services
     }
             return await GenerateTokensAndUpdateUserAsync(user, currentStoreId);
         }
-
         private async Task<TokenResponse> GenerateTokensAndUpdateUserAsync(User user, int? storeId = null)
         {
             var accessToken = CreateAccessToken(user, storeId);
@@ -125,7 +118,6 @@ namespace BeautyBookingSystem.Application.Services
 
             return new TokenResponse { AccessToken = accessToken, RefreshToken = refreshToken };
         }
-
         private string CreateAccessToken(User user, int? storeId = null)
         {
            
@@ -158,7 +150,7 @@ namespace BeautyBookingSystem.Application.Services
         {
             var randomNumber = new byte[32];
             using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomNumber); //Fill dữ liệu ngẫu nhiên vào mảng byte.
+            rng.GetBytes(randomNumber); 
             return Convert.ToBase64String(randomNumber); 
         }
 

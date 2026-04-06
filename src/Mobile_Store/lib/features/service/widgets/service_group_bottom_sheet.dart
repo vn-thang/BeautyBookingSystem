@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import '../services/service_api.dart';
 import '../models/service_group_model.dart';
-import '../../../shared/widgets/shared_service_widgets.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/widgets/inputs/app_text_field.dart';
+import '../../../shared/widgets/buttons/app_buttons.dart';
+import '../../../shared/widgets/feedback/snackbar_helper.dart';
 
 class ServiceGroupBottomSheet extends StatefulWidget {
   final int storeId;
@@ -61,7 +67,10 @@ class _ServiceGroupBottomSheetState extends State<ServiceGroupBottomSheet> {
 
       if (mounted) {
         nav.pop();
-        SnackBarHelper.showSuccess(context, isEdit ? 'Cập nhật nhóm thành công!' : 'Tạo nhóm dịch vụ thành công!');
+        SnackBarHelper.showSuccess(
+          context, 
+          isEdit ? 'Cập nhật nhóm thành công!' : 'Tạo nhóm dịch vụ thành công!'
+        );
         widget.onSuccess();
       }
     } catch (e) {
@@ -76,7 +85,9 @@ class _ServiceGroupBottomSheetState extends State<ServiceGroupBottomSheet> {
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 20, right: 20, top: 24,
+        left: AppDimens.paddingLarge, 
+        right: AppDimens.paddingLarge, 
+        top: AppDimens.paddingLarge,
       ),
       child: Form(
         key: _formKey,
@@ -85,23 +96,43 @@ class _ServiceGroupBottomSheetState extends State<ServiceGroupBottomSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              BottomSheetHeader(title: isEdit ? 'Chỉnh sửa nhóm' : 'Thêm nhóm dịch vụ'),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _nameController,
-                decoration: buildCustomInputDecoration(
-                  isEdit ? 'Tên nhóm (*)' : 'Tên nhóm hiển thị (*)', 
-                  'VD: Combo Cắt Tóc VIP...'
+              // Nút kéo mờ ảo (Drag Handle)
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                validator: (value) => (value == null || value.trim().isEmpty) ? 'Vui lòng nhập tên nhóm' : null,
               ),
-              const SizedBox(height: 32),
-              LoadingSubmitButton(
+              Text(
+                isEdit ? 'Chỉnh sửa nhóm' : 'Thêm nhóm dịch vụ',
+                style: AppTextStyles.heading1.copyWith(fontSize: 20),
+              ),
+              const SizedBox(height: AppDimens.paddingLarge),
+            
+              AppTextField(
+                label: isEdit ? 'Tên nhóm (*)' : 'Tên nhóm hiển thị (*)',
+                hint: 'VD: Combo Cắt Tóc VIP...',
+                icon: Icons.folder_outlined,
+                controller: _nameController,
+                validator: (value) => (value == null || value.trim().isEmpty) 
+                    ? 'Vui lòng nhập tên nhóm' 
+                    : null,
+              ),
+              
+              const SizedBox(height: AppDimens.paddingLarge), 
+              
+              AppPrimaryButton(
                 isLoading: _isLoading,
                 onPressed: _submitForm,
                 text: isEdit ? 'Lưu thay đổi' : 'Lưu nhóm dịch vụ',
               ),
-              const SizedBox(height: 24),
+              
+              const SizedBox(height: AppDimens.paddingLarge),
             ],
           ),
         ),

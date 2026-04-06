@@ -31,6 +31,9 @@ class StoreBookingDetailModel extends StoreBookingListModel {
   final String? customerNote;
   final double totalPrice;
   final double discountAmount;
+  final double depositAmount;
+  final double remainingAmount;
+
   final String? cancelReason;
   final String? cancelledBy;
   final int? paymentId;
@@ -46,6 +49,9 @@ class StoreBookingDetailModel extends StoreBookingListModel {
     this.customerNote,
     required this.totalPrice,
     required this.discountAmount,
+    required this.depositAmount,
+    required this.remainingAmount,
+
     this.cancelReason,
     this.cancelledBy,
     required this.services,
@@ -64,6 +70,11 @@ class StoreBookingDetailModel extends StoreBookingListModel {
       customerNote: json['customerNote'],
       totalPrice: (json['totalPrice'] ?? 0).toDouble(),
       discountAmount: (json['discountAmount'] ?? 0).toDouble(),
+      
+      // 3. Parse dữ liệu từ JSON gửi về
+      depositAmount: (json['depositAmount'] ?? 0).toDouble(),
+      remainingAmount: (json['remainingAmount'] ?? 0).toDouble(),
+
       cancelReason: json['cancelReason'],
       cancelledBy: json['cancelledBy'],
       paymentId: json['paymentId'],

@@ -12,7 +12,6 @@ namespace BeautyBookingSystem.Application.DTOs.Common
         public string Message { get; set; } = string.Empty;
         public T? Data { get; set; }
 
-        // Các hàm Helper để gọi cho nhanh
         public static ApiResponse<T> Ok(T data, string message = "Thành công")
         {
             return new ApiResponse<T> { Success = true, Message = message, Data = data };

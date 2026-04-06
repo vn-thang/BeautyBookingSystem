@@ -16,7 +16,6 @@ class AccountService {
     return e.toString().replaceAll('Exception: ', '');
   }
 
-  // 1. Lấy thông tin Profile
   static Future<AccountResult<UserProfileModel>> getProfile() async {
     try {
       final json = await ApiClient.get('/api/User/me');
@@ -27,7 +26,6 @@ class AccountService {
     }
   }
 
-  // 2. Cập nhật Profile
   static Future<AccountResult<bool>> updateProfile({
     required String fullName,
     String? email,
@@ -49,7 +47,6 @@ class AccountService {
     }
   }
 
-  // 3. Đổi mật khẩu
   static Future<AccountResult<bool>> changePassword(String oldPassword, String newPassword) async {
     try {
       await ApiClient.put('/api/Auth/change-password', body: {

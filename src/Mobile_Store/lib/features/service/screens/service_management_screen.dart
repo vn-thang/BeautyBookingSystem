@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
+import '../../../shared/widgets/feedback/app_error_box.dart';
+import '../../../shared/widgets/inputs/app_filter_dropdown.dart';
+import '../../../shared/widgets/inputs/app_header.dart';
+import '../../../shared/widgets/feedback/snackbar_helper.dart'; 
+import '../../../shared/widgets/buttons/app_buttons.dart'; 
 import '../models/service_group_model.dart';
 import '../models/service_model.dart';
 import '../services/service_api.dart';
-import '../../../shared/widgets/shared_service_widgets.dart';
 import '../widgets/service_group_bottom_sheet.dart';
 import '../widgets/service_bottom_sheet.dart';
 import '../widgets/service_group_card.dart';
 import '../widgets/free_service_tile.dart';
 import 'service_group_detail_screen.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 
 enum ServiceFilter { all, active, inactive }
 
@@ -41,8 +48,10 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusLarge))
+      ),
       builder: (context) => ServiceGroupBottomSheet(
         storeId: widget.storeId,
         group: group,
@@ -55,14 +64,22 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => ServiceBottomSheet(
-        storeId: widget.storeId,
-        service: service,
-        serviceGroupId: 0,
-        groupName: "Dịch vụ tự do",
-        onSuccess: _loadData,
+      backgroundColor: Colors.transparent,
+      builder: (context) => FractionallySizedBox(
+        heightFactor: 0.91, 
+        child: Container(
+          decoration: const BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusLarge)),
+          ),
+          child: ServiceBottomSheet(
+            storeId: widget.storeId,
+            service: service,
+            serviceGroupId: 0,
+            groupName: "Dịch vụ tự do",
+            onSuccess: _loadData,
+          ),
+        ),
       ),
     );
   }
@@ -71,25 +88,41 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc muốn xóa nhóm "${group.name}" không?'),
+        backgroundColor: AppColors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMedium)),
+        title: Text('Xác nhận xóa', style: AppTextStyles.heading1.copyWith(fontSize: 18, color: AppColors.error)),
+        content: Text('Bạn có chắc muốn xóa nhóm "${group.name}" không?', style: AppTextStyles.bodyText),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                await ServiceApi.deleteServiceGroup(group.id);
-                if (!mounted) return;
-                SnackBarHelper.showSuccess(context, 'Đã xóa nhóm!');
-                _loadData();
-              } catch (e) {
-                if (!mounted) return;
-                SnackBarHelper.showError(context, e.toString());
-              }
-            },
-            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
-          ),
+          Row(
+            children: [
+              Expanded(
+                child: AppOutlineButton(
+                  text: 'HỦY', 
+                  color: AppColors.textSub,
+                  onTap: () => Navigator.pop(ctx)
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: AppPrimaryButton(
+                  text: 'XÓA',
+                  color: AppColors.error, 
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      await ServiceApi.deleteServiceGroup(group.id);
+                      if (!mounted) return;
+                      SnackBarHelper.showSuccess(context, 'Đã xóa nhóm!');
+                      _loadData();
+                    } catch (e) {
+                      if (!mounted) return;
+                      SnackBarHelper.showError(context, e.toString());
+                    }
+                  },
+                ),
+              ),
+            ],
+          )
         ],
       ),
     );
@@ -98,147 +131,149 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100, 
-      appBar: AppBar(
-        title: const Text('Quản lý dịch vụ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
-        centerTitle: true,
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.background,
-        elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: InkWell(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              child: const Icon(Icons.arrow_back_ios_new, size: 18, color: AppColors.primary),
+      backgroundColor: AppColors.background, 
+      appBar: const AppHeader(
+        title: 'Quản lý dịch vụ',
+      ),
+      body: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimens.paddingMedium, 
+              vertical: AppDimens.paddingSmall
+            ),
+            color: AppColors.white,
+            child: AppFilterDropdown<ServiceFilter>(
+              inlineLabel: 'Trạng thái: ',
+              hint: 'Chọn trạng thái',
+              value: _currentFilter,
+              items: [
+                DropdownMenuItem(
+                  value: ServiceFilter.all, 
+                  child: Text('Tất cả', style: AppTextStyles.bodyText)
+                ),
+                DropdownMenuItem(
+                  value: ServiceFilter.active, 
+                  child: Text('Đang hiển thị', style: AppTextStyles.bodyText)
+                ),
+                DropdownMenuItem(
+                  value: ServiceFilter.inactive, 
+                  child: Text('Đã ẩn', style: AppTextStyles.bodyText)
+                ),
+              ],
+              onChanged: (ServiceFilter? filter) {
+                if (filter != null && filter != _currentFilter) {
+                  setState(() => _currentFilter = filter);
+                }
+              },
             ),
           ),
-        ),
-        actions: [
-          PopupMenuButton<ServiceFilter>(
-            icon: const Icon(Icons.filter_list_rounded, color: AppColors.background),
-            tooltip: 'Lọc dịch vụ',
-            onSelected: (ServiceFilter filter) {
-              if (_currentFilter != filter) {
-                setState(() => _currentFilter = filter);
-              }
-            },
-            itemBuilder: (context) => [
-              CheckedPopupMenuItem<ServiceFilter>(
-                value: ServiceFilter.all,
-                checked: _currentFilter == ServiceFilter.all,
-                child: const Text('Tất cả'),
-              ),
-              CheckedPopupMenuItem<ServiceFilter>(
-                value: ServiceFilter.active,
-                checked: _currentFilter == ServiceFilter.active,
-                child: const Text('Đang hiển thị'),
-              ),
-              CheckedPopupMenuItem<ServiceFilter>(
-                value: ServiceFilter.inactive,
-                checked: _currentFilter == ServiceFilter.inactive,
-                child: const Text('Đã ẩn'),
-              ),
-            ],
+          
+          Expanded(
+            child: FutureBuilder<List<ServiceGroupModel>>(
+              future: _groupedServicesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                }
+                if (snapshot.hasError) {
+                  return Padding(
+                    padding: const EdgeInsets.all(AppDimens.paddingMedium),
+                    child: Center(child: AppErrorBox(errorMessage: snapshot.error.toString())),
+                  );
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(child: Text("Chưa có dữ liệu.", style: AppTextStyles.bodyText));
+                }
+
+                final allGroups = snapshot.data!;
+                final groups = allGroups.map((group) {
+                  final filteredServices = group.services.where((service) {
+                    if (_currentFilter == ServiceFilter.active) return service.isActive;
+                    if (_currentFilter == ServiceFilter.inactive) return !service.isActive;
+                    return true; 
+                  }).toList();
+
+                  return ServiceGroupModel(
+                    id: group.id,
+                    name: group.name,
+                    storeId: group.storeId,
+                    sortOrder: group.sortOrder,
+                    services: filteredServices,
+                  );
+                }).where((group) => group.id == 0 || group.services.isNotEmpty).toList();
+                
+                final ungroupedGroup = groups.firstWhere(
+                  (g) => g.id == 0,
+                  orElse: () => ServiceGroupModel(id: 0, name: '', services: [], storeId: widget.storeId, sortOrder: 0), 
+                );
+                final realGroups = groups.where((g) => g.id != 0).toList();
+
+                return RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: () async => _loadData(),
+                  child: ListView(
+                    padding: const EdgeInsets.all(AppDimens.paddingMedium),
+                    children: [
+                      if (ungroupedGroup.services.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md, left: AppSpacing.xs),
+                          child: Text("Dịch vụ tự do", style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                        ...ungroupedGroup.services.map((service) => FreeServiceTile(
+                          service: service,
+                          onTap: () => _openFreeServiceBottomSheet(service: service),
+                        )),
+                        const SizedBox(height: AppDimens.paddingLarge),
+                      ],
+                      if (realGroups.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md, left: AppSpacing.xs),
+                          child: Text("Nhóm dịch vụ", style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, fontSize: 16)),
+                        ),
+                        ...realGroups.map((group) => ServiceGroupCard(
+                          group: group,
+                          onTap: () => Navigator.push(context, MaterialPageRoute(
+                            builder: (context) => ServiceGroupDetailScreen(storeId: widget.storeId, group: group)
+                          )).then((_) => _loadData()),
+                          onEdit: () => _openGroupBottomSheet(group: group),
+                          onDelete: () => _confirmDeleteGroup(group),
+                        )),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
-      body: FutureBuilder<List<ServiceGroupModel>>(
-        future: _groupedServicesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-          if (snapshot.hasError) return Center(child: Text("Lỗi: ${snapshot.error}"));
-          if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text("Chưa có dữ liệu."));
-
-          final allGroups = snapshot.data!;
-          final groups = allGroups.map((group) {
-            final filteredServices = group.services.where((service) {
-              if (_currentFilter == ServiceFilter.active) return service.isActive;
-              if (_currentFilter == ServiceFilter.inactive) return !service.isActive;
-              return true; 
-            }).toList();
-
-            return ServiceGroupModel(
-              id: group.id,
-              name: group.name,
-              storeId: group.storeId,
-              sortOrder: group.sortOrder,
-              services: filteredServices,
-            );
-          }).where((group) => group.id == 0 || group.services.isNotEmpty).toList();
-          
-          final ungroupedGroup = groups.firstWhere(
-            (g) => g.id == 0,
-            orElse: () => ServiceGroupModel(id: 0, name: '', services: [], storeId: widget.storeId, sortOrder: 0), 
-          );
-          final realGroups = groups.where((g) => g.id != 0).toList();
-
-          return RefreshIndicator(
-            color: AppColors.primary,
-            onRefresh: () async => _loadData(),
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (ungroupedGroup.services.isNotEmpty) ...[
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 12, left: 4),
-                    child: Text("Dịch vụ tự do", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
-                  ),
-                  ...ungroupedGroup.services.map((service) => FreeServiceTile(
-                    service: service,
-                    onTap: () => _openFreeServiceBottomSheet(service: service),
-                  )),
-                  const SizedBox(height: 24),
-                ],
-                if (realGroups.isNotEmpty) ...[
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 12, left: 4),
-                    child: Text("Nhóm dịch vụ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
-                  ),
-                  ...realGroups.map((group) => ServiceGroupCard(
-                    group: group,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ServiceGroupDetailScreen(storeId: widget.storeId, group: group))).then((_) => _loadData()),
-                    onEdit: () => _openGroupBottomSheet(group: group),
-                    onDelete: () => _confirmDeleteGroup(group),
-                  )),
-                ],
-              ],
-            ),
-          );
-        },
-      ),
       bottomNavigationBar: SafeArea(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingMedium, vertical: AppDimens.paddingSmall),
           decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -5))],
+            color: AppColors.white,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.textMain.withValues(alpha: 0.05), 
+                blurRadius: 10, 
+                offset: const Offset(0, -5)
+              )
+            ],
           ),
           child: Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () => _openGroupBottomSheet(),
-                  child: const Text('Thêm Nhóm', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                child: AppOutlineButton(
+                  text: 'Thêm Nhóm',
+                  onTap: () => _openGroupBottomSheet(),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
-                  ),
+                child: AppPrimaryButton(
+                  text: 'Thêm Dịch Vụ',
                   onPressed: () => _openFreeServiceBottomSheet(),
-                  child: const Text('Thêm Dịch Vụ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

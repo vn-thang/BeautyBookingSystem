@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../../shared/widgets/app_text_field.dart'; 
+import 'package:flutter/gestures.dart';
+import 'package:mobile_store/core/screens/custom_webview_screen.dart';
+import '../../../shared/widgets/inputs/app_text_field.dart';
+import '../../../shared/widgets/buttons/app_buttons.dart';
+import '../../../shared/widgets/feedback/app_error_box.dart';
+import '../../../shared/widgets/feedback/snackbar_helper.dart';
 import '../widgets/auth_components.dart';
 import '../services/auth_service.dart';
 import '../../../core/utils/form_validators.dart';
-import 'package:flutter/gestures.dart'; 
-import 'package:url_launcher/url_launcher.dart'; // thư viện mở web
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -23,15 +28,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _isLoading = false;
   String? _serverErrorMessage;
-  bool _isAgreed = false; 
+  bool _isAgreed = false;
   late TapGestureRecognizer _termsRecognizer;
-
 
   @override
   void initState() {
     super.initState();
-    _termsRecognizer = TapGestureRecognizer()..onTap = _openTermsWebPage;
+    _termsRecognizer = TapGestureRecognizer(); 
   }
+
   @override
   void dispose() {
     _ownerNameController.dispose();
@@ -43,29 +48,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _clearError() {
-    if (_serverErrorMessage != null) setState(() => _serverErrorMessage = null);
-  }
-Future<void> _openTermsWebPage() async {
-    final Uri url = Uri.parse('https://google.com'); 
-    
-    if (!await launchUrl(url, mode: LaunchMode.inAppBrowserView)) {
-      debugPrint('Không thể mở link: $url');
+    if (_serverErrorMessage != null) {
+      setState(() {
+        _serverErrorMessage = null;
+      });
     }
   }
+
+  void _openTermsWebPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CustomWebViewScreen(
+          title: 'Điều khoản và Chính sách',
+          url: 'http://localhost:5173/chinh-sach-chung', 
+        ),
+      ),
+    );
+  }
+
   Future<void> _handleRegister() async {
     _clearError();
     if (!_formKey.currentState!.validate()) return;
 
     if (!_isAgreed) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng đồng ý với Chính sách & điều khoản để tiếp tục!'),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating, 
-        ),
-      );
-      return; 
+      SnackBarHelper.showError(context, 'Vui lòng đồng ý với Chính sách & điều khoản!');
+      return;
     }
+
     setState(() => _isLoading = true);
     try {
       final result = await AuthService.registerPartner(
@@ -78,9 +88,7 @@ Future<void> _openTermsWebPage() async {
       if (!mounted) return;
 
       if (result.isSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đăng ký thành công! Vui lòng đăng nhập'), backgroundColor: Colors.green),
-        );
+        SnackBarHelper.showSuccess(context, 'Đăng ký thành công! Vui lòng đăng nhập');
         Navigator.pop(context);
       } else {
         setState(() => _serverErrorMessage = result.errorMessage);
@@ -92,6 +100,10 @@ Future<void> _openTermsWebPage() async {
 
   @override
   Widget build(BuildContext context) {
+    _termsRecognizer.onTap = () {
+      _openTermsWebPage(context);
+    };
+
     return Scaffold(
       body: AuthGlassBackground(
         child: Form(
@@ -99,51 +111,57 @@ Future<void> _openTermsWebPage() async {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Đăng ký đối tác', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
-              const SizedBox(height: 8),
-              const Text('Tạo tài khoản cửa hàng của bạn', style: TextStyle(color: Colors.white, fontSize: 13)),
+              Text(
+                'Đăng ký đối tác',
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 24,
+                  color: AppColors.authTextTitle,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Tạo tài khoản cửa hàng của bạn',
+                style: AppTextStyles.bodyText.copyWith(color: Colors.white70, fontSize: 13),
+              ),
               const SizedBox(height: 30),
 
-             AppTextField(
-  hint: 'Họ và tên chủ tiệm',
-  icon: Icons.person_outline,
-  controller: _ownerNameController,
- 
-  validator: (val) => FormValidators.requiredField(val, 'Vui lòng nhập họ tên'),
-  onChanged: (_) => _clearError(),
-),
+              AppTextField(
+                hint: 'Họ và tên chủ tiệm',
+                icon: Icons.person_outline,
+                controller: _ownerNameController,
+                validator: (val) => FormValidators.requiredField(val, 'Vui lòng nhập họ tên'),
+                onChanged: (_) => _clearError(),
+              ),
               const SizedBox(height: 14),
 
-            AppTextField(
-  hint: 'Số điện thoại',
-  icon: Icons.phone_outlined,
-  controller: _phoneController,
-  validator: FormValidators.phone,
-  onChanged: (_) => _clearError(),
-),
+              AppTextField(
+                hint: 'Số điện thoại',
+                icon: Icons.phone_outlined,
+                controller: _phoneController,
+                validator: FormValidators.phone,
+                onChanged: (_) => _clearError(),
+              ),
               const SizedBox(height: 14),
 
-             AppTextField(
-  hint: 'Email',
-  icon: Icons.email_outlined,
-  controller: _emailController,
-  
-  validator: FormValidators.email,
-  onChanged: (_) => _clearError(),
-),
+              AppTextField(
+                hint: 'Email',
+                icon: Icons.email_outlined,
+                controller: _emailController,
+                validator: FormValidators.email,
+                onChanged: (_) => _clearError(),
+              ),
               const SizedBox(height: 14),
 
-             AppTextField(
-  hint: 'Mật khẩu',
-  icon: Icons.lock_outline,
-  controller: _passwordController,
-  isPassword: true,
-  
-  validator: (val) => FormValidators.password(val),
-  onChanged: (_) => _clearError(),
-),
+              AppTextField(
+                hint: 'Mật khẩu',
+                icon: Icons.lock_outline,
+                controller: _passwordController,
+                isPassword: true,
+                validator: (val) => FormValidators.password(val),
+                onChanged: (_) => _clearError(),
+              ),
 
-const SizedBox(height: 14), 
+              const SizedBox(height: 14),
 
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,8 +171,8 @@ const SizedBox(height: 14),
                     width: 24,
                     child: Checkbox(
                       value: _isAgreed,
-                      activeColor: Colors.blue, 
-                      side: const BorderSide(color: Color(0xFF334155)), 
+                      activeColor: AppColors.authLink,
+                      side: const BorderSide(color: AppColors.authTextBody),
                       onChanged: (bool? value) {
                         setState(() {
                           _isAgreed = value ?? false;
@@ -162,22 +180,25 @@ const SizedBox(height: 14),
                       },
                     ),
                   ),
-                  const SizedBox(width: 8), 
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 2.0), 
+                      padding: const EdgeInsets.only(top: 2.0),
                       child: RichText(
                         text: TextSpan(
                           text: 'Tôi đã đọc và đồng ý với ',
-                         
-                          style: const TextStyle(color: Color(0xFF334155), fontSize: 13),
+                          style: AppTextStyles.bodyText.copyWith(
+                            color: AppColors.authTextBody,
+                            fontSize: 13,
+                          ),
                           children: [
                             TextSpan(
                               text: 'Chính sách & điều khoản',
                               style: const TextStyle(
-                                color: Colors.blue,
+                                color: AppColors.authLink,
                                 fontWeight: FontWeight.bold,
                               ),
+                              // Gắn recognizer vào TextSpan
                               recognizer: _termsRecognizer, 
                             ),
                             const TextSpan(text: ' dịch vụ của hệ thống.'),
@@ -189,15 +210,30 @@ const SizedBox(height: 14),
                 ],
               ),
 
-              if (_serverErrorMessage != null) AuthErrorBox(errorMessage: _serverErrorMessage!),
+              if (_serverErrorMessage != null) ...[
+                const SizedBox(height: 14),
+                AppErrorBox(errorMessage: _serverErrorMessage!),
+              ],
 
               const SizedBox(height: 25),
-              AuthGradientButton(text: 'Đăng ký', isLoading: _isLoading, onPressed: _handleRegister),
-              
+              AppPrimaryButton(
+                text: 'ĐĂNG KÝ',
+                isLoading: _isLoading,
+                onPressed: _handleRegister,
+                color: const Color(0xFFFF758C),
+              ),
+
               const SizedBox(height: 20),
-              const Text('Đã có tài khoản?', style: TextStyle(color: Color(0xFF334155), fontSize: 13)),
+              Text(
+                'Đã có tài khoản?',
+                style: AppTextStyles.bodyText.copyWith(color: AppColors.authTextBody, fontSize: 13),
+              ),
               const SizedBox(height: 10),
-              AuthOutlineButton(text: 'Đăng nhập ngay', onTap: () => Navigator.pop(context)),
+              AppOutlineButton(
+                text: 'ĐĂNG NHẬP NGAY',
+                color: AppColors.authLink,
+                onTap: () => Navigator.pop(context),
+              ),
             ],
           ),
         ),

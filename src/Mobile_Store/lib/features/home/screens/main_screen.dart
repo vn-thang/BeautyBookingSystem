@@ -1,6 +1,9 @@
 import 'dart:async'; 
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart'; 
+import '../../../core/theme/app_text_styles.dart'; 
+import '../../../shared/widgets/dialogs/permission_dialog.dart';
+
 import '../../dashboard/screens/store_dashboard_screen.dart';
 import '../../store/screens/store_management_screen.dart';  
 import '../../booking/screens/booking_management_screen.dart';  
@@ -8,8 +11,6 @@ import '../../notification/screens/notification_screen.dart';
 import '../../notification/services/notification_api.dart';
 import '../../../core/service/firebase_messaging_service.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../../../shared/widgets/permission_dialog.dart';
-
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -37,7 +38,6 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _checkAndRequestNotificationPermission() async {
-   
     var status = await Permission.notification.status;
     
     if (status.isDenied) {
@@ -57,12 +57,10 @@ class _MainScreenState extends State<MainScreen> {
     } else if (status.isGranted) {
       await FirebaseMessagingService.init();
     }
-
   }
 
   @override
   void dispose() {
-   
     _notificationSubscription?.cancel();
     super.dispose();
   }
@@ -98,6 +96,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background, 
       body: IndexedStack(
         index: _selectedIndex,
         children: _screens, 
@@ -106,11 +105,12 @@ class _MainScreenState extends State<MainScreen> {
         type: BottomNavigationBarType.fixed, 
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        
+        backgroundColor: AppColors.white,
         selectedItemColor: AppColors.primary, 
-        unselectedItemColor: Colors.grey.shade500,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-        backgroundColor: Colors.white,
+        unselectedItemColor: AppColors.textSub, 
+        selectedLabelStyle: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.bold),
+        unselectedLabelStyle: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w500),
         elevation: 10,
         
         items: [
@@ -125,7 +125,7 @@ class _MainScreenState extends State<MainScreen> {
               isLabelVisible: _unreadCount > 0, 
               label: Text(
                 _unreadCount > 99 ? '99+' : '$_unreadCount', 
-                style: const TextStyle(color: Colors.white, fontSize: 11)
+                style: AppTextStyles.labelSmall.copyWith(color: AppColors.white, fontSize: 11), 
               ),
               child: const Icon(Icons.notifications_none_outlined), 
             ),
@@ -133,7 +133,7 @@ class _MainScreenState extends State<MainScreen> {
               isLabelVisible: _unreadCount > 0,
               label: Text(
                 _unreadCount > 99 ? '99+' : '$_unreadCount', 
-                style: const TextStyle(color: Colors.white, fontSize: 11)
+                style: AppTextStyles.labelSmall.copyWith(color: AppColors.white, fontSize: 11), 
               ),
               child: const Icon(Icons.notifications),
             ),

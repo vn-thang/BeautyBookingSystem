@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BeautyBookingSystem.API.Controllers
+namespace BeautyBookingSystem.API.Controllers.Admin
 {
     [Authorize(Roles = "Admin")]
     [ApiController]
@@ -17,10 +17,10 @@ namespace BeautyBookingSystem.API.Controllers
             _dashboardService = dashboardService;
         }
 
-        [HttpGet("statistics")]
-        public async Task<IActionResult> GetStatistics()
+       [HttpGet("statistics")]
+        public async Task<IActionResult> GetStatistics([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
         {
-            var data = await _dashboardService.GetDashboardStatisticsAsync();
+            var data = await _dashboardService.GetDashboardStatisticsAsync(fromDate, toDate);
             return Ok(data);
         }
     }

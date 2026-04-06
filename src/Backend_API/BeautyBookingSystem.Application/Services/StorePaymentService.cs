@@ -91,7 +91,6 @@ namespace BeautyBookingSystem.Application.Services
 
             return result;
         }
-
         public async Task<bool> RefundPaymentAsync(int paymentId)
         {
             int storeId = await _currentUserService.GetCurrentStoreIdAsync();

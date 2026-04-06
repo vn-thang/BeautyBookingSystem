@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/staff_model.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 
 class StaffTile extends StatelessWidget {
   final StaffModel staff;
@@ -15,14 +19,13 @@ class StaffTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFFDE4660);
     final hasAvatar = staff.avatarUrl != null && staff.avatarUrl!.isNotEmpty;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -32,45 +35,47 @@ class StaffTile extends StatelessWidget {
         ],
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingMedium, vertical: AppSpacing.sm),
         leading: CircleAvatar(
           radius: 25,
-          backgroundColor: Colors.grey.shade200,
+          backgroundColor: AppColors.surface,
           backgroundImage: hasAvatar
               ? NetworkImage(staff.avatarUrl!)
               : NetworkImage('https://ui-avatars.com/api/?name=${staff.fullName}&background=random'),
-        
           onBackgroundImageError: (_, _) {}, 
         ),
         title: Text(
           staff.fullName,
-          style: TextStyle(
+          style: AppTextStyles.bodyText.copyWith(
             fontWeight: FontWeight.bold,
             fontSize: 16,
-            color: staff.isActive ? Colors.black87 : Colors.grey,
+            color: staff.isActive ? AppColors.textMain : AppColors.textSub,
             decoration: staff.isActive ? TextDecoration.none : TextDecoration.lineThrough,
           ),
         ),
         subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
+          padding: const EdgeInsets.only(top: AppSpacing.xs),
           child: Wrap(
-            spacing: 8, 
-            runSpacing: 4,
+            spacing: AppSpacing.sm, 
+            runSpacing: AppSpacing.xs,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
                 decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   staff.position,
-                  style: const TextStyle(color: primaryColor, fontSize: 12, fontWeight: FontWeight.w600),
+                  style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
                 ),
               ),
               if (!staff.isActive)
-                const Text('Đã nghỉ/Ẩn', style: TextStyle(color: Colors.redAccent, fontSize: 12, fontStyle: FontStyle.italic)),
+                Text(
+                  'Đã nghỉ/Ẩn', 
+                  style: AppTextStyles.labelSmall.copyWith(color: AppColors.error, fontStyle: FontStyle.italic)
+                ),
             ],
           ),
         ),
@@ -80,10 +85,28 @@ class StaffTile extends StatelessWidget {
             if (value == 'delete') onDelete();
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 20), SizedBox(width: 8), Text('Sửa thông tin')])),
-            const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, color: Colors.red, size: 20), SizedBox(width: 8), Text('Xóa/Ẩn', style: TextStyle(color: Colors.red))])),
+            PopupMenuItem(
+              value: 'edit', 
+              child: Row(
+                children: [
+                  const Icon(Icons.edit, size: 20, color: AppColors.textMain), 
+                  const SizedBox(width: AppSpacing.sm), 
+                  Text('Sửa thông tin', style: AppTextStyles.bodyText)
+                ]
+              )
+            ),
+            PopupMenuItem(
+              value: 'delete', 
+              child: Row(
+                children: [
+                  const Icon(Icons.delete, color: AppColors.error, size: 20), 
+                  const SizedBox(width: AppSpacing.sm), 
+                  Text('Xóa/Ẩn', style: AppTextStyles.bodyText.copyWith(color: AppColors.error))
+                ]
+              )
+            ),
           ],
-          icon: const Icon(Icons.more_vert, color: Colors.grey),
+          icon: const Icon(Icons.more_vert, color: AppColors.textSub),
         ),
       ),
     );

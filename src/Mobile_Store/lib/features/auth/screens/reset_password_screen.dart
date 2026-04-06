@@ -1,11 +1,15 @@
-
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
-import '../widgets/auth_components.dart';
-import '../../../shared/widgets/app_text_field.dart';
+import '../../../shared/widgets/inputs/app_text_field.dart';
+import '../../../shared/widgets/inputs/app_header.dart'; 
+import '../../../shared/widgets/buttons/app_buttons.dart'; 
+import '../../../shared/widgets/feedback/snackbar_helper.dart'; 
 import '../../../core/utils/form_validators.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
@@ -38,50 +42,36 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     setState(() => _isLoading = false);
 
     if (result.isSuccess) { 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Đổi mật khẩu thành công! Hãy đăng nhập lại."), backgroundColor: Colors.green)
+      SnackBarHelper.showSuccess(context, "Đổi mật khẩu thành công! Hãy đăng nhập lại.");
+      Navigator.pushAndRemoveUntil(
+        context, 
+        MaterialPageRoute(builder: (context) => const LoginScreen()), 
+        (route) => false
       );
-      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.errorMessage ?? "Mã xác nhận không đúng!"), backgroundColor: Colors.red)
-      );
+      SnackBarHelper.showError(context, result.errorMessage ?? "Mã xác nhận không đúng!");
     }
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: AppColors.primary,
-        centerTitle: true,
-        title: const Text(
-          'Đặt lại mật khẩu',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18, 
-            fontWeight: FontWeight.w600
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20), 
-          onPressed: () => Navigator.pop(context)
-        ),
-      ),
+      appBar: const AppHeader(title: 'Đặt lại mật khẩu'), 
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimens.paddingMedium, 
+            vertical: AppDimens.paddingLarge
+          ),
           child: Container(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(AppDimens.paddingLarge),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
+                  color: AppColors.textMain.withValues(alpha: 0.03),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -92,55 +82,62 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     "Tạo mật khẩu mới 🔒", 
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)
+                    style: AppTextStyles.heading1.copyWith(fontSize: 22),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.md),
                   RichText(
                     text: TextSpan(
                       text: "Mã xác nhận đã được gửi đến:\n",
-                      style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.5),
+                      style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub),
                       children: [
                         TextSpan(
                           text: widget.email,
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+                          style: AppTextStyles.bodyText.copyWith(
+                            fontWeight: FontWeight.bold, 
+                            color: AppColors.textMain
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: AppSpacing.xl * 1.5),
 
                   AppTextField(
                     hint: 'Nhập mã từ email...',
+                    label: 'Mã xác nhận (OTP)',
                     icon: Icons.security_outlined,
                     controller: _otpController,
                     validator: (val) => FormValidators.requiredField(val, 'Vui lòng nhập mã OTP'),
+                    keyboardType: TextInputType.number,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.lg),
 
                   AppTextField(
                     hint: 'Mật khẩu mới',
+                    label: 'Mật khẩu mới',
                     icon: Icons.lock_outline,
                     controller: _newPasswordController,
                     isPassword: true,
                     validator: (val) => FormValidators.password(val),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.lg),
 
                   AppTextField(
                     hint: 'Xác nhận mật khẩu',
+                    label: 'Xác nhận mật khẩu',
                     icon: Icons.lock_reset_outlined,
                     controller: _confirmPasswordController,
                     isPassword: true,
                     validator: (val) => FormValidators.confirmPassword(val, _newPasswordController.text),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: AppSpacing.xl * 2),
 
-                  AuthGradientButton(
-                    text: 'Xác nhận & Đổi mật khẩu', 
+                  AppPrimaryButton(
+                    text: 'XÁC NHẬN & ĐỔI MẬT KHẨU', 
                     isLoading: _isLoading, 
-                    onPressed: _handleResetPassword
+                    onPressed: _handleResetPassword,
                   ),
                 ],
               ),

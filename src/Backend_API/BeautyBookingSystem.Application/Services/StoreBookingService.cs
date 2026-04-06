@@ -2,6 +2,7 @@
 using BeautyBookingSystem.Application.Common.Exceptions;
 using BeautyBookingSystem.Application.DTOs.StoreBooking;
 using BeautyBookingSystem.Application.Interfaces;
+using BeautyBookingSystem.Domain.Entities;
 using BeautyBookingSystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -18,31 +19,48 @@ namespace BeautyBookingSystem.Application.Services
         private readonly IMapper _mapper;
         private readonly ICurrentUserService _currentUserService;
         private readonly INotificationService _notificationService;
+        private readonly IStoreWalletService _storeWalletService;
+        private readonly IVnPayService _vnPayService;
 
-        public StoreBookingService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserService currentUserService, INotificationService notificationService)
+        public StoreBookingService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserService currentUserService,IVnPayService vnPayService, INotificationService notificationService, IStoreWalletService storeWalletService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _currentUserService = currentUserService;
             _notificationService = notificationService;
+            _storeWalletService = storeWalletService;
+            _vnPayService = vnPayService;
         }
 
-        public async Task<List<StoreBookingListDto>> GetBookingsAsync(string? status = null)
-        {
-            int storeId = await _currentUserService.GetCurrentStoreIdAsync();
-
-            var query = _unitOfWork.BookingRepository.GetQueryable()
-                .Include(b => b.Customer)
-                .Where(b => b.StoreId == storeId);
-
-            if (!string.IsNullOrEmpty(status) && Enum.TryParse<BookingStatus>(status, true, out var parsedStatus))
+        public async Task<List<StoreBookingListDto>> GetBookingsAsync(string? status = null, int? staffId = null, DateTime? startDate = null, DateTime? endDate = null)
             {
-                query = query.Where(b => b.Status == parsedStatus);
-            }
+                int storeId = await _currentUserService.GetCurrentStoreIdAsync();
 
-            var bookings = await query.OrderByDescending(b => b.CreatedAt).ToListAsync();
-            return _mapper.Map<List<StoreBookingListDto>>(bookings);
-        }
+                var query = _unitOfWork.BookingRepository.GetQueryable()
+                    .Include(b => b.Customer)
+                    .Where(b => b.StoreId == storeId);
+
+                if (!string.IsNullOrEmpty(status) && Enum.TryParse<BookingStatus>(status, true, out var parsedStatus))
+                {
+                    query = query.Where(b => b.Status == parsedStatus);
+                }
+            if (staffId.HasValue)
+            {
+                query = query.Where(b => b.BookingDetails.Any(bd => bd.StaffId == staffId.Value));
+            }
+                if (startDate.HasValue)
+                {
+                    query = query.Where(b => b.CreatedAt >= startDate.Value.Date);
+                }
+                if (endDate.HasValue)
+                {
+                    var nextDay = endDate.Value.Date.AddDays(1);
+                    query = query.Where(b => b.CreatedAt < nextDay);
+                }
+
+                var bookings = await query.OrderByDescending(b => b.CreatedAt).ToListAsync();
+                return _mapper.Map<List<StoreBookingListDto>>(bookings);
+            }
 
         public async Task<StoreBookingDetailDto> GetBookingDetailAsync(int bookingId)
         {
@@ -121,59 +139,120 @@ namespace BeautyBookingSystem.Application.Services
             return result;
         }
 
-        public async Task<bool> UpdateStatusAsync(int bookingId, UpdateBookingStatusRequest request)
-        {
-            int storeId = await _currentUserService.GetCurrentStoreIdAsync();
+    public async Task<bool> UpdateStatusAsync(int bookingId, UpdateBookingStatusRequest request)
+{
+    int storeId = await _currentUserService.GetCurrentStoreIdAsync();
+    int currentUserId = _currentUserService.GetUserId(); 
 
-            var booking = await _unitOfWork.BookingRepository.GetQueryable()
-                .Include(b => b.BookingDetails)
-                .FirstOrDefaultAsync(b => b.Id == bookingId && b.StoreId == storeId);
+    var booking = await _unitOfWork.BookingRepository.GetQueryable()
+        .Include(b => b.BookingDetails)
+        .Include(b => b.Payments)
+        .FirstOrDefaultAsync(b => b.Id == bookingId && b.StoreId == storeId);
 
-            if (booking == null)
-                throw new NotFoundException("Không tìm thấy đơn đặt lịch!");
+    if (booking == null)
+        throw new NotFoundException("Không tìm thấy đơn đặt lịch!");
 
-            if (!Enum.TryParse<BookingStatus>(request.Status, true, out var newStatus))
+    if (!Enum.TryParse<BookingStatus>(request.Status, true, out var newStatus))
+    {
+        throw new BadRequestException("Trạng thái không hợp lệ!"); 
+    }
+
+    booking.Status = newStatus;
+    
+    string customerNotificationTitle = string.Empty;
+    string customerNotificationMessage = string.Empty;
+
+    switch (newStatus)
+    {
+        case BookingStatus.Cancelled:
+            booking.CancelledBy = CancelledByType.Store;
+            booking.CancelReason = request.CancelReason;
+            foreach (var detail in booking.BookingDetails)
             {
-                throw new BadRequestException("Trạng thái không hợp lệ!"); 
+                detail.Status = BookingDetailStatus.Cancelled;
             }
 
-            booking.Status = newStatus;
-            string notificationTitle = string.Empty;
-            string notificationMessage = string.Empty;
-            switch (newStatus)
+            bool isRefunded = false;
+
+            var vnPayDeposit = booking.Payments.FirstOrDefault(p => 
+                p.PaymentMethod == PaymentMethod.VNPAY && 
+                p.PaymentType == PaymentType.Deposit && 
+                p.Status == PaymentStatus.Success);   
+
+            if (vnPayDeposit != null && booking.DepositAmount > 0)
             {
-                case BookingStatus.Cancelled:
-                    booking.CancelledBy = CancelledByType.Store;
-                    booking.CancelReason = request.CancelReason;
-                    foreach (var detail in booking.BookingDetails)
-                        detail.Status = BookingDetailStatus.Cancelled;
+                if (string.IsNullOrEmpty(vnPayDeposit.TransactionId) || !vnPayDeposit.PaidAt.HasValue)
+                {
+                    throw new BadRequestException("Giao dịch thiếu TransactionId hoặc PaidAt, không thể hoàn tiền VNPay!");
+                }
 
-                    notificationTitle = "Lịch hẹn đã bị hủy";
-                    notificationMessage = $"Rất tiếc, lịch hẹn #{booking.Id} đã bị hủy bởi cửa hàng. Lý do: {request.CancelReason}";
-                    break;
+                string vnpPayDateStr = vnPayDeposit.PaidAt.Value.ToString("yyyyMMddHHmmss");
 
-                case BookingStatus.Completed:
-                    foreach (var detail in booking.BookingDetails)
-                        detail.Status = BookingDetailStatus.Done;
-
-                    notificationTitle = "Dịch vụ hoàn tất";
-                    notificationMessage = $"Cảm ơn bạn đã sử dụng dịch vụ tại cửa hàng! Hy vọng bạn hài lòng với trải nghiệm vừa rồi.";
-                    break;
-            }
-
-            _unitOfWork.BookingRepository.Update(booking);
-            var result = await _unitOfWork.SaveChangesAsync() > 0;
-
-            if (result && !string.IsNullOrEmpty(notificationTitle))
-            {
-                _ = _notificationService.CreateAndSendNotificationAsync(
-                    booking.CustomerId,
-                    notificationTitle,
-                    notificationMessage,
-                    NotificationType.BookingUpdate
+                bool refundSuccess = await _vnPayService.RefundAsync(
+                    vnPayDeposit.TransactionId,
+                    vnpPayDateStr,
+                    booking.DepositAmount, 
+                    $"Store_{storeId}" 
                 );
+
+                if (!refundSuccess)
+                {
+                    throw new BadRequestException("Hệ thống VNPay đang gián đoạn, không thể hoàn tiền lúc này!");
+                }
+
+                isRefunded = true;
+
+                vnPayDeposit.Status = PaymentStatus.Refunded;
+                await _storeWalletService.ClawbackDepositAsync(booking.Id);
             }
-            return result;
-        }
+
+            if (isRefunded)
+            {
+                customerNotificationTitle = "Lịch hẹn đã hủy & Hoàn tiền cọc";
+                customerNotificationMessage = $"Cửa hàng đã hủy lịch hẹn #{booking.Id}. Lý do: {request.CancelReason}. Số tiền cọc {booking.DepositAmount:N0}đ đang được tự động hoàn về thẻ/tài khoản của bạn.";
+            }
+            else
+            {
+                customerNotificationTitle = "Lịch hẹn đã bị hủy";
+                customerNotificationMessage = $"Rất tiếc, lịch hẹn #{booking.Id} đã bị hủy bởi cửa hàng. Lý do: {request.CancelReason}";
+            }
+            break;
+
+        case BookingStatus.Completed:
+            foreach (var detail in booking.BookingDetails)
+            {
+                detail.Status = BookingDetailStatus.Done;
+            }
+
+            customerNotificationTitle = "Dịch vụ hoàn tất";
+            customerNotificationMessage = "Cảm ơn bạn đã sử dụng dịch vụ tại cửa hàng! Hy vọng bạn hài lòng với trải nghiệm vừa rồi.";
+            break;
+    }
+
+    _unitOfWork.BookingRepository.Update(booking);
+    var result = await _unitOfWork.SaveChangesAsync() > 0;
+    if (result && newStatus == BookingStatus.Completed)
+    {
+        decimal deductedAmount = await _storeWalletService.ProcessBookingCommissionAsync(booking.Id);
+        
+        _ = _notificationService.CreateAndSendNotificationAsync(
+            currentUserId,
+            "💰 Đã thu phí hoa hồng",
+            $"Đơn đặt lịch #{booking.Id} đã hoàn tất. Hệ thống đã trừ {deductedAmount:N0}đ phí hoa hồng vào ví của cửa hàng.",
+            NotificationType.SystemAlert
+        );
+    }
+    if (result && !string.IsNullOrEmpty(customerNotificationTitle))
+    {
+        _ = _notificationService.CreateAndSendNotificationAsync(
+            booking.CustomerId,
+            customerNotificationTitle,
+            customerNotificationMessage,
+            NotificationType.BookingUpdate
+        );
+    }
+
+    return result;
+}
     }
 }

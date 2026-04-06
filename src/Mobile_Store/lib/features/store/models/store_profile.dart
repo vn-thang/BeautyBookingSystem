@@ -13,6 +13,11 @@ class StoreProfile {
   double averageRating;
   int totalReviews;
   List<OperatingHour> operatingHours;
+  int depositPercent; 
+  double depositThreshold;
+  String? bankName;
+  String? bankAccountNumber;
+  String? bankAccountName;
 
   StoreProfile({
     required this.name,
@@ -26,7 +31,12 @@ class StoreProfile {
     this.isOpen = false,
     this.averageRating = 0.0,
     this.totalReviews = 0,
+    this.depositPercent = 0, 
+    this.depositThreshold = 0.0,
     List<OperatingHour>? operatingHours,
+    this.bankName,
+    this.bankAccountNumber,
+    this.bankAccountName,
   }) : operatingHours = operatingHours ?? [];
 
   factory StoreProfile.fromJson(Map<String, dynamic> json) {
@@ -70,7 +80,12 @@ class StoreProfile {
       isOpen: json['isOpen'] ?? false,
       averageRating: (json['averageRating'] as num?)?.toDouble() ?? 0.0, 
       totalReviews: json['totalReviews'] ?? 0,
+      depositPercent: json['depositPercent'] ?? 0,
+      depositThreshold: (json['depositThreshold'] as num?)?.toDouble() ?? 0.0,
       operatingHours: full7Days, 
+      bankName: json['bankName'],
+      bankAccountNumber: json['bankAccountNumber'],
+      bankAccountName: json['bankAccountName'],
     );
   }
 
@@ -87,10 +102,15 @@ class StoreProfile {
       'isOpen': isOpen,
       'averageRating': averageRating,
       'totalReviews': totalReviews,
+      'depositPercent': depositPercent,
+      'depositThreshold': depositThreshold,
       'operatingHours': operatingHours
           .where((hour) => hour.isActive)
           .map((hour) => hour.toJson())
           .toList(),
+      'bankName': bankName,
+      'bankAccountNumber': bankAccountNumber,
+      'bankAccountName': bankAccountName,
     };
   }
 }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../shared/widgets/buttons/app_buttons.dart';
 
 class ReplyDialogWidget extends StatefulWidget {
   final String? initialReply;
@@ -28,36 +31,46 @@ class _ReplyDialogWidgetState extends State<ReplyDialogWidget> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Phản hồi đánh giá', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      backgroundColor: AppColors.white,
+      surfaceTintColor: Colors.transparent,
+      title: Text('Phản hồi đánh giá', style: AppTextStyles.heading1.copyWith(fontSize: 18)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMedium)),
       content: TextField(
         controller: _controller,
         maxLines: 4,
         maxLength: 500,
+        style: AppTextStyles.bodyText,
         decoration: InputDecoration(
           hintText: 'Nhập nội dung trả lời...',
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          hintStyle: AppTextStyles.labelSmall,
+          filled: true,
+          fillColor: AppColors.white,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
+            borderSide: const BorderSide(color: AppColors.textSub, width: 0.5),
+          ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: AppColors.primary, width: 2), 
+            borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.5), 
           ),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+          child: Text('Hủy', style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub, fontWeight: FontWeight.bold)),
         ),
-        ElevatedButton(
-          onPressed: () {
-            if (_controller.text.trim().isEmpty) return;
-            Navigator.pop(context, _controller.text.trim());
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary, 
-            foregroundColor: Colors.white, 
+        SizedBox(
+          width: 100,
+          height: 40,
+          child: AppPrimaryButton(
+            text: 'GỬI',
+            onPressed: () {
+              if (_controller.text.trim().isEmpty) return;
+              Navigator.pop(context, _controller.text.trim());
+            },
           ),
-          child: const Text('Gửi'),
         ),
       ],
     );

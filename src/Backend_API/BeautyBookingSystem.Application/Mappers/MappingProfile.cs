@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using BeautyBookingSystem.Application.DTOs.AdminBooking;
+using BeautyBookingSystem.Application.DTOs.SystemConfig;
 using BeautyBookingSystem.Application.DTOs.AdminReview;
 using BeautyBookingSystem.Application.DTOs.AdminStore;
 using BeautyBookingSystem.Application.DTOs.AdminUser;
@@ -14,12 +16,15 @@ using BeautyBookingSystem.Application.DTOs.StorePayment;
 using BeautyBookingSystem.Application.DTOs.StoreReview;
 using BeautyBookingSystem.Application.DTOs.StoreVoucher;
 using BeautyBookingSystem.Application.DTOs.User;
+using BeautyBookingSystem.Application.DTOs.StoreWallet;
 using BeautyBookingSystem.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BeautyBookingSystem.Application.DTOs.AdminWallet;
+using BeautyBookingSystem.Application.DTOs.SystemContent;
 
 namespace BeautyBookingSystem.Application.Mappers
 {
@@ -73,9 +78,8 @@ namespace BeautyBookingSystem.Application.Mappers
                 (src.Payments != null && src.Payments.Any())
                 ? src.Payments.First().Id
                 : (int?)null
-                ));
-
-            // Map từ BookingDetails -> BookingServiceItemDto
+                ))
+                .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.FinalPrice - src.DepositAmount));
             CreateMap<BookingDetail, BookingServiceItemDto>()
                 .ForMember(dest => dest.BookingDetailId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.ServiceName, opt => opt.MapFrom(src => src.Service.Name))
@@ -121,6 +125,37 @@ namespace BeautyBookingSystem.Application.Mappers
             CreateMap<Review, ReviewDto>()
             .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.FullName))
             .ForMember(dest => dest.StoreName, opt => opt.MapFrom(src => src.Store.Name));
+
+            CreateMap<Booking, AdminBookingListDto>()
+            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.FullName))
+            .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => src.Customer.Phone))
+            .ForMember(dest => dest.StoreName, opt => opt.MapFrom(src => src.Store.Name))
+            .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => 
+        src.Payments.OrderByDescending(p => p.Id).Select(p => p.Status).FirstOrDefault()
+    ));
+
+            CreateMap<Booking, AdminBookingDetailDto>()
+    .IncludeBase<Booking, AdminBookingListDto>()
+    .ForMember(dest => dest.Services, opt => opt.MapFrom(src => src.BookingDetails))
+    .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.FinalPrice - src.DepositAmount));
+
+            CreateMap<BookingDetail, AdminBookingDetailItemDto>()
+    .ForMember(dest => dest.BookingDetailId, opt => opt.MapFrom(src => src.Id))
+    .ForMember(dest => dest.ServiceName, opt => opt.MapFrom(src => src.Service.Name))
+    .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : null))
+    .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
+
+    CreateMap<WalletTransaction, WalletTransactionDto>();
+    CreateMap<SystemConfig, SystemConfigDto>();
+    CreateMap<WalletTransaction, AdminWalletTransactionDto>()
+    .ForMember(dest => dest.StoreName, opt => opt.MapFrom(src => src.Store.Name));
+    CreateMap<AdjustWalletRequest, WalletTransaction>()
+    .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Reason));
+    CreateMap<SystemContent, SystemContentListDto>();
+    CreateMap<SystemContent, SystemContentDetailDto>();
+    CreateMap<WithdrawalRequest, WithdrawalRequestDto>()
+        .ForMember(dest => dest.StoreName, opt => opt.MapFrom(src => src.Store.Name))
+        .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status));
         }
     }
 }

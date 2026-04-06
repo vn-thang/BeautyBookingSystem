@@ -3,7 +3,6 @@ import '../models/customer_list_model.dart';
 import '../models/customer_profile_model.dart';
 
 class CustomerApi {
-  // 1. Lấy danh sách khách hàng 
   static Future<List<CustomerListModel>> getCustomers(int storeId, {String? searchTerm}) async {
     String url = '/api/store/$storeId/customers';
 

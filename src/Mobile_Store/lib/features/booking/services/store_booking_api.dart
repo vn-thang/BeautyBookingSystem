@@ -1,24 +1,43 @@
+import 'package:intl/intl.dart';
+
 import '../../../core/network/api_client.dart'; 
 import '../models/store_booking_model.dart';
+import '../models/booking_bill_model.dart';
 
 class StoreBookingApi {
-  // 1. Lấy danh sách booking
-  static Future<List<StoreBookingListModel>> getBookings({String? status}) async {
-    final queryParam = status != null ? '?status=$status' : '';
+  static Future<List<StoreBookingListModel>> getBookings({
+    String? status,
+    int? staffId,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    List<String> queryParams = [];
+
+    if (status != null && status.isNotEmpty) {
+      queryParams.add('status=$status');
+    }
+    if (startDate != null) {
+      queryParams.add('startDate=${DateFormat('yyyy-MM-dd').format(startDate)}');
+    }
+    if (endDate != null) {
+      queryParams.add('endDate=${DateFormat('yyyy-MM-dd').format(endDate)}');
+    }
+  if (staffId != null) {
+      queryParams.add('staffId=$staffId'); 
+    }
+    final queryString = queryParams.isNotEmpty ? '?${queryParams.join('&')}' : '';
     
-    final json = await ApiClient.get('/api/StoreBookings$queryParam');
+    final json = await ApiClient.get('/api/StoreBookings$queryString');
     
     List data = json is List ? json : (json['data'] ?? []);
     return data.map((e) => StoreBookingListModel.fromJson(e)).toList();
   }
 
-  // 2. Lấy chi tiết booking
   static Future<StoreBookingDetailModel> getBookingDetail(int id) async {
     final json = await ApiClient.get('/api/StoreBookings/$id');
     return StoreBookingDetailModel.fromJson(json is Map<String, dynamic> ? json : json['data']);
   }
 
-  // 3. Lấy nhân viên rảnh
   static Future<List<AvailableStaffModel>> getAvailableStaffs({
     required DateTime date,
     required String startTime,
@@ -33,7 +52,6 @@ class StoreBookingApi {
     return data.map((e) => AvailableStaffModel.fromJson(e)).toList();
   }
 
-  // 4. Gán nhân viên và xác nhận
   static Future<bool> assignStaff(int bookingId, List<Map<String, int>> assignments) async {
     await ApiClient.put(
       '/api/StoreBookings/$bookingId/assign-staff',
@@ -42,12 +60,18 @@ class StoreBookingApi {
     return true;
   }
 
-  // 5. Cập nhật trạng thái (Hủy / Hoàn thành)
   static Future<bool> updateStatus(int bookingId, String status, {String? cancelReason}) async {
     await ApiClient.put(
       '/api/StoreBookings/$bookingId/status',
       body: { "status": status, "cancelReason": cancelReason },
     );
     return true;
+  }
+
+  static Future<BookingBillModel> getBillDetail(int bookingId) async {
+    final response = await ApiClient.get('/api/store/bookings/$bookingId/bill');
+    final data = response['data'] ?? response['Data'];
+    
+    return BookingBillModel.fromJson(data);
   }
 }

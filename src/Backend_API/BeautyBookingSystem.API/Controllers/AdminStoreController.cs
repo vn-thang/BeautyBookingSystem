@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BeautyBookingSystem.API.Controllers
+namespace BeautyBookingSystem.API.Controllers.Admin
 {
     [Authorize(Roles = "Admin")]
     [ApiController]
@@ -22,6 +22,13 @@ namespace BeautyBookingSystem.API.Controllers
         {
             var result = await _adminStoreService.GetStoresAsync(request);
             return Ok(result);
+        }
+
+        [HttpGet("dropdown")]
+        public async Task<IActionResult> GetStoresForDropdown()
+        {
+            var result = await _adminStoreService.GetStoresForDropdownAsync();
+            return Ok(result); 
         }
 
         [HttpGet("{id}")]
@@ -53,6 +60,15 @@ namespace BeautyBookingSystem.API.Controllers
                 return BadRequest(new { message = "Cập nhật trạng thái thất bại." });
 
             return Ok(new { message = "Cập nhật trạng thái cửa hàng thành công." });
+        }
+        [HttpPut("{id}/fees")]
+        public async Task<IActionResult> UpdateStoreFeeConfig(int id, [FromBody] UpdateStoreFeeConfigRequest request)
+        {
+            var success = await _adminStoreService.UpdateStoreFeeConfigAsync(id, request);
+            if (!success)
+                return BadRequest(new { message = "Cập nhật cấu hình phí thất bại." });
+
+            return Ok(new { message = "Cập nhật cấu hình phí thành công." });
         }
     }
 }

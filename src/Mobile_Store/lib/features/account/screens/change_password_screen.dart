@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../../shared/widgets/app_text_field.dart';
-import '../../../shared/widgets/app_buttons.dart';
-import '../../../shared/widgets/app_error_box.dart';
-import '../../../core/utils/form_validators.dart';
+import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
+import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
+import 'package:mobile_store/shared/widgets/inputs/app_header.dart';
 import '../services/account_service.dart';
+import '../../../core/utils/form_validators.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/inputs/app_text_field.dart';
+import '../../../shared/widgets/feedback/app_error_box.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -27,7 +31,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null; // Reset lỗi
+      _errorMessage = null; 
     });
 
     final result = await AccountService.changePassword(
@@ -39,9 +43,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     setState(() => _isLoading = false);
 
     if (result.isSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đổi mật khẩu thành công!'), backgroundColor: Colors.green),
-      );
+      SnackBarHelper.showSuccess(context, 'Đổi mật khẩu thành công!');
       Navigator.pop(context); 
     } else {
       setState(() => _errorMessage = result.errorMessage);
@@ -59,26 +61,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, 
-      appBar: AppBar(
-        title: const Text(
-          'Đổi mật khẩu',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-        backgroundColor: AppColors.primary, // Đổ màu nền đỏ/hồng
-        foregroundColor: AppColors.background, 
-        elevation: 0,
-      ),
+      backgroundColor: AppColors.background, 
+      appBar: const AppHeader(title: 'Đổi mật khẩu'),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppDimens.paddingLarge),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
               if (_errorMessage != null) ...[
                 AppErrorBox(errorMessage: _errorMessage!),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.xl),
               ],
               
               AppTextField(
@@ -89,7 +82,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 isPassword: true,
                 validator: (val) => FormValidators.requiredField(val, 'Vui lòng nhập mật khẩu cũ'),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               
               AppTextField(
                 label: 'Mật khẩu mới',
@@ -99,7 +92,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 isPassword: true,
                 validator: (val) => FormValidators.password(val, minLength: 6),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               
               AppTextField(
                 label: 'Xác nhận mật khẩu mới',
@@ -111,7 +104,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ),
               const SizedBox(height: 40),
               
-              AppGradientButton(
+              AppPrimaryButton(
                 text: 'CẬP NHẬT MẬT KHẨU',
                 isLoading: _isLoading,
                 onPressed: _submit,

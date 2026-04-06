@@ -1,11 +1,18 @@
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile_store/features/customer/screens/customer_detail_screen.dart';
+import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
+import '../../../shared/widgets/inputs/app_header.dart'; 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
+
 import '../models/customer_list_model.dart';
 import '../services/customer_api.dart';
 import '../widgets/customer_card.dart';
 import '../widgets/customer_search_bar.dart';
-import '../../../core/theme/app_colors.dart';
 
 class CustomerListScreen extends StatefulWidget {
   final int storeId; 
@@ -71,31 +78,20 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     setState(() {});
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text(
-          'Quản lý Khách hàng',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true, 
-        elevation: 0,
-        
-        backgroundColor: AppColors.primary, 
-       
-        foregroundColor: AppColors.background, 
+      backgroundColor: AppColors.background, 
+      appBar: const AppHeader(
+        title: 'Quản lý Khách hàng',
       ),
       body: Column(
         children: [
-        
           CustomerSearchBar(
             controller: _searchController,
             onChanged: _onSearchChanged,
             onClear: _clearSearch,
           ),
-          
           Expanded(
             child: _buildBodyContent(),
           ),
@@ -106,7 +102,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
 
   Widget _buildBodyContent() {
     if (_isLoading && _customers.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
 
     if (_errorMessage != null && _customers.isEmpty) {
@@ -118,46 +114,51 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
     }
 
     return RefreshIndicator(
+      color: AppColors.primary,
       onRefresh: () => _fetchCustomers(searchTerm: _searchController.text),
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingLarge, vertical: AppDimens.paddingMedium),
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: _customers.length,
         itemBuilder: (context, index) {
           final customer = _customers[index];
-          // Gọi Widget Card đã tách
           return CustomerCard(
             customer: customer,
             onTap: () {
-  Navigator.push(context, MaterialPageRoute(
-    builder: (context) => CustomerDetailScreen(
-      storeId: widget.storeId, 
-      customerId: customer.customerId,
-    )
-  ));
-},
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) => CustomerDetailScreen(
+                  storeId: widget.storeId, 
+                  customerId: customer.customerId,
+                )
+              ));
+            },
           );
         },
       ),
     );
   }
 
-  // Giao diện khi Lỗi
   Widget _buildErrorState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(AppDimens.paddingLarge),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.redAccent),
-            const SizedBox(height: 16),
-            Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => _fetchCustomers(searchTerm: _searchController.text),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Thử lại'),
+            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              _errorMessage!, 
+              textAlign: TextAlign.center, 
+              style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub)
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            SizedBox(
+              width: 150, 
+              child: AppOutlineButton(
+                text: 'Thử lại',
+                onTap: () => _fetchCustomers(searchTerm: _searchController.text),
+              ),
             )
           ],
         ),
@@ -170,14 +171,14 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 80, color: Colors.grey[300]),
-          const SizedBox(height: 16),
+          Icon(Icons.people_outline, size: 80, color: AppColors.textSub.withValues(alpha: 0.3)),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             _searchController.text.isNotEmpty 
                 ? 'Không tìm thấy khách hàng nào\nphù hợp với từ khóa.'
                 : 'Tiệm chưa có khách hàng nào.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            style: AppTextStyles.bodyText.copyWith(fontSize: 16, color: AppColors.textSub),
           ),
         ],
       ),

@@ -1,13 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:mobile_store/features/store/widgets/store_image_header.dart';
-import 'package:mobile_store/shared/widgets/permission_dialog.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/widgets/buttons/app_buttons.dart';
+import '../../../shared/widgets/dialogs/permission_dialog.dart';
+import '../../../shared/widgets/feedback/snackbar_helper.dart';
+import '../../../shared/widgets/inputs/app_header.dart';
+import '../../../shared/widgets/inputs/app_text_field.dart';
+
 import '../models/operating_hour.dart';
 import '../models/store_profile.dart';
-import 'location_verification.dart';
+import '../screens/map_picker_screen.dart';
+
+import 'store_image_header.dart';
+import 'store_payment_section.dart';
 import 'operating_hours_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'store_basic_info_section.dart';
+import 'store_settings_section.dart';
 
 class StoreProfileForm extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -39,6 +53,10 @@ class _StoreProfileFormState extends State<StoreProfileForm> {
   
   late TextEditingController _logoUrlController;
   late TextEditingController _coverUrlController;
+  late TextEditingController _bankNameController;
+  late TextEditingController _bankAccountNumberController;
+  late TextEditingController _bankAccountNameController;
+  late TextEditingController _depositThresholdController;
 
   String _coverUrl = '';
   String _logoUrl = '';
@@ -48,8 +66,10 @@ class _StoreProfileFormState extends State<StoreProfileForm> {
   bool _isGettingLocation = false;
   bool _isOpen = true;
   List<OperatingHour> _operatingHours = [];
-
-  final Color primaryColor = const Color(0xFFD84B6B);
+  
+  int _depositPercent = 0; 
+  final List<int> _depositOptions = [0, 10, 20, 30, 40, 50];
+  final Color primaryColor = AppColors.primary;
 
   @override
   void initState() {
@@ -68,18 +88,30 @@ class _StoreProfileFormState extends State<StoreProfileForm> {
     _coverUrl = data['coverImageUrl']?.toString() ?? '';
     _logoUrlController = TextEditingController(text: _logoUrl);
     _coverUrlController = TextEditingController(text: _coverUrl);
+
+    _bankNameController = TextEditingController(text: data['bankName']?.toString() ?? '');
+    _bankAccountNumberController = TextEditingController(text: data['bankAccountNumber']?.toString() ?? '');
+    _bankAccountNameController = TextEditingController(text: data['bankAccountName']?.toString() ?? '');
     
     _latitude = double.tryParse(data['latitude']?.toString() ?? '');
     _longitude = double.tryParse(data['longitude']?.toString() ?? '');
     _isOpen = data['isOpen'] ?? false;
+    
+    _depositPercent = data['depositPercent'] ?? 0;
+    if (!_depositOptions.contains(_depositPercent)) {
+      _depositPercent = 0;
+    }
+    final initialThreshold = data['depositThreshold']?.toString() ?? '0';
+    _depositThresholdController = TextEditingController(
+      text: initialThreshold.endsWith('.0') ? initialThreshold.replaceAll('.0', '') : initialThreshold
+    );
+
     _initOperatingHours(data['operatingHours']);
   }
-void _initOperatingHours(dynamic apiHours) {
+
+  void _initOperatingHours(dynamic apiHours) {
     _operatingHours = List.generate(7, (index) => OperatingHour(
-      dayOfWeek: index, 
-      openTime: "08:30", 
-      closeTime: "20:30", 
-      isActive: false 
+      dayOfWeek: index, openTime: "08:30", closeTime: "20:30", isActive: false 
     ));
 
     if (apiHours != null && apiHours is List) {
@@ -93,15 +125,16 @@ void _initOperatingHours(dynamic apiHours) {
       }
     }
   }
-  
-void _showSnack(String message, Color color) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: color),
-    );
-  }
 
- Future<void> _getCurrentLocation() async {
+  void _showSnack(String message, Color color) {
+    if (!mounted) return;
+    if (color == Colors.red || color == Colors.orange) {
+       SnackBarHelper.showError(context, message);
+    } else {
+       SnackBarHelper.showSuccess(context, message);
+    }
+  }
+  Future<void> _getCurrentLocation() async {
     setState(() => _isGettingLocation = true);
     try {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -112,18 +145,14 @@ void _showSnack(String message, Color color) {
       if (permission == LocationPermission.denied) {
         if (!mounted) return;
         bool isAgreed = await PermissionDialog.showCustomPrompt(
-          context: context,
-          icon: Icons.location_on_rounded,
-          title: 'Định vị cửa hàng',
-          description: 'Ứng dụng cần quyền vị trí để tự động lấy tọa độ GPS của bạn một cách chính xác nhất.',
+          context: context, icon: Icons.location_on_rounded, title: 'Định vị cửa hàng',
+          description: 'Ứng dụng cần quyền vị trí để tự động lấy tọa độ GPS của bạn.',
           confirmText: 'Bật vị trí',
         );
 
         if (isAgreed) {
           permission = await Geolocator.requestPermission();
-          if (permission == LocationPermission.denied) {
-            throw 'Bạn đã từ chối quyền truy cập vị trí.';
-          }
+          if (permission == LocationPermission.denied) throw 'Từ chối quyền vị trí.';
         } else {
           return; 
         }
@@ -166,15 +195,13 @@ void _showSnack(String message, Color color) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Cần quyền vị trí'),
-        content: const Text('Bạn đã từ chối quyền vị trí vĩnh viễn trước đó. Để sử dụng tính năng này, vui lòng vào Cài đặt và cấp quyền lại.'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMedium)),
+        title: Text('Cần quyền vị trí', style: AppTextStyles.heading1.copyWith(fontSize: 20)),
+        content: Text('Vui lòng vào Cài đặt và cấp quyền.', style: AppTextStyles.bodyText),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng', style: TextStyle(color: Colors.grey)),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Đóng')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () {
               Navigator.pop(context);
               openAppSettings(); 
@@ -186,31 +213,76 @@ void _showSnack(String message, Color color) {
     );
   }
 
-  Future<void> _verifyLocation() async {
-    final address = _addressController.text.trim();
-    if (address.isEmpty) return _showSnack('Vui lòng nhập địa chỉ trước!', Colors.orange);
-
+  Future<void> _openMapPicker() async {
     setState(() => _isGettingLocation = true);
-    try {
-      List<Location> locations = await locationFromAddress(address);
-      if (locations.isNotEmpty) {
-        setState(() {
-          _latitude = locations.first.latitude;
-          _longitude = locations.first.longitude;
-        });
-        _showSnack('Đã xác minh vị trí thành công!', Colors.green);
+
+    double? tempLat = _latitude;
+    double? tempLng = _longitude;
+    final addressText = _addressController.text.trim();
+
+    if (tempLat == null && tempLng == null && addressText.isNotEmpty) {
+      try {
+        List<Location> locations = await locationFromAddress(addressText);
+        if (locations.isNotEmpty) {
+          tempLat = locations.first.latitude;
+          tempLng = locations.first.longitude;
+        }
+      } catch (e) {
+        try {
+          Position pos = await Geolocator.getCurrentPosition();
+          tempLat = pos.latitude;
+          tempLng = pos.longitude;
+        } catch (_) {}
       }
-    } catch (e) {
-      _showSnack('Không tìm ra tọa độ. Đang lấy GPS...', Colors.blue);
-      await _getCurrentLocation();
-    } finally {
-      if(mounted) setState(() => _isGettingLocation = false);
+    }
+
+    setState(() => _isGettingLocation = false);
+
+    if (!mounted) return;
+
+    final LatLng? result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapPickerScreen(
+          initialLat: tempLat,
+          initialLng: tempLng,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _isGettingLocation = true;
+        _latitude = result.latitude;
+        _longitude = result.longitude;
+      });
+
+      try {
+        List<Placemark> placemarks = await placemarkFromCoordinates(result.latitude, result.longitude);
+        if (placemarks.isNotEmpty) {
+          Placemark place = placemarks.first;
+          List<String> addressParts = [
+            place.street ?? "", place.subLocality ?? "", place.locality ?? "",
+            place.subAdministrativeArea ?? "", place.administrativeArea ?? ""
+          ]..removeWhere((e) => e.isEmpty);
+
+          final finalAddress = addressParts.toSet().join(", ");
+
+          setState(() => _addressController.text = finalAddress);
+          _showSnack('Đã cập nhật tọa độ!', Colors.green);
+        } else {
+          _showSnack('Đã lưu tọa độ!', Colors.orange);
+        }
+      } catch (e) {
+        _showSnack('Đã lưu tọa độ!', Colors.orange);
+      } finally {
+        if (mounted) setState(() => _isGettingLocation = false);
+      }
     }
   }
 
-void _submitForm() {
+  void _submitForm() {
     if (!_formKey.currentState!.validate()) return;
-
     final activeHours = _operatingHours.where((h) => h.isActive).toList();
 
     final profileData = StoreProfile(
@@ -223,211 +295,96 @@ void _submitForm() {
       latitude: _latitude ?? 0.0,
       longitude: _longitude ?? 0.0,
       isOpen: _isOpen,
+      depositPercent: _depositPercent, 
+      depositThreshold: double.tryParse(_depositThresholdController.text.trim()) ?? 0.0,
       operatingHours: activeHours,
+      bankName: _bankNameController.text.trim().isEmpty ? null : _bankNameController.text.trim(),
+      bankAccountNumber: _bankAccountNumberController.text.trim().isEmpty ? null : _bankAccountNumberController.text.trim(),
+      bankAccountName: _bankAccountNameController.text.trim().isEmpty ? null : _bankAccountNameController.text.trim(),
     );
     
-    final dataToSend = profileData.toJson();
-    widget.onSubmit(dataToSend); 
-  }
-
-  Widget _buildFlatTextField({required TextEditingController controller, required IconData icon, required String hint, bool isPhone = false, bool isRequired = true, Function(String)? onChanged}) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
-      onChanged: onChanged,
-      validator: isRequired ? (v) => (v == null || v.trim().isEmpty) ? 'Bắt buộc' : null : null,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Colors.black54, fontSize: 15),
-        prefixIcon: Icon(icon, color: primaryColor),
-        prefixIconConstraints: const BoxConstraints(minWidth: 40),
-        contentPadding: const EdgeInsets.symmetric(vertical: 15),
-        enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFEEEEEE))),
-        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: primaryColor, width: 1.5)),
-        errorBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.red)),
-      ),
-    );
+    widget.onSubmit(profileData.toJson()); 
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: widget.showAppBar 
-        ? AppBar(
-            backgroundColor: primaryColor,
-            elevation: 0,
-            centerTitle: true,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            title: const Text("Thông tin", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-          ) 
-        : null,
+      backgroundColor: AppColors.background,
+      appBar: widget.showAppBar ? const AppHeader(title: "Thông tin") : null,
       body: SingleChildScrollView(
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              
               StoreImageHeader(
-                coverUrl: _coverUrl,
-                logoUrl: _logoUrl,
-                onCoverUploaded: (newUrl) {
-                  setState(() {
-                    _coverUrl = newUrl;
-                    _coverUrlController.text = newUrl; 
-                  });
-                },
-                onLogoUploaded: (newUrl) {
-                  setState(() {
-                    _logoUrl = newUrl;
-                    _logoUrlController.text = newUrl; 
-                  });
-                },
+                coverUrl: _coverUrl, logoUrl: _logoUrl,
+                onCoverUploaded: (newUrl) => setState(() { _coverUrl = newUrl; _coverUrlController.text = newUrl; }),
+                onLogoUploaded: (newUrl) => setState(() { _logoUrl = newUrl; _logoUrlController.text = newUrl; }),
               ),
-              
               Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(AppDimens.paddingLarge),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Thông tin chung", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                    const SizedBox(height: 10),
-                    
-                    _buildFlatTextField(controller: _nameController, icon: Icons.store_mall_directory_outlined, hint: "Tên cửa hàng"),
-                    
-                    _buildFlatTextField(
-                      controller: _addressController, 
-                      icon: Icons.location_on_outlined, 
-                      hint: "Địa chỉ chi tiết",
-                      onChanged: (v) {
-                        if (_latitude != null) {
-                          setState(() {
-                            _latitude = null;
-                            _longitude = null;
-                          });
-                        }
-                      }
-                    ),
-                    const SizedBox(height: 16),
-
-                    LocationVerification(
+                    StoreBasicInfoSection(
+                      nameController: _nameController,
+                      addressController: _addressController,
+                      phoneController: _phoneController,
                       isGettingLocation: _isGettingLocation,
                       latitude: _latitude,
                       longitude: _longitude,
-                      onVerifyAddress: _verifyLocation,
+                      onOpenMap: _openMapPicker,
                       onGetGPS: _getCurrentLocation,
+                      onAddressChanged: (v) {
+                        if (_latitude != null) setState(() { _latitude = null; _longitude = null; });
+                      },
                     ),
 
-                    _buildFlatTextField(controller: _phoneController, icon: Icons.phone_outlined, hint: "Số điện thoại", isPhone: true),
+                    const SizedBox(height: 12),
+                    StoreSettingsSection(
+                      isOpen: _isOpen,
+                      onToggleOpen: (val) => setState(() => _isOpen = val),
+                      depositPercent: _depositPercent,
+                      depositOptions: _depositOptions,
+                      onDepositPercentChanged: (val) { if (val != null) setState(() => _depositPercent = val); },
+                      depositThresholdController: _depositThresholdController,
+                      descController: _descController,
+                      primaryColor: primaryColor,
+                    ),
                     
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(Icons.meeting_room_outlined, color: primaryColor),
-                      title: const Text("Đóng cửa/Mở cửa", style: TextStyle(fontSize: 15, color: Colors.black87)),
-                      trailing: Switch(
-                        activeThumbColor: Colors.white,
-                        activeTrackColor: Colors.green,
-                        value: _isOpen,
-                        onChanged: (val) => setState(() => _isOpen = val),
-                      ),
-                    ),
-                    const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-
+                    const SizedBox(height: 16),
                     OperatingHoursPicker(operatingHours: _operatingHours, primaryColor: primaryColor),
-                    const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE)),
-
+                    const SizedBox(height: 12),
+                    const Divider(height: 1, thickness: 1, color: AppColors.surface),
                     const SizedBox(height: 15),
-                    Row(
-                      children: [
-                        Icon(Icons.description_outlined, color: primaryColor),
-                        const SizedBox(width: 15),
-                        const Text("Giới thiệu cửa hàng", style: TextStyle(fontSize: 15, color: Colors.black87)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
-                      child: Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: const BorderRadius.vertical(top: Radius.circular(8))),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text("Normal", style: TextStyle(color: Colors.black54)),
-                                Icon(Icons.arrow_drop_down, color: Colors.black54),
-                                Text("Sans Serif", style: TextStyle(color: Colors.black54)),
-                                Icon(Icons.arrow_drop_down, color: Colors.black54),
-                                Text("12 pt", style: TextStyle(color: Colors.black54)),
-                              ],
-                            ),
-                          ),
-                          TextFormField(
-                            controller: _descController,
-                            maxLines: 4,
-                            decoration: const InputDecoration(
-                              hintText: "Nhập mô tả...",
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.all(12),
-                            ),
-                          ),
-                        ],
-                      ),
+
+                    StorePaymentSection(
+                      bankNameController: _bankNameController,
+                      bankAccountNumberController: _bankAccountNumberController,
+                      bankAccountNameController: _bankAccountNameController,
+                      primaryColor: primaryColor,
                     ),
 
                     const SizedBox(height: 20),
                     Theme(
                       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                       child: ExpansionTile(
-                        tilePadding: EdgeInsets.zero,
-                        leading: Icon(Icons.link, color: primaryColor),
-                        title: const Text("Cập nhật Link Ảnh thủ công", style: TextStyle(fontSize: 14, color: Colors.black54)),
+                        tilePadding: EdgeInsets.zero, leading: Icon(Icons.link, color: primaryColor),
+                        title: Text("Cập nhật Link Ảnh thủ công", style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub, fontWeight: FontWeight.w600)),
                         children: [
-                          _buildFlatTextField(
-                            controller: _logoUrlController, 
-                            icon: Icons.image_outlined, 
-                            hint: "Link Avatar URL", 
-                            isRequired: false,
-                            onChanged: (val) {
-                              setState(() {
-                                _logoUrl = val; 
-                              });
-                            }
-                          ),
-                          _buildFlatTextField(
-                            controller: _coverUrlController, 
-                            icon: Icons.wallpaper_outlined, 
-                            hint: "Link Cover URL", 
-                            isRequired: false,
-                            onChanged: (val) {
-                              setState(() {
-                                _coverUrl = val; 
-                              });
-                            }
-                          ),
+                          AppTextField(controller: _logoUrlController, icon: Icons.image_outlined, hint: "Link Avatar URL", onChanged: (val) => setState(() => _logoUrl = val)),
+                          const SizedBox(height: 12),
+                          AppTextField(controller: _coverUrlController, icon: Icons.wallpaper_outlined, hint: "Link Cover URL", onChanged: (val) => setState(() => _coverUrl = val)),
                         ],
                       ),
                     ),
 
                     const SizedBox(height: 30),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: widget.isSubmitting ? null : _submitForm,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: widget.isSubmitting
-                            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : Text(widget.buttonText, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
+                    AppPrimaryButton(
+                      text: widget.buttonText,
+                      isLoading: widget.isSubmitting,
+                      onPressed: _submitForm,
                     ),
                     const SizedBox(height: 40),
                   ],
@@ -442,12 +399,10 @@ void _submitForm() {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    _addressController.dispose();
-    _descController.dispose();
-    _logoUrlController.dispose();
-    _coverUrlController.dispose();
+    _nameController.dispose(); _phoneController.dispose(); _addressController.dispose();
+    _descController.dispose(); _logoUrlController.dispose(); _coverUrlController.dispose();
+    _bankNameController.dispose(); _bankAccountNumberController.dispose(); _bankAccountNameController.dispose();
+    _depositThresholdController.dispose();
     super.dispose();
   }
 }

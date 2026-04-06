@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/store_review_model.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
 
 class ReviewCardWidget extends StatelessWidget {
   final StoreReviewModel review;
@@ -10,29 +13,31 @@ class ReviewCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Card(
       elevation: 1,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppDimens.paddingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: Colors.grey.shade200,
+                  backgroundColor: AppColors.surface,
                   backgroundImage: review.customerAvatar != null ? NetworkImage(review.customerAvatar!) : null,
-                  child: review.customerAvatar == null ? const Icon(Icons.person, color: Colors.grey) : null,
+                  child: review.customerAvatar == null ? const Icon(Icons.person, color: AppColors.textSub) : null,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(review.customerName ?? 'Khách hàng', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      Text(
+                        review.customerName ?? 'Khách hàng', 
+                        style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, fontSize: 15)
+                      ),
                       Row(
                         children: List.generate(5, (index) => Icon(
                           index < review.rating ? Icons.star : Icons.star_border,
@@ -44,22 +49,22 @@ class ReviewCardWidget extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             
-            Text(review.comment ?? 'Không có nhận xét', style: const TextStyle(fontSize: 14)),
-            const SizedBox(height: 16),
+            Text(review.comment ?? 'Không có nhận xét', style: AppTextStyles.bodyText),
+            const SizedBox(height: AppSpacing.lg),
             
             if (review.reply != null && review.reply!.isNotEmpty) ...[
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.all(AppDimens.paddingSmall),
+                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Phản hồi của bạn:", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 13)),
-                    const SizedBox(height: 4),
-                    Text(review.reply!, style: const TextStyle(fontSize: 14)),
+                    Text("Phản hồi của bạn:", style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(review.reply!, style: AppTextStyles.bodyText),
                   ],
                 ),
               ),
@@ -67,8 +72,8 @@ class ReviewCardWidget extends StatelessWidget {
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
                   onPressed: onReplyTap,
-                  icon: Icon(Icons.edit, size: 16, color: AppColors.primary),
-                  label: Text("Sửa phản hồi", style: TextStyle(color: AppColors.primary)),
+                  icon: const Icon(Icons.edit, size: 16, color: AppColors.primary),
+                  label: Text("Sửa phản hồi", style: AppTextStyles.bodyText.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
                 ),
               )
             ] else ...[
@@ -76,10 +81,11 @@ class ReviewCardWidget extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: onReplyTap,
-                  icon: Icon(Icons.reply, color: AppColors.primary),
-                  label: Text("Trả lời khách hàng", style: TextStyle(color: AppColors.primary)),
+                  icon: const Icon(Icons.reply, color: AppColors.primary),
+                  label: Text("Trả lời khách hàng", style: AppTextStyles.bodyText.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppColors.primary), 
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
+                    side: const BorderSide(color: AppColors.primary), 
                   ),
                 ),
               )

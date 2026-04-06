@@ -8,8 +8,6 @@ namespace BeautyBookingSystem.Application.Services
     public class StoreCustomerService : IStoreCustomerService
     {
         private readonly IUnitOfWork _unitOfWork;
-
-        // Bơm IUnitOfWork vào qua Constructor
         public StoreCustomerService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
@@ -43,7 +41,6 @@ namespace BeautyBookingSystem.Application.Services
 
             return customers;
         }
-
         public async Task<CustomerProfileDto?> GetCustomerProfileAsync(int storeId, int customerId)
         {
             var profile = await _unitOfWork.UserRepository.GetQueryable()
@@ -61,8 +58,6 @@ namespace BeautyBookingSystem.Application.Services
                 .FirstOrDefaultAsync();
 
             if (profile == null) return null;
-
-            // Lấy lịch sử dịch vụ
             var history = await _unitOfWork.BookingRepository.GetQueryable()
                 .Where(b => b.StoreId == storeId && b.CustomerId == customerId && b.Status == BookingStatus.Completed)
                 .SelectMany(b => b.BookingDetails)

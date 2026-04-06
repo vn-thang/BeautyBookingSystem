@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_text_styles.dart';
 
 class SocialLoginButton extends StatelessWidget {
   final String text;
@@ -17,19 +20,32 @@ class SocialLoginButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: color,
-          elevation: 3,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+      child: SizedBox(
+        height: 44, 
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.white,
+            foregroundColor: color,
+            elevation: 2,
+            shadowColor: AppColors.textMain.withValues(alpha: 0.1),
+            padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingSmall),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+            ),
           ),
+          icon: Icon(icon, size: 20),
+          label: Text(
+            text, 
+            style: AppTextStyles.bodyText.copyWith(
+              color: color, 
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          onPressed: onPressed,
         ),
-        icon: Icon(icon),
-        label: Text(text),
-        onPressed: onPressed,
       ),
     );
   }

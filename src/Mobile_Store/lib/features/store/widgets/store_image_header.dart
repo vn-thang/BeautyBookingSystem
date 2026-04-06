@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../shared/widgets/app_image_picker.dart'; 
+import '../../../shared/widgets/inputs/app_image_picker.dart'; 
+import '../../../core/theme/app_colors.dart';
 
 class StoreImageHeader extends StatelessWidget {
   final String coverUrl; 
@@ -42,7 +43,7 @@ class StoreImageHeader extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(4), 
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: AppColors.white, 
                 shape: BoxShape.circle,
               ),
               child: AppImagePicker(

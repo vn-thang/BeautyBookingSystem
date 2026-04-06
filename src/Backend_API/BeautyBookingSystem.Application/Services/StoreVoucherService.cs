@@ -105,20 +105,6 @@ namespace BeautyBookingSystem.Application.Services
                     .ToListAsync();
 
                 var store = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
-
-                //if (customerIds.Any())
-                //{
-                //    var notificationTasks = customerIds.Select(customerId =>
-                //        _notificationService.CreateAndSendNotificationAsync(
-                //            customerId,
-                //            $"🎁 Ưu đãi mới từ {store?.Name}",
-                //            $"Nhập mã {voucher.Code} để được giảm giá ngay cho lần đặt lịch tiếp theo!",
-                //            NotificationType.Promotion
-                //        )
-                //    );
-                //    await Task.WhenAll(notificationTasks);
-                //}
-
                 if (customerIds.Any())
                 {
                     foreach (var customerId in customerIds)

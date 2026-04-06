@@ -9,6 +9,5 @@ namespace BeautyBookingSystem.Application.DTOs.StorePayment
     public class ConfirmPaymentRequest
     {
         public string? TransactionId { get; set; }
-        // Mã GD (nếu khách ck ngân hàng, thu ngân tự nhập)
     }
 }

@@ -32,6 +32,11 @@ namespace BeautyBookingSystem.Application.DTOs.Store
         public bool IsOpen { get; set; }
         public decimal AverageRating { get; set; } 
         public int TotalReviews { get; set; }
+        public int DepositPercent { get; set; }
+        public decimal DepositThreshold { get; set; }
+        public string? BankName { get; set; } 
+        public string? BankAccountNumber { get; set; }
+        public string? BankAccountName { get; set; }
 
         public List<OperatingHourDto> OperatingHours { get; set; } = new();
     }

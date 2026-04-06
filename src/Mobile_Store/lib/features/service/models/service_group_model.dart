@@ -28,7 +28,6 @@ factory ServiceGroupModel.fromJson(Map<String, dynamic> json) {
         }
       }
     }
-     ("✅ Đã tóm được ${parsedServices.length} dịch vụ cho Nhóm ${json['id']}");
     return ServiceGroupModel(
       id: json['id'] ?? 0,
       storeId: json['storeId'] ?? 0,

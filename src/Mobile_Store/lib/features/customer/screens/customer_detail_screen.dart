@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_store/features/booking/screens/booking_detail_screen.dart';
+import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
+import '../../../shared/widgets/feedback/app_error_box.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart'; 
+import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/widgets/inputs/app_header.dart';
+
 import '../models/customer_profile_model.dart';
 import '../services/customer_api.dart';
 import '../widgets/customer_info_card.dart';
 import '../widgets/customer_stats_row.dart';
 import '../widgets/service_history_card.dart';
-import '../../../core/theme/app_colors.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
   final int storeId;
@@ -55,16 +62,9 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100], 
-      appBar: AppBar(
-        title: const Text(
-          'Hồ sơ Khách hàng',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.background,
+      backgroundColor: AppColors.background,
+      appBar: const AppHeader(
+        title: 'Hồ sơ Khách hàng',
       ),
       body: _buildBody(),
     );
@@ -73,45 +73,36 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary)
+        child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
     if (_errorMessage != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 60, color: AppColors.primary),
-            const SizedBox(height: 16),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Text(
-                _errorMessage!, 
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingLarge),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AppErrorBox(errorMessage: _errorMessage!),
+              const SizedBox(height: AppSpacing.lg),
+              AppPrimaryButton(
+                text: 'Thử lại',
+                onPressed: _fetchCustomerProfile,
               ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: _fetchCustomerProfile,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Thử lại'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.background,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            )
-          ],
+            ],
+          ),
         ),
       );
     }
 
     if (_profile == null) {
-      return const Center(child: Text('Không tìm thấy dữ liệu khách hàng.'));
+      return Center(
+        child: Text(
+          'Không tìm thấy dữ liệu khách hàng.',
+          style: AppTextStyles.bodyText,
+        ),
+      );
     }
 
     return RefreshIndicator(
@@ -119,18 +110,17 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       onRefresh: _fetchCustomerProfile,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppDimens.paddingMedium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          
-            const SizedBox(height: 8), 
+            const SizedBox(height: AppSpacing.sm), 
 
             CustomerInfoCard(profile: _profile!),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             
             CustomerStatsRow(profile: _profile!),
-            const SizedBox(height: 28),
+            const SizedBox(height: AppSpacing.xl),
             
             Row(
               children: [
@@ -138,7 +128,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppDimens.radiusSmall), 
                   ),
                   child: const Icon(
                     Icons.history_edu, 
@@ -146,53 +136,48 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                     size: 20
                   ),
                 ),
-                const SizedBox(width: 12),
-                const Text(
+                const SizedBox(width: AppSpacing.md),
+                Text(
                   'Lịch sử Dịch vụ',
-                  style: TextStyle(
-                    fontSize: 18, 
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                  style: AppTextStyles.heading1.copyWith(fontSize: 18), 
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
 
-           _profile!.serviceHistories.isEmpty
-    ? _buildEmptyHistory()
-    : ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: _profile!.serviceHistories.length,
-        itemBuilder: (context, index) {
-          final historyItem = _profile!.serviceHistories[index]; 
+            _profile!.serviceHistories.isEmpty
+              ? _buildEmptyHistory()
+              : ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _profile!.serviceHistories.length,
+                  itemBuilder: (context, index) {
+                    final historyItem = _profile!.serviceHistories[index]; 
 
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12), 
-                onTap: () {
-                
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => BookingDetailScreen(
-                        bookingId: historyItem.bookingId,
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(AppDimens.radiusSmall), 
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BookingDetailScreen(
+                                  bookingId: historyItem.bookingId,
+                                ),
+                              ),
+                            );
+                          },
+                          child: ServiceHistoryCard(
+                            history: historyItem,
+                          ),
+                        ),
                       ),
-                    ),
-                  );
-                },
-                child: ServiceHistoryCard(
-                  history: historyItem,
+                    );
+                  },
                 ),
-              ),
-            ),
-          );
-        },
-      ),
           ],
         ),
       ),
@@ -202,22 +187,21 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   Widget _buildEmptyHistory() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(AppDimens.paddingLarge),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        color: AppColors.white, 
+        borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+        border: Border.all(color: AppColors.textSub.withValues(alpha: 0.2)), 
       ),
       child: Column(
         children: [
-          Icon(Icons.history_toggle_off, size: 56, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
+          Icon(Icons.history_toggle_off, size: 56, color: AppColors.textSub.withValues(alpha: 0.5)),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'Khách hàng chưa sử dụng\ndịch vụ nào tại tiệm.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey.shade600, 
-              fontSize: 14,
+            style: AppTextStyles.bodyText.copyWith(
+              color: AppColors.textSub, 
               height: 1.4,
             ),
           ),

@@ -1,9 +1,12 @@
-
 import 'package:flutter/material.dart';
+import 'package:mobile_store/features/notification/widgets/notification_detail_sheet.dart';
+import 'package:mobile_store/features/notification/widgets/notification_item.dart';
+import 'package:mobile_store/shared/widgets/inputs/app_header.dart';
+import '../../../shared/widgets/feedback/snackbar_helper.dart';
 import '../models/notification_model.dart';
 import '../services/notification_api.dart';
-import '../widgets/notification_item.dart'; 
-import '../widgets/notification_detail_sheet.dart'; 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
 
 class NotificationScreen extends StatefulWidget {
   final VoidCallback? onCountChanged;
@@ -23,14 +26,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
     _fetchNotifications();
   }
 
-
   Future<void> _fetchNotifications() async {
     setState(() => _isLoading = true);
     try {
       final data = await NotificationApi.getNotifications();
       setState(() => _notifications = data);
     } catch (e) {
-      _showSnackBar(e.toString().replaceAll('Exception: ', ''), isError: true);
+      if (mounted) SnackBarHelper.showError(context, e.toString());
     } finally {
       setState(() => _isLoading = false);
     }
@@ -43,9 +45,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
         for (var n in _notifications) { n.isRead = true; }
       });
       widget.onCountChanged?.call();
-      _showSnackBar('Đã đánh dấu tất cả là đã đọc');
+      if (mounted) SnackBarHelper.showSuccess(context, 'Đã đánh dấu tất cả là đã đọc');
     } catch (e) {
-      _showSnackBar(e.toString().replaceAll('Exception: ', ''), isError: true);
+      if (mounted) SnackBarHelper.showError(context, e.toString());
     }
   }
 
@@ -53,7 +55,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20))
+      ),
       builder: (context) => NotificationDetailSheet(notification: notification),
     );
 
@@ -63,20 +68,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
         setState(() => notification.isRead = true);
         widget.onCountChanged?.call();
       } catch (e) {
-        _showSnackBar(e.toString().replaceAll('Exception: ', ''), isError: true);
+        if (mounted) SnackBarHelper.showError(context, e.toString());
       }
     }
-  }
-
-  void _showSnackBar(String message, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.red : Colors.green,
-        duration: const Duration(seconds: 2),
-      ),
-    );
   }
 
   @override
@@ -84,22 +78,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final hasUnread = _notifications.any((n) => !n.isRead);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Thông báo', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 1,
+      backgroundColor: AppColors.background, 
+      appBar: AppHeader(
+        title: 'Thông báo',
         actions: [
           IconButton(
-            icon: Icon(Icons.done_all, color: hasUnread ? Colors.blue : Colors.grey),
+            icon: Icon(
+              Icons.done_all, 
+              color: hasUnread ? AppColors.white : AppColors.white.withValues(alpha: 0.5)
+            ),
             tooltip: 'Đánh dấu tất cả đã đọc',
             onPressed: hasUnread ? _handleMarkAllAsRead : null,
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : RefreshIndicator(
+              color: AppColors.primary,
               onRefresh: _fetchNotifications,
               child: _buildBody(),
             ),
@@ -109,16 +105,27 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget _buildBody() {
     if (_notifications.isEmpty) {
       return ListView(
-        children: const [
-          SizedBox(height: 200),
-          Center(child: Text('Bạn không có thông báo nào.', style: TextStyle(color: Colors.grey, fontSize: 16))),
+        children: [
+          const SizedBox(height: 200),
+          Center(
+            child: Column(
+              children: [
+                const Icon(Icons.notifications_off_outlined, size: 80, color: AppColors.surface),
+                const SizedBox(height: 16),
+                Text(
+                  'Bạn không có thông báo nào.', 
+                  style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub, fontSize: 16)
+                ),
+              ],
+            )
+          ),
         ],
       );
     }
 
     return ListView.separated(
       itemCount: _notifications.length,
-      separatorBuilder: (_, _) => const Divider(height: 1, thickness: 1, color: Colors.black12),
+      separatorBuilder: (_, _) => Divider(height: 1, thickness: 1, color: AppColors.textSub.withValues(alpha: 0.1)),
       itemBuilder: (context, index) {
         final item = _notifications[index];
         return NotificationItem(

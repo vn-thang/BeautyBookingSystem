@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
+import '../../../shared/widgets/feedback/snackbar_helper.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/formatters.dart';
+
 import '../models/store_booking_model.dart';
 import '../services/store_booking_api.dart';
 
@@ -14,13 +21,10 @@ class AssignStaffBottomSheet extends StatefulWidget {
 }
 
 class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
-  final Color primaryColor = const Color(0xFFDE4660);
-  
   bool _isLoading = true;
   String? _errorMessage;
 
   final Map<int, List<AvailableStaffModel>> _availableStaffMap = {};
-  
   final Map<int, int> _selectedStaffMap = {};
 
   @override
@@ -52,9 +56,7 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
 
   Future<void> _submitAssignment() async {
     if (_selectedStaffMap.length < widget.booking.services.length) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng phân công nhân viên cho tất cả dịch vụ!'), backgroundColor: Colors.orange)
-      );
+      SnackBarHelper.showError(context, 'Vui lòng phân công nhân viên cho tất cả dịch vụ!');
       return;
     }
 
@@ -66,7 +68,7 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      builder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
     );
 
     try {
@@ -78,15 +80,11 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
       
       widget.onSuccess(); 
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Duyệt đơn & Gán nhân viên thành công!'), backgroundColor: Colors.green)
-      );
+      SnackBarHelper.showSuccess(context, 'Duyệt đơn & Gán nhân viên thành công!');
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context); 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red)
-      );
+      SnackBarHelper.showError(context, e.toString());
     }
   }
 
@@ -94,10 +92,13 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        top: 24, left: 24, right: 24,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        top: AppSpacing.xl, left: AppDimens.paddingLarge, right: AppDimens.paddingLarge,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppDimens.paddingLarge,
       ),
-     
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusLarge)),
+      ),
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -106,27 +107,19 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Phân công nhân viên', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+              Text('Phân công nhân viên', style: AppTextStyles.heading1.copyWith(fontSize: 20)),
+              IconButton(icon: const Icon(Icons.close, color: AppColors.textMain), onPressed: () => Navigator.pop(context)),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           
           Expanded(child: _buildBody()),
 
           if (!_isLoading && _errorMessage == null) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                onPressed: _submitAssignment,
-                child: const Text('XÁC NHẬN VÀ DUYỆT ĐƠN', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-              ),
+            const SizedBox(height: AppSpacing.lg),
+            AppPrimaryButton(
+              text: 'XÁC NHẬN VÀ DUYỆT ĐƠN',
+              onPressed: _submitAssignment,
             ),
           ]
         ],
@@ -136,18 +129,16 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator(color: primaryColor));
+      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
     }
     if (_errorMessage != null) {
-      return Center(child: Text('Lỗi: $_errorMessage', style: const TextStyle(color: Colors.red)));
+      return Center(child: Text('Lỗi: $_errorMessage', style: AppTextStyles.bodyText.copyWith(color: AppColors.error)));
     }
-
-    final dateFormat = DateFormat('dd/MM/yyyy', 'vi_VN');
 
     return ListView.separated(
       shrinkWrap: true,
       itemCount: widget.booking.services.length,
-      separatorBuilder: (context, index) => const Divider(height: 32),
+      separatorBuilder: (context, index) => const Divider(height: 32, color: AppColors.surface),
       itemBuilder: (context, index) {
         final service = widget.booking.services[index];
         final staffs = _availableStaffMap[service.bookingDetailId] ?? [];
@@ -155,38 +146,51 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(service.serviceName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 4),
+            Text(service.serviceName, style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: AppSpacing.xs),
             Text(
-              '⏰ ${service.startTime} - ${service.endTime} • ${dateFormat.format(service.appointmentDate)}',
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
+              '⏰ ${service.startTime} - ${service.endTime} • ${Formatters.formatDateOnly(service.appointmentDate)}',
+              style: AppTextStyles.labelSmall,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             
             if (staffs.isEmpty)
               Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                child: const Row(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1), 
+                  borderRadius: BorderRadius.circular(AppDimens.radiusSmall)
+                ),
+                child: Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('Không có nhân viên nào rảnh khung giờ này!', style: TextStyle(color: Colors.red, fontSize: 13))),
+                    const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 20),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: Text('Không có nhân viên nào rảnh khung giờ này!', style: AppTextStyles.labelSmall.copyWith(color: AppColors.error, fontWeight: FontWeight.bold))),
                   ],
                 ),
               )
             else
               DropdownButtonFormField<int>(
+                dropdownColor: AppColors.white,
+                icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSub),
                 decoration: InputDecoration(
                   labelText: 'Chọn nhân viên phụ trách',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  labelStyle: AppTextStyles.labelSmall,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
+                    borderSide: BorderSide(color: AppColors.surface, width: 1.5)
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 1.5)
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                 ),
                 initialValue: _selectedStaffMap[service.bookingDetailId],
                 items: staffs.map((staff) {
                   return DropdownMenuItem<int>(
                     value: staff.id,
-                    child: Text('${staff.fullName} (${staff.position})'),
+                    child: Text('${staff.fullName} (${staff.position})', style: AppTextStyles.bodyText),
                   );
                 }).toList(),
                 onChanged: (value) {

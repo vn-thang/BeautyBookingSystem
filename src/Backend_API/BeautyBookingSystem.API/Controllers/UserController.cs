@@ -1,7 +1,6 @@
 ﻿using BeautyBookingSystem.Application.DTOs.User;
 using BeautyBookingSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -35,7 +34,6 @@ namespace BeautyBookingSystem.API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
@@ -43,7 +41,6 @@ namespace BeautyBookingSystem.API.Controllers
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
                 await _userService.UpdateProfileAsync(userId, request);
                 return Ok(new { message = "Cập nhật thông tin thành công!" });
             }

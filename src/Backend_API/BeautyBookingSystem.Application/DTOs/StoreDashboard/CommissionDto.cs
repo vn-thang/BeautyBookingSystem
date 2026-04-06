@@ -10,6 +10,6 @@ namespace BeautyBookingSystem.Application.DTOs.StoreDashboard
     {
         public decimal TotalCommission { get; set; }
         public decimal AppUsageFee { get; set; }
-        public decimal BalanceToPay { get; set; }
+       public decimal TotalWithdrawn { get; set; }
     }
 }

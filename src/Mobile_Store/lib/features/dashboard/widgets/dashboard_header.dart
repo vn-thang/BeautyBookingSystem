@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart'; 
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../store/screens/update_profile_screen.dart';
 import '../models/store_dashboard_model.dart'; 
 
@@ -12,7 +15,7 @@ class DashboardHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.primary,
-      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppDimens.radiusLarge)),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () {
@@ -22,24 +25,29 @@ class DashboardHeader extends StatelessWidget {
           );
         },
         child: Padding(
-          padding: const EdgeInsets.only(top: 60, left: 16, right: 16, bottom: 24),
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + AppDimens.paddingLarge + 10, 
+            left: AppDimens.paddingMedium, 
+            right: AppDimens.paddingMedium, 
+            bottom: AppDimens.paddingLarge + 10
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
                 child: Container(
                   width: 55, height: 55, color: Colors.white24,
                   child: (header.logoUrl != null && header.logoUrl!.isNotEmpty)
                       ? Image.network(
                           header.logoUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) => const Icon(Icons.store, color: Colors.white, size: 30),
+                          errorBuilder: (c, e, s) => const Icon(Icons.store, color: AppColors.white, size: 30),
                         )
-                      : const Icon(Icons.store, color: Colors.white, size: 30),
+                      : const Icon(Icons.store, color: AppColors.white, size: 30),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,18 +57,18 @@ class DashboardHeader extends StatelessWidget {
                         Flexible(
                           child: Text(
                             header.name.isNotEmpty ? header.name : 'Chưa cập nhật tên', 
-                            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                            style: AppTextStyles.bodyText.copyWith(color: AppColors.white, fontSize: 18, fontWeight: FontWeight.bold),
                             maxLines: 1, overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.sm),
                         const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 14), 
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.xs),
                     Text(
                       'Địa chỉ: ${header.address.isNotEmpty ? header.address : "Chưa cập nhật"}', 
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13), 
+                      style: AppTextStyles.labelSmall.copyWith(color: AppColors.white.withValues(alpha: 0.9), fontSize: 13), 
                       maxLines: 1, overflow: TextOverflow.ellipsis
                     ),
                   ],

@@ -7,13 +7,12 @@ import '../constant/global_keys.dart';
 import '../../shared/token_storage.dart';
 
 class ApiClient {
-  // 1. CÁC BIẾN QUẢN LÝ HÀNG ĐỢI (QUEUE/LOCK)
   static bool _isRefreshing = false;
   static Completer<bool>? _refreshCompleter;
 
   static Future<dynamic> get(String endpoint) async {
   final response = await _request('GET', endpoint);
-  return _processResponse(response); // Nhả luôn JSON ra
+  return _processResponse(response); 
 }
 
 static Future<dynamic> post(String endpoint, {Map<String, dynamic>? body}) async {
@@ -31,16 +30,28 @@ static Future<dynamic> delete(String endpoint) async {
   return _processResponse(response);
 }
   
+static Future<List<int>> downloadFile(String endpoint) async {
+    final response = await _request('GET', endpoint);
+
+    if (response.statusCode == 200) {
+      return response.bodyBytes; 
+    } else {
+      try {
+        final json = jsonDecode(response.body);
+        throw Exception(json['message'] ?? json.toString());
+      } catch (_) {
+        throw Exception('Đã xảy ra lỗi khi tải file (${response.statusCode})');
+      }
+    }
+  }
+
   static Future<http.Response> _request(String method, String endpoint, {Map<String, dynamic>? body}) async {
-    // 3.1. Nếu có người đang đi xin Token, tất cả request mới phải đứng chờ ở đây
     if (_isRefreshing) {
       await _refreshCompleter?.future;
     }
 
-    // 3.2. Thực hiện gọi API
     var response = await _makeHttpCall(method, endpoint, body);
 
-    // 3.3. Bắt lỗi 401 (Hết hạn Access Token)
     if (response.statusCode == 401) {
       
       if (!_isRefreshing) {
@@ -53,10 +64,8 @@ static Future<dynamic> delete(String endpoint) async {
         _refreshCompleter?.complete(isRefreshSuccess); 
 
         if (isRefreshSuccess) {
-          // Xin thành công -> Gọi lại API ban đầu với Token mới
           return await _makeHttpCall(method, endpoint, body);
         } else {
-          // Xin thất bại (Refresh Token cũng hết hạn) -> Xử lý văng App
           await _handleSessionExpired();
           return response;
         }
@@ -64,18 +73,15 @@ static Future<dynamic> delete(String endpoint) async {
       else {
         bool isRefreshSuccess = await _refreshCompleter!.future;
         if (isRefreshSuccess) {
-          return await _makeHttpCall(method, endpoint, body); // Chạy lại với token mới
+          return await _makeHttpCall(method, endpoint, body);
         } else {
-          return response; // Thất bại thì trả về lỗi nguyên bản
+          return response; 
         }
       }
     }
-
-    // Trả về kết quả bình thường nếu không phải lỗi 401
     return response;
   }
 
-  // Hàm tạo Request có nhúng sẵn Token mới nhất
   static Future<http.Response> _makeHttpCall(String method, String endpoint, Map<String, dynamic>? body) async {
     final token = await TokenStorage.getAccessToken();
     final headers = {
@@ -94,12 +100,10 @@ static Future<dynamic> delete(String endpoint) async {
         default: return await http.get(uri, headers: headers);
       }
     } catch (e) {
-      // Bắt lỗi mất mạng hoặc server sập
       throw Exception("Lỗi kết nối mạng: $e");
     }
   }
 
-  // Hàm âm thầm gọi lên C# xin Token mới
   static Future<bool> refreshToken() async {
     try {
       final accessToken = await TokenStorage.getAccessToken();
@@ -133,7 +137,6 @@ static Future<dynamic> delete(String endpoint) async {
     }
   }
 
-  // Hàm xử lý khi phiên đăng nhập tèo hoàn toàn
   static Future<void> _handleSessionExpired() async {
     await TokenStorage.clearTokens();
     

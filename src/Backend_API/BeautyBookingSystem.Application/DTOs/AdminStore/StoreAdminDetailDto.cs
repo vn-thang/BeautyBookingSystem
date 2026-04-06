@@ -23,5 +23,8 @@ namespace BeautyBookingSystem.Application.DTOs.AdminStore
 
         public ApprovalStatus Status { get; set; }
         public DateTime CreatedAt { get; set; }
+        public int? CommissionRate { get; set; } 
+        public decimal MonthlyAppFee { get; set; }
+        public decimal WalletBalance { get; set; }
     }
 }

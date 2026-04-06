@@ -4,10 +4,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 
-namespace BeautyBookingSystem.API.Controllers
+namespace BeautyBookingSystem.API.Controllers.Admin
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class GlobalCategoriesController : ControllerBase
     {
         private readonly IGlobalCategoryService _categoryService;

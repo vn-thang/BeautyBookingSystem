@@ -38,7 +38,6 @@ class AuthService {
 
         var rawUserId = decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ?? decoded['Id'] ?? decoded['id'] ?? decoded['sub'];
         if (rawUserId != null) {
-          // TokenStorage.saveUserId(int.parse(rawUserId.toString())); 
         }
 
         await TokenStorage.saveTokens(accessToken, refreshToken);

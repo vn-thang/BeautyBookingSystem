@@ -9,7 +9,7 @@ namespace BeautyBookingSystem.Application.Interfaces
 {
     public interface IStoreBookingService
     {
-        Task<List<StoreBookingListDto>> GetBookingsAsync(string? status = null);
+        Task<List<StoreBookingListDto>> GetBookingsAsync(string? status = null, int? staffId = null, DateTime? startDate = null, DateTime? endDate = null);
 
         Task<StoreBookingDetailDto> GetBookingDetailAsync(int bookingId);
 
