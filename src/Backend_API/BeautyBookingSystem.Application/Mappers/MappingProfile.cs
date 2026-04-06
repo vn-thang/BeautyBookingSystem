@@ -5,17 +5,11 @@ using BeautyBookingSystem.Application.DTOs.AdminReview;
 using BeautyBookingSystem.Application.DTOs.AdminStore;
 using BeautyBookingSystem.Application.DTOs.AdminUser;
 using BeautyBookingSystem.Application.DTOs.Auth;
-using BeautyBookingSystem.Application.DTOs.Category;
 using BeautyBookingSystem.Application.DTOs.Notification;
-using BeautyBookingSystem.Application.DTOs.Service;
-using BeautyBookingSystem.Application.DTOs.ServiceGroup;
-using BeautyBookingSystem.Application.DTOs.Staff;
-using BeautyBookingSystem.Application.DTOs.Store;
 using BeautyBookingSystem.Application.DTOs.StoreBooking;
 using BeautyBookingSystem.Application.DTOs.StorePayment;
 using BeautyBookingSystem.Application.DTOs.StoreReview;
 using BeautyBookingSystem.Application.DTOs.StoreVoucher;
-using BeautyBookingSystem.Application.DTOs.User;
 using BeautyBookingSystem.Application.DTOs.StoreWallet;
 using BeautyBookingSystem.Domain.Entities;
 using System;
@@ -25,6 +19,12 @@ using System.Text;
 using System.Threading.Tasks;
 using BeautyBookingSystem.Application.DTOs.AdminWallet;
 using BeautyBookingSystem.Application.DTOs.SystemContent;
+using BeautyBookingSystem.Application.DTOs.StoreUser;
+using BeautyBookingSystem.Application.DTOs.AdminCategory;
+using BeautyBookingSystem.Application.DTOs.MyStore;
+using BeautyBookingSystem.Application.DTOs.StoreService;
+using BeautyBookingSystem.Application.DTOs.StoreServiceGroup;
+using BeautyBookingSystem.Application.DTOs.StoreStaff;
 
 namespace BeautyBookingSystem.Application.Mappers
 {

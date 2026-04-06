@@ -19,7 +19,7 @@ namespace BeautyBookingSystem.Application.Services
         private readonly IMapper _mapper;
         private readonly INotificationService _notificationService;
         private readonly ICurrentUserService _currentUserService;
-        private readonly IVnPayService _vnPayService;
+        private readonly IStoreVnPayService _vnPayService;
 
         private const decimal DEFAULT_COMMISSION_RATE = 10m; 
 
@@ -28,7 +28,7 @@ namespace BeautyBookingSystem.Application.Services
             IMapper mapper, 
             INotificationService notificationService, 
             ICurrentUserService currentUserService,
-            IVnPayService vnPayService)
+            IStoreVnPayService vnPayService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;

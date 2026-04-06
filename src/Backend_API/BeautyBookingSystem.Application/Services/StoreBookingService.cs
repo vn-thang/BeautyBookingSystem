@@ -20,9 +20,9 @@ namespace BeautyBookingSystem.Application.Services
         private readonly ICurrentUserService _currentUserService;
         private readonly INotificationService _notificationService;
         private readonly IStoreWalletService _storeWalletService;
-        private readonly IVnPayService _vnPayService;
+        private readonly IStoreVnPayService _vnPayService;
 
-        public StoreBookingService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserService currentUserService,IVnPayService vnPayService, INotificationService notificationService, IStoreWalletService storeWalletService)
+        public StoreBookingService(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserService currentUserService,IStoreVnPayService vnPayService, INotificationService notificationService, IStoreWalletService storeWalletService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
