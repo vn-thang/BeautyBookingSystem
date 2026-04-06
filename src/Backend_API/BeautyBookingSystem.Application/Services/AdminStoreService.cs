@@ -27,39 +27,41 @@ namespace BeautyBookingSystem.Application.Services
             _notificationService = notificationService;
         }
 
-        //Lấy danh sách (Bao gồm cả lấy danh sách Pending nếu request.Status = Pending)
-        public async Task<PagedResponse<StoreAdminDto>> GetStoresAsync(StoreFilterRequest request)
-        {
-            var query = _unitOfWork.StoreRepository.GetQueryable();
+    public async Task<PagedResponse<StoreAdminDto>> GetStoresAsync(StoreFilterRequest request)
+{
+    var query = _unitOfWork.StoreRepository.GetQueryable();
+    if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+    {
+        var search = request.SearchTerm.ToLower();
+        query = query.Where(s => s.Name.ToLower().Contains(search) ||
+                                 s.Phone.Contains(search));
+    }
 
-            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-            {
-                var search = request.SearchTerm.ToLower();
-                query = query.Where(s => s.Name.ToLower().Contains(search) ||
-                                         s.Phone.Contains(search));
-            }
+    if (request.Status.HasValue)
+    {
+        query = query.Where(s => s.ApprovalStatus == request.Status.Value);
+    }
+    if (request.IsDebt.HasValue && request.IsDebt.Value)
+    {
+       query = query.Where(s => s.WalletBalance < 0);
+    }
 
-            if (request.Status.HasValue)
-            {
-                query = query.Where(s => s.ApprovalStatus == request.Status.Value);
-            }
+    int totalCount = await query.CountAsync();
 
-            int totalCount = await query.CountAsync();
+    var stores = await query
+        .OrderByDescending(s => s.CreatedAt)
+        .Skip((request.PageIndex - 1) * request.PageSize)
+        .Take(request.PageSize)
+        .ProjectTo<StoreAdminDto>(_mapper.ConfigurationProvider) 
+        .ToListAsync();
 
-            var stores = await query
-                .OrderByDescending(s => s.CreatedAt)
-                .Skip((request.PageIndex - 1) * request.PageSize)
-                .Take(request.PageSize)
-                .ProjectTo<StoreAdminDto>(_mapper.ConfigurationProvider) 
-                .ToListAsync();
-
-            return new PagedResponse<StoreAdminDto>
-            {
-                Items = stores,
-                TotalCount = totalCount,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize)
-            };
-        }
+    return new PagedResponse<StoreAdminDto>
+    {
+        Items = stores,
+        TotalCount = totalCount,
+        TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize)
+    };
+}
 
         public async Task<StoreAdminDetailDto?> GetStoreByIdAsync(int id)
         {
@@ -122,6 +124,29 @@ namespace BeautyBookingSystem.Application.Services
                 );
             }
             return result;
+        }
+        public async Task<bool> UpdateStoreFeeConfigAsync(int id, UpdateStoreFeeConfigRequest request)
+        {
+            var store = await _unitOfWork.StoreRepository.GetByIdAsync(id);
+            if (store == null) throw new NotFoundException("Không tìm thấy cửa hàng.");
+
+            store.CommissionRate = request.CommissionRate;
+            store.MonthlyAppFee = request.MonthlyAppFee;
+
+            _unitOfWork.StoreRepository.Update(store);
+            return await _unitOfWork.SaveChangesAsync() > 0;
+        }
+
+        public async Task<IEnumerable<StoreDropdownDto>> GetStoresForDropdownAsync()
+        {
+            return await _unitOfWork.StoreRepository.GetQueryable()
+                .Where(s => s.ApprovalStatus == ApprovalStatus.Approved)
+                .Select(s => new StoreDropdownDto
+                {
+                    Id = s.Id,
+                    Name = s.Name
+                })
+                .ToListAsync();
         }
     }
 }

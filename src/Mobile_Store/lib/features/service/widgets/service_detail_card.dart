@@ -1,7 +1,11 @@
+
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../models/service_model.dart';
-import '../../../shared/widgets/shared_service_widgets.dart';
+import '../../../core/utils/formatters.dart'; 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 
 class ServiceDetailCard extends StatelessWidget {
   final ServiceModel service;
@@ -19,38 +23,49 @@ class ServiceDetailCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppDimens.radiusLarge),
+        boxShadow: [
+          BoxShadow(color: AppColors.textMain.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))
+        ],
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppDimens.paddingMedium),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: service.isActive == false ? Colors.grey.shade200 : kPrimaryColor.withValues(alpha: 0.1), shape: BoxShape.circle),
-            child: Icon(Icons.cut, color: service.isActive == false ? Colors.grey : kPrimaryColor, size: 24),
+            padding: const EdgeInsets.all(AppDimens.paddingMedium),
+            decoration: BoxDecoration(
+              color: service.isActive == false ? AppColors.background : AppColors.primary.withValues(alpha: 0.1), 
+              shape: BoxShape.circle
+            ),
+            child: Icon(
+              Icons.cut, 
+              color: service.isActive == false ? AppColors.textSub : AppColors.primary, 
+              size: 24
+            ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: AppDimens.paddingMedium),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   service.name,
-                  style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold, 
-                    color: service.isActive == false ? Colors.grey : Colors.black87,
+                  style: AppTextStyles.bodyText.copyWith(
+                    color: service.isActive == false ? AppColors.textSub : AppColors.textMain,
                     decoration: service.isActive == false ? TextDecoration.lineThrough : null, 
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    Icon(Icons.schedule, size: 14, color: Colors.grey.shade500),
-                    const SizedBox(width: 4),
-                    Text('${service.durationMinutes} phút', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                    const Icon(Icons.schedule, size: 14, color: AppColors.textSub),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text(
+                      '${service.durationMinutes} phút', 
+                      style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSub)
+                    ),
                   ],
                 ),
               ],
@@ -63,21 +78,38 @@ class ServiceDetailCard extends StatelessWidget {
                 height: 30, width: 30,
                 child: PopupMenuButton<String>(
                   padding: EdgeInsets.zero,
-                  icon: const Icon(Icons.more_vert, color: Colors.grey),
+                  icon: const Icon(Icons.more_vert, color: AppColors.textSub),
                   onSelected: (value) {
                     if (value == 'edit') onEdit();
                     if (value == 'delete') onDelete();
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 20, color: Colors.black87), SizedBox(width: 8), Text('Chỉnh sửa')])),
-                    const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, size: 20, color: Colors.red), SizedBox(width: 8), Text('Xóa dịch vụ', style: TextStyle(color: Colors.red))])),
+                    PopupMenuItem(
+                      value: 'edit', 
+                      child: Row(children: [
+                        const Icon(Icons.edit, size: 20, color: AppColors.textMain), 
+                        const SizedBox(width: AppSpacing.sm), 
+                        Text('Chỉnh sửa', style: AppTextStyles.bodyText)
+                      ])
+                    ),
+                    PopupMenuItem(
+                      value: 'delete', 
+                      child: Row(children: [
+                        const Icon(Icons.delete, size: 20, color: AppColors.error), 
+                        const SizedBox(width: AppSpacing.sm), 
+                        Text('Xóa dịch vụ', style: AppTextStyles.bodyText.copyWith(color: AppColors.error))
+                      ])
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
-                NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(service.price),
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: service.isActive == false ? Colors.grey : kPrimaryColor),
+                Formatters.formatCurrency(service.price),
+                style: AppTextStyles.bodyText.copyWith(
+                  color: service.isActive == false ? AppColors.textSub : AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),

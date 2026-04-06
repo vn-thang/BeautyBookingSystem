@@ -67,19 +67,19 @@ class StatisticsModel {
 class CommissionModel {
   final double totalCommission;
   final double appUsageFee;
-  final double balanceToPay;
+  final double totalWithdrawn;
 
   CommissionModel({
     required this.totalCommission,
     required this.appUsageFee,
-    required this.balanceToPay,
+    required this.totalWithdrawn,
   });
 
   factory CommissionModel.fromJson(Map<String, dynamic> json) {
     return CommissionModel(
-      totalCommission: (json['totalCommission'] ?? 0).toDouble(),
-      appUsageFee: (json['appUsageFee'] ?? 0).toDouble(),
-      balanceToPay: (json['balanceToPay'] ?? 0).toDouble(),
+      totalCommission: double.tryParse(json['totalCommission']?.toString() ?? '0') ?? 0.0,
+      appUsageFee: double.tryParse(json['appUsageFee']?.toString() ?? '0') ?? 0.0,
+      totalWithdrawn: double.tryParse(json['totalWithdrawn']?.toString() ?? '0') ?? 0.0,
     );
   }
 }

@@ -11,14 +11,17 @@ using System.Text;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using System.IO;
+using Hangfire;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+{
+    
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.ConfigureWarnings(warnings => 
+        warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        });
 builder.Services.AddControllers();
-//builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -47,6 +50,17 @@ builder.Services.AddScoped<IAdminStoreService, AdminStoreService>();
 builder.Services.AddScoped<IAdminReviewService, AdminReviewService>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<IStoreCustomerService, StoreCustomerService>();
+builder.Services.AddScoped<IAdminBookingService, AdminBookingService>();
+builder.Services.AddScoped<IStoreWalletService, StoreWalletService>();
+builder.Services.AddScoped<IVnPayService, VnPayService>();
+builder.Services.AddScoped<ISystemConfigService, SystemConfigService>();
+builder.Services.AddScoped<IAdminWalletService, AdminWalletService>();
+builder.Services.AddScoped<ISystemContentService, SystemContentService>();
+builder.Services.AddScoped<IWithdrawalService, WithdrawalService>();
+builder.Services.AddScoped<IStoreStatisticsService, StoreStatisticsService>();
+builder.Services.AddScoped<IExcelService, ExcelService>();
+builder.Services.AddScoped<IStoreBillingService, StoreBillingService>();
+builder.Services.AddHttpClient();
 
 
 var jwtKey = builder.Configuration["Jwt:Key"];
@@ -71,6 +85,15 @@ builder.Services.AddAuthentication(options =>
 });
 builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
 
+var connectionStrings = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddHangfire(configuration => configuration
+.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+.UseSimpleAssemblyNameTypeSerializer()
+.UseRecommendedSerializerSettings()
+.UseSqlServerStorage(connectionStrings));
+builder.Services.AddHangfireServer();
+
 var firebaseKeyPath = Path.Combine(Directory.GetCurrentDirectory(), "firebase-key.json"); 
 if (File.Exists(firebaseKeyPath))
 {
@@ -84,39 +107,36 @@ else
 {
     Console.WriteLine("CẢNH BÁO: Không tìm thấy file firebase-key.json");
 }
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") 
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); 
+    });
+});
+
 var app = builder.Build();
 app.UseMiddleware<BeautyBookingSystem.API.Middleware.ExceptionMiddleware>();
-
-// Configure the HTTP request pipeline.
+app.UseHangfireDashboard("/hangfire");
 if (app.Environment.IsDevelopment())
 {
-    //app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-//app.UseHttpsRedirection();
-app.UseAuthentication(); // BẮT BUỘC PHẢI ĐỨNG TRƯỚC Authorization
+app.UseCors("AllowReactApp");
+app.UseAuthentication(); 
 app.UseAuthorization();
 app.MapControllers();
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+RecurringJob.AddOrUpdate<IStoreWalletService>(
+    "auto-monthly-fee-deduction", 
+    walletService => walletService.ProcessMonthlyAppFeeAsync(), 
+    "5 0 * * *", // Mã Cron: Chạy vào đúng 00:05 mỗi ngày
+    new RecurringJobOptions { TimeZone = TimeZoneInfo.Local } 
+);
 
 app.Run();
 

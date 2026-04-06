@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
+import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
+import 'package:mobile_store/shared/widgets/inputs/app_header.dart';
 import '../models/voucher_model.dart';
 import '../services/voucher_api.dart';
 import '../widgets/voucher_tile.dart';
 import '../widgets/voucher_form_bottom_sheet.dart';
 import '../../../core/theme/app_colors.dart';
-
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 class VoucherManagementScreen extends StatefulWidget {
   const VoucherManagementScreen({super.key});
 
@@ -26,22 +31,27 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
       _vouchersFuture = VoucherApi.getVouchers();
     });
   }
+  
   void _showMessage(String msg, {bool isError = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: isError ? Colors.red : Colors.green),
-    );
+    if (isError) {
+      SnackBarHelper.showError(context, msg);
+    } else {
+      SnackBarHelper.showSuccess(context, msg);
+    }
   }
 
   void _openFormBottomSheet({VoucherModel? voucher}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => VoucherFormBottomSheet(
-        voucher: voucher,
-        onSuccess: _loadData,
+      backgroundColor: Colors.transparent, 
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 20),
+        child: VoucherFormBottomSheet(
+          voucher: voucher,
+          onSuccess: _loadData,
+        ),
       ),
     );
   }
@@ -50,16 +60,41 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xóa khuyến mãi'),
-        content: Text('Bạn có chắc muốn xóa mã ${voucher.code}?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy', style: TextStyle(color: Colors.grey))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xóa', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+        backgroundColor: AppColors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusLarge)),
+        title: Text('Xóa khuyến mãi', style: AppTextStyles.heading1.copyWith(fontSize: 20)),
+        contentPadding: const EdgeInsets.only(
+          left: AppDimens.paddingLarge, 
+          right: AppDimens.paddingLarge, 
+          top: AppSpacing.md, 
+          bottom: AppDimens.paddingLarge
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Bạn có chắc muốn xóa mã ${voucher.code}?', style: AppTextStyles.bodyText),
+            const SizedBox(height: AppSpacing.xl),
+            Row(
+              children: [
+                Expanded(
+                  child: AppOutlineButton(
+                    text: 'Hủy',
+                    color: AppColors.textSub, 
+                    onTap: () => Navigator.pop(context, false),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: AppPrimaryButton(
+                    text: 'Xóa',
+                    color: AppColors.error, 
+                    onPressed: () => Navigator.pop(context, true),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
 
@@ -77,32 +112,24 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        title: const Text('Quản lý Khuyến mãi', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
-        centerTitle: true,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      backgroundColor: AppColors.background,
+      appBar: const AppHeader(title: 'Quản lý Khuyến mãi'),
       body: FutureBuilder<List<VoucherModel>>(
         future: _vouchersFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator(color: AppColors.primary));
+            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
           }
-          if (snapshot.hasError) return Center(child: Text('Lỗi: ${snapshot.error}'));
+          if (snapshot.hasError) {
+            return Center(child: Text('Lỗi: ${snapshot.error}', style: AppTextStyles.bodyText.copyWith(color: AppColors.error)));
+          }
           if (!snapshot.hasData || snapshot.data!.isEmpty) return _buildEmptyState();
 
           return RefreshIndicator(
             onRefresh: () async => _loadData(),
             color: AppColors.primary,
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppDimens.paddingLarge),
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 final voucher = snapshot.data![index];
@@ -116,11 +143,25 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openFormBottomSheet(),
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text("Tạo Voucher", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+    floatingActionButton: SizedBox(
+        height: 44, 
+        child: FloatingActionButton.extended(
+          onPressed: () => _openFormBottomSheet(),
+          backgroundColor: AppColors.primary,
+          elevation: 4, 
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(100), 
+          ),
+          icon: const Icon(Icons.add, color: AppColors.white, size: 20), 
+          label: Text(
+            "Tạo Voucher", 
+            style: AppTextStyles.bodyText.copyWith(
+              color: AppColors.white, 
+              fontWeight: FontWeight.w600, 
+              fontSize: 13, 
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -130,9 +171,9 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.local_offer_outlined, size: 80, color: Colors.grey.shade300),
+          Icon(Icons.local_offer_outlined, size: 80, color: AppColors.textSub.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
-          const Text('Chưa có mã khuyến mãi nào.', style: TextStyle(color: Colors.grey, fontSize: 16)),
+          Text('Chưa có mã khuyến mãi nào.', style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub, fontSize: 16)),
         ],
       ),
     );

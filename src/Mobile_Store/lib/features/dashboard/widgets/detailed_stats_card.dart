@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:mobile_store/shared/widgets/inputs/app_filter_dropdown.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/stat_item_widget.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/formatters.dart'; // Đổi đường dẫn cho phù hợp
+import '../../../shared/widgets/cards/stat_item_widget.dart';
 import '../models/store_dashboard_model.dart';
 
 class DetailedStatsCard extends StatelessWidget {
@@ -22,11 +26,6 @@ class DetailedStatsCard extends StatelessWidget {
     required this.onDateChanged,
   });
 
-  String _formatCurrency(double amount) {
-    return amount.toInt().toString().replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
-  }
-
   Future<void> _selectDate(BuildContext context, bool isStart) async {
     final DateTime initialDate = isStart 
         ? (startDate ?? DateTime.now()) 
@@ -40,10 +39,10 @@ class DetailedStatsCard extends StatelessWidget {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: AppColors.primary,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
+              onPrimary: AppColors.white,
+              onSurface: AppColors.textMain,
             ),
           ),
           child: child!,
@@ -62,35 +61,37 @@ class DetailedStatsCard extends StatelessWidget {
 
   Widget _buildDatePicker(BuildContext context, {required String label, required bool isStart}) {
     final date = isStart ? startDate : endDate;
-    final dateString = date != null ? DateFormat('dd/MM/yyyy').format(date) : 'dd/mm/yyyy';
+    final dateString = date != null ? Formatters.formatDateOnly(date) : 'dd/mm/yyyy';
 
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.black87)),
-          const SizedBox(height: 8),
+          Text(
+            label, 
+            style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w500, color: AppColors.textMain)
+          ),
+          const SizedBox(height: AppSpacing.sm),
           InkWell(
             onTap: () => _selectDate(context, isStart),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingSmall, vertical: AppDimens.paddingSmall),
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.white,
+                border: Border.all(color: AppColors.textSub.withValues(alpha: 0.3)),
+                borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     dateString,
-                    style: TextStyle(
-                      fontSize: 14, 
-                      color: date != null ? Colors.black87 : Colors.grey,
+                    style: AppTextStyles.bodyText.copyWith(
+                      color: date != null ? AppColors.textMain : AppColors.textSub,
                     ),
                   ),
-                  const Icon(Icons.calendar_month, size: 18, color: Colors.grey),
+                  const Icon(Icons.calendar_month, size: 18, color: AppColors.textSub),
                 ],
               ),
             ),
@@ -104,70 +105,65 @@ class DetailedStatsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: AppColors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMedium)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppDimens.paddingMedium),
         child: Column(
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.bar_chart, color: Colors.blue, size: 24),
-                    SizedBox(width: 8),
-                    Text('Thống kê chi tiết', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Icon(Icons.bar_chart, color: AppColors.primary, size: 24),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'Thống kê chi tiết', 
+                      style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.bold)
+                    ),
                   ],
                 ),
-                Container(
-                  height: 32,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: currentFilter,
-                      icon: const Icon(Icons.keyboard_arrow_down, size: 16),
-                      style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.w500),
-                      items: const [
-                        DropdownMenuItem(value: 'today', child: Text('Hôm nay')),
-                        DropdownMenuItem(value: 'week', child: Text('Tuần này')),
-                        DropdownMenuItem(value: 'month', child: Text('Tháng này')),
-                        DropdownMenuItem(value: 'all', child: Text('Tất cả')), // ĐÃ THÊM MỤC NÀY
-                        DropdownMenuItem(value: 'custom', child: Text('Tùy chỉnh')),
-                      ],
-                      onChanged: (String? newValue) {
-                        if (newValue != null) {
-                          onFilterChanged(newValue);
-                        }
-                      },
-                    ),
+                SizedBox(
+                  width: 130, 
+                  child: AppFilterDropdown<String>(
+                    hint: 'Tất cả',
+                    value: currentFilter,
+                    items: const [
+                      DropdownMenuItem(value: 'today', child: Text('Hôm nay')),
+                      DropdownMenuItem(value: 'week', child: Text('Tuần này')),
+                      DropdownMenuItem(value: 'month', child: Text('Tháng này')),
+                      DropdownMenuItem(value: 'all', child: Text('Tất cả')),
+                      DropdownMenuItem(value: 'custom', child: Text('Tùy chỉnh')),
+                    ],
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        onFilterChanged(newValue);
+                      }
+                    },
                   ),
                 ),
               ],
             ),
             
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             
             Row(
               children: [
                 _buildDatePicker(context, label: 'Bắt đầu', isStart: true),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.lg),
                 _buildDatePicker(context, label: 'Kết thúc', isStart: false),
               ],
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: AppDimens.paddingLarge),
             
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                StatItemWidget(icon: Icons.groups, iconColor: Colors.grey, value: '${stats.totalCustomers}', label: 'Khách hàng'),
+                StatItemWidget(icon: Icons.groups, iconColor: AppColors.textSub, value: '${stats.totalCustomers}', label: 'Khách hàng'),
                 StatItemWidget(icon: Icons.calendar_month, iconColor: AppColors.primary, value: '${stats.totalBookings}', label: 'Lịch đặt'),
-                StatItemWidget(icon: Icons.attach_money, iconColor: Colors.green, value: _formatCurrency(stats.totalRevenue), label: 'Doanh thu'),
+                StatItemWidget(icon: Icons.attach_money, iconColor: AppColors.success, value: Formatters.formatCurrency(stats.totalRevenue), label: 'Doanh thu'),
               ],
             ),
           ],

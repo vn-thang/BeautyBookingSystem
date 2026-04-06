@@ -2,23 +2,31 @@
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 <uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 <queries>
   <intent>
     <action android:name="android.intent.action.VIEW" />
     <data android:scheme="https" />
   </intent>
   <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+  <intent>
     <action android:name="android.intent.action.DIAL" />
   </intent>
   <intent>
     <action android:name="android.intent.action.SEND" />
-    <data android:mimeType="*/*" />
+    <data android:mimeType="*/*" /> 
   </intent>
 </queries>
     <application
         android:label="mobile_store"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:largeHeap="true"
+        android:enableOnBackInvokedCallback="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -44,6 +52,13 @@
     <action android:name="FLUTTER_NOTIFICATION_CLICK" />
     <category android:name="android.intent.category.DEFAULT" />
 </intent-filter>
+
+<intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="beautybooking" android:host="payment-result" />
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

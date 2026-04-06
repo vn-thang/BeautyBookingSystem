@@ -19,9 +19,9 @@ namespace BeautyBookingSystem.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetBookings([FromQuery] string? status = null)
+        public async Task<IActionResult> GetBookings([FromQuery] string? status = null, [FromQuery] int? staffId = null, [FromQuery] DateTime? startDate=null, [FromQuery] DateTime? endDate=null)
         {
-            var result = await _bookingService.GetBookingsAsync(status);
+            var result = await _bookingService.GetBookingsAsync(status, staffId, startDate, endDate);
             return Ok(result);
         }
 

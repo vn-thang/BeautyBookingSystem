@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/formatters.dart'; // Áp dụng Formatters
 import '../models/customer_profile_model.dart';
 
 class CustomerStatsRow extends StatelessWidget {
@@ -9,8 +13,6 @@ class CustomerStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-
     return Row(
       children: [
         _buildStatCard(
@@ -18,23 +20,23 @@ class CustomerStatsRow extends StatelessWidget {
           value: '${profile.totalVisits}',
           unit: 'lần',
           icon: Icons.check_circle_outline,
-          color: Colors.green,
+          color: AppColors.success,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         _buildStatCard(
           title: 'Chi tiêu',
-          value: currencyFormat.format(profile.totalSpent),
+          value: Formatters.formatCurrency(profile.totalSpent), 
           unit: '',
           icon: Icons.monetization_on_outlined,
-          color: Colors.blue,
+          color: AppColors.primary,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         _buildStatCard(
           title: 'Hủy lịch',
           value: '${profile.totalCancelled}',
           unit: 'lần',
           icon: Icons.cancel_outlined,
-          color: profile.totalCancelled >= 3 ? Colors.red : Colors.orange,
+          color: profile.totalCancelled >= 3 ? AppColors.error : AppColors.warning,
         ),
       ],
     );
@@ -49,21 +51,31 @@ class CustomerStatsRow extends StatelessWidget {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppDimens.paddingMedium, 
+          horizontal: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
           border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
             Icon(icon, color: color, size: 24),
-            const SizedBox(height: 8),
-            Text(title, style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.sm),
             Text(
-              '$value ${unit}'.trim(),
-              style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14),
+              title, 
+              style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSub),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              '$value $unit'.trim(),
+              style: AppTextStyles.bodyText.copyWith(
+                fontWeight: FontWeight.bold, 
+                color: color, 
+                fontSize: 14,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

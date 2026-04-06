@@ -1,6 +1,5 @@
 
 class FormValidators {
-  // 1. Kiểm tra bắt buộc nhập chung chung
   static String? requiredField(String? value, [String message = 'Trường này không được để trống']) {
     if (value == null || value.trim().isEmpty) {
       return message;
@@ -8,7 +7,6 @@ class FormValidators {
     return null;
   }
 
-  // 2. Validate Email
   static String? email(String? value) {
     if (value == null || value.trim().isEmpty) return 'Vui lòng nhập email';
     final emailRegex = RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$');
@@ -16,7 +14,6 @@ class FormValidators {
     return null;
   }
 
-  // 3. Validate Số điện thoại (Việt Nam)
   static String? phone(String? value) {
     if (value == null || value.trim().isEmpty) return 'Vui lòng nhập số điện thoại';
     final phoneRegex = RegExp(r'^(0|\+84)[0-9]{8,9}$');
@@ -24,7 +21,6 @@ class FormValidators {
     return null;
   }
 
-  // 4. Validate Email HOẶC Số điện thoại (Dùng riêng cho Login)
   static String? emailOrPhone(String? value) {
     if (value == null || value.trim().isEmpty) return 'Vui lòng nhập email hoặc số điện thoại';
     final trimmed = value.trim();
@@ -37,14 +33,12 @@ class FormValidators {
     return null;
   }
 
-  // 5. Validate Mật khẩu
   static String? password(String? value, {int minLength = 6}) {
     if (value == null || value.isEmpty) return 'Vui lòng nhập mật khẩu';
     if (value.length < minLength) return 'Mật khẩu phải có ít nhất $minLength ký tự';
     return null;
   }
 
-  // 6. Validate Xác nhận mật khẩu
   static String? confirmPassword(String? value, String originalPassword) {
     if (value == null || value.isEmpty) return 'Vui lòng xác nhận mật khẩu';
     if (value != originalPassword) return 'Mật khẩu không khớp';

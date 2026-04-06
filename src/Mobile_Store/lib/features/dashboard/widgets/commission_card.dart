@@ -1,44 +1,76 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/features/wallet/screens/store_wallet_screen.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/stat_item_widget.dart';
-import '../models/store_dashboard_model.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/formatters.dart'; // Thay bằng đường dẫn file Formatters của bạn
+import '../../../shared/widgets/cards/stat_item_widget.dart';
+import '../models/store_dashboard_model.dart'; 
 
 class CommissionCard extends StatelessWidget {
   final CommissionModel comm;
+  
   const CommissionCard({super.key, required this.comm});
-
-  String _formatCurrency(double amount) {
-    return amount.toInt().toString().replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
-  }
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0, 
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppDimens.paddingMedium),
         child: Column(
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.pie_chart, color: Colors.orange, size: 24), SizedBox(width: 8),
-                    Text('Thống kê tiền hoa hồng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Icon(Icons.pie_chart, color: AppColors.warning, size: 24), 
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'Thống kê chi tiêu', 
+                      style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.bold)
+                    ),
                   ],
                 ),
-                Text('Xem tất cả >', style: TextStyle(color: AppColors.primary, fontSize: 13)),
+               GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(builder: (context) => const StoreWalletScreen())
+                    );
+                  },
+                  child: Text(
+                    'Xem tất cả >', 
+                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500)
+                  )
+                ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppDimens.paddingLarge),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                StatItemWidget(icon: Icons.monetization_on, iconColor: Colors.yellow[700]!, value: _formatCurrency(comm.totalCommission), label: 'Hoa hồng'),
-                StatItemWidget(icon: Icons.phone_android, iconColor: Colors.blue, value: _formatCurrency(comm.appUsageFee), label: 'Sử dụng app'),
-                StatItemWidget(icon: Icons.account_balance_wallet, iconColor: Colors.red[400]!, value: _formatCurrency(comm.balanceToPay), label: 'Cần thanh toán'),
+                StatItemWidget(
+                  icon: Icons.monetization_on, 
+                  iconColor: AppColors.warning, 
+                  value: Formatters.formatCurrency(comm.totalCommission), 
+                  label: 'Hoa hồng'
+                ),
+                StatItemWidget(
+                  icon: Icons.phone_android, 
+                  iconColor: Colors.blue, 
+                  value: Formatters.formatCurrency(comm.appUsageFee), 
+                  label: 'Sử dụng app'
+                ),
+                StatItemWidget(
+                  icon: Icons.account_balance, 
+                  iconColor: AppColors.error, 
+                  value: Formatters.formatCurrency(comm.totalWithdrawn), 
+                  label: 'Tổng tiền đã rút'
+                ),
               ],
             ),
           ],

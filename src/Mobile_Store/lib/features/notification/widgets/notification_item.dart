@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/notification_model.dart';
-import '../../../core/utils/date_formatter.dart'; 
+import '../../../core/utils/formatters.dart'; 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
 
 class NotificationItem extends StatelessWidget {
   final NotificationModel notification;
@@ -13,17 +17,21 @@ class NotificationItem extends StatelessWidget {
     final isRead = notification.isRead;
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      tileColor: isRead ? Colors.transparent : Colors.blue.withValues(alpha: 0.05),
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingMedium, vertical: AppDimens.paddingSmall),
+      tileColor: isRead ? AppColors.white : AppColors.primary.withValues(alpha: 0.05), 
       leading: CircleAvatar(
-        backgroundColor: isRead ? Colors.grey.shade200 : Colors.blue.shade100,
-        child: Icon(Icons.notifications, color: isRead ? Colors.grey : Colors.blue),
+        backgroundColor: isRead ? AppColors.surface : AppColors.primary.withValues(alpha: 0.1),
+        child: Icon(
+          Icons.notifications, 
+          color: isRead ? AppColors.textSub : AppColors.primary
+        ),
       ),
       title: Text(
         notification.title,
-        style: TextStyle(
+        style: AppTextStyles.bodyText.copyWith(
           fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-          color: isRead ? Colors.black87 : Colors.black,
+          color: isRead ? AppColors.textMain.withValues(alpha: 0.8) : AppColors.textMain,
+          fontSize: 15,
         ),
       ),
       subtitle: Column(
@@ -34,12 +42,15 @@ class NotificationItem extends StatelessWidget {
             notification.message,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: isRead ? Colors.grey.shade700 : Colors.black87),
+            style: AppTextStyles.bodyText.copyWith(
+              color: isRead ? AppColors.textSub : AppColors.textMain,
+              fontSize: 13,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
-            DateFormatter.formatDateTime(notification.createdAt),
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+            Formatters.formatDateTime(notification.createdAt),
+            style: AppTextStyles.labelSmall,
           ),
         ],
       ),

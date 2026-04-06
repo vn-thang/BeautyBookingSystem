@@ -28,7 +28,6 @@ namespace BeautyBookingSystem.Infrastructure.Services
 
             try
             {
-                // 1. Tạo gói tin Notification
                 var message = new Message()
                 {
                     Token = fcmToken,
@@ -38,8 +37,6 @@ namespace BeautyBookingSystem.Infrastructure.Services
                         Body = body
                     }
                 };
-
-                // 2. Ra lệnh cho Firebase gửi đi
                 string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
 
                 _logger.LogInformation($"[THÀNH CÔNG] Đã gửi thông báo tới {fcmToken}. Firebase Response: {response}");

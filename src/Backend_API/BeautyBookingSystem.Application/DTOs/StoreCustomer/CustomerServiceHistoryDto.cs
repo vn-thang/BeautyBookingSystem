@@ -7,6 +7,6 @@ public class CustomerServiceHistoryDto
         public TimeSpan StartTime { get; set; }
         public string ServiceName { get; set; } = string.Empty;
         public string StaffName { get; set; } = string.Empty;
-        public decimal Price { get; set; } // Giá của dịch vụ đó lúc khách làm
+        public decimal Price { get; set; } 
     }
 }

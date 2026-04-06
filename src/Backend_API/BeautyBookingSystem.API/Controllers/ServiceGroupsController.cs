@@ -50,17 +50,13 @@ namespace BeautyBookingSystem.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            //await _serviceGroupService.DeleteAsync(id);
-            //return Ok(new { Message = "Xóa nhóm dịch vụ thành công" });
             try
             {
-                // Gọi hàm xóa dưới tầng Service
                 await _serviceGroupService.DeleteAsync(id);
                 return Ok(new { success = true, message = "Đã xóa nhóm thành công" });
             }
             catch (Exception ex)
             {
-                // Bắt cái lỗi từ Service ném lên, và biến nó thành HTTP 400 gửi cho Flutter
                 return BadRequest(new { success = false, message = ex.Message });
             }
         }

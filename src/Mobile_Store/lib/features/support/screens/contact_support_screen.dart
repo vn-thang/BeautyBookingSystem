@@ -1,43 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
+import 'package:mobile_store/shared/widgets/inputs/app_header.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../services/support_api.dart';
+import '../models/contact_info_model.dart';
+import '../widgets/contact_card.dart';
 
-class ContactSupportScreen extends StatelessWidget {
+class ContactSupportScreen extends StatefulWidget {
   const ContactSupportScreen({super.key});
 
+  @override
+  State<ContactSupportScreen> createState() => _ContactSupportScreenState();
+}
+
+class _ContactSupportScreenState extends State<ContactSupportScreen> {
+  late Future<ContactInfoModel> _contactInfoFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
+    setState(() {
+      _contactInfoFuture = SupportApi.getContactInfo();
+    });
+  }
+
   Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
-    final Uri launchUri = Uri(
-      scheme: 'tel',
-      path: phoneNumber,
-    );
+    if (phoneNumber == 'Đang cập nhật') return;
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
     _launchInExternalApp(context, launchUri);
   }
 
-  Future<void> _sendEmail(BuildContext context) async {
+  Future<void> _sendEmail(BuildContext context, String email) async {
+    if (email == 'Đang cập nhật') return;
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
-      path: 'support@beautybooking.com', 
-      queryParameters: {
-        'subject': 'Cần hỗ trợ từ BeautyBooking',
-      },
+      path: email,
+      queryParameters: {'subject': 'Cần hỗ trợ từ BeautyBooking'},
     );
     _launchInExternalApp(context, emailLaunchUri);
   }
 
   Future<void> _openZalo(BuildContext context, String phoneNumber) async {
-    final Uri zaloUri = Uri.parse('https://zalo.me/$phoneNumber');
+    if (phoneNumber == 'Đang cập nhật') return;
+    final cleanPhone = phoneNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    final Uri zaloUri = Uri.parse('https://zalo.me/$cleanPhone');
     
     try {
       bool launched = await launchUrl(zaloUri, mode: LaunchMode.externalApplication);
-      
       if (!launched) {
         await launchUrl(zaloUri, mode: LaunchMode.inAppBrowserView);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không thể kết nối tới Zalo. Vui lòng thử lại!'), backgroundColor: Colors.red),
-        );
+        SnackBarHelper.showError(context, 'Không thể kết nối tới Zalo. Vui lòng thử lại!');
       }
     }
   }
@@ -46,16 +69,12 @@ class ContactSupportScreen extends StatelessWidget {
     try {
       if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Không thể mở ứng dụng. Vui lòng thử lại!'), backgroundColor: Colors.red),
-          );
+          SnackBarHelper.showError(context, 'Không thể mở ứng dụng. Vui lòng thử lại!');
         }
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Có lỗi xảy ra hoặc thiết bị không hỗ trợ.'), backgroundColor: Colors.red),
-        );
+        SnackBarHelper.showError(context, 'Có lỗi xảy ra hoặc thiết bị không hỗ trợ.');
       }
     }
   }
@@ -63,131 +82,79 @@ class ContactSupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), 
-      appBar: AppBar(
-        title: const Text(
-          "Liên hệ & Hỗ trợ",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.support_agent_rounded, size: 80, color: AppColors.primary),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              "Chúng tôi có thể giúp gì cho bạn?",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              "Hãy chọn một trong các phương thức dưới đây để kết nối với đội ngũ chăm sóc khách hàng của chúng tôi.",
-              style: TextStyle(fontSize: 14, color: Colors.black54),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 40),
+      backgroundColor: AppColors.background,
+      appBar: const AppHeader(title: "Liên hệ & Hỗ trợ"),
+      body: FutureBuilder<ContactInfoModel>(
+        future: _contactInfoFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+          }
+          
+          final contactInfo = snapshot.data ?? ContactInfoModel(hotline: '', email: '', zalo: '');
 
-            _buildContactCard(
-              icon: Icons.phone_in_talk_outlined,
-              title: "Gọi Hotline",
-              subtitle: "1900 1234 - Phục vụ 24/7",
-              color: Colors.green,
-              onTap: () => _makePhoneCall(context, '19001234'), 
-            ),
-            const SizedBox(height: 15),
-
-            // Nút Zalo
-            _buildContactCard(
-              icon: Icons.chat_bubble_outline,
-              title: "Chat qua Zalo",
-              subtitle: "Phản hồi nhanh chóng",
-              color: Colors.blue,
-              onTap: () => _openZalo(context, '0966774351'), 
-            ),
-            const SizedBox(height: 15),
-
-            _buildContactCard(
-              icon: Icons.email_outlined,
-              title: "Gửi Email",
-              subtitle: "support@beautybooking.com",
-              color: Colors.orange,
-              onTap: () => _sendEmail(context),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContactCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: color, size: 28),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
+          return RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: () async => _loadData(),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(), 
+              padding: const EdgeInsets.all(AppDimens.paddingLarge),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                  const SizedBox(height: AppSpacing.lg),
+                  Container(
+                    padding: const EdgeInsets.all(AppDimens.paddingLarge),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.support_agent_rounded, size: 80, color: AppColors.primary),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xl),
                   Text(
-                    subtitle,
-                    style: const TextStyle(fontSize: 14, color: Colors.black54),
+                    "Chúng tôi có thể giúp gì cho bạn?",
+                    style: AppTextStyles.heading1.copyWith(fontSize: 20),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    "Hãy chọn một trong các phương thức dưới đây để kết nối với đội ngũ chăm sóc khách hàng của chúng tôi.",
+                    style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 40),
+
+                  ContactCard(
+                    icon: Icons.phone_in_talk_outlined,
+                    title: "Gọi Hotline",
+                    subtitle: "${contactInfo.hotline} - Phục vụ 24/7",
+                    color: AppColors.success,
+                    onTap: () => _makePhoneCall(context, contactInfo.hotline),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  ContactCard(
+                    icon: Icons.chat_bubble_outline,
+                    title: "Chat qua Zalo",
+                    subtitle: "Phản hồi nhanh chóng",
+                    color: const Color(0xFF0068FF), 
+                    onTap: () => _openZalo(context, contactInfo.zalo),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  ContactCard(
+                    icon: Icons.email_outlined,
+                    title: "Gửi Email",
+                    subtitle: contactInfo.email,
+                    color: AppColors.warning, 
+                    onTap: () => _sendEmail(context, contactInfo.email),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, color: Colors.grey.shade400, size: 16),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

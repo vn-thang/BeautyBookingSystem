@@ -9,6 +9,6 @@ namespace BeautyBookingSystem.Application.Interfaces
 {
     public interface IAdminDashboardService
     {
-        Task<AdminDashboardDto> GetDashboardStatisticsAsync();
+        Task<AdminDashboardDto> GetDashboardStatisticsAsync(DateTime? fromDate = null, DateTime? toDate = null);
     }
 }

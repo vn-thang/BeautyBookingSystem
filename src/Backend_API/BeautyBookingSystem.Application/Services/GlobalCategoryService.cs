@@ -59,36 +59,48 @@ namespace BeautyBookingSystem.Application.Services
             return _mapper.Map<GlobalCategoryDto>(newCategory);
         }
 
-        public async Task<bool> UpdateAsync(int id, UpdateCategoryRequest request)
+       public async Task<bool> UpdateAsync(int id, UpdateCategoryRequest request)
+{
+    var category = await _unitOfWork.GlobalCategoryRepository.GetByIdAsync(id);
+    if (category == null) throw new NotFoundException("Không tìm thấy danh mục!");
+    if (category.IsActive == true && request.IsActive == false)
+    {
+        var hasRelatedServices = await _unitOfWork.ServiceRepository.GetQueryable()
+            .AnyAsync(s => s.CategoryId == id && s.IsActive);
+
+        if (hasRelatedServices)
         {
-            var category = await _unitOfWork.GlobalCategoryRepository.GetByIdAsync(id);
-            if (category == null) throw new NotFoundException("Không tìm thấy danh mục!");
-
-            _mapper.Map(request, category);
-
-            _unitOfWork.GlobalCategoryRepository.Update(category);
-            await _unitOfWork.SaveChangesAsync();
-
-            return true;
+            throw new BadRequestException("Không thể lưu trạng thái Ẩn! Danh mục này vẫn còn các dịch vụ đang hoạt động bên trong.");
         }
+    }
 
-        public async Task<bool> DeleteAsync(int id)
-        {
-            var category = await _unitOfWork.GlobalCategoryRepository.GetByIdAsync(id);
-            if (category == null) throw new NotFoundException("Không tìm thấy danh mục!");
-            var hasRelatedServices = await _unitOfWork.ServiceRepository.GetQueryable()
-          .AnyAsync(s => s.CategoryId == id && s.IsActive);
+    _mapper.Map(request, category);
 
-            if (hasRelatedServices)
-            {
-                throw new BadRequestException("Không thể ẩn danh mục này vì vẫn còn các dịch vụ đang hoạt động bên trong. Vui lòng xóa hoặc chuyển các dịch vụ đó trước.");
-            }
-            category.IsActive = false;
+    _unitOfWork.GlobalCategoryRepository.Update(category);
+    await _unitOfWork.SaveChangesAsync();
 
-            _unitOfWork.GlobalCategoryRepository.Update(category);
-            await _unitOfWork.SaveChangesAsync();
+    return true;
+}
 
-            return true;
-        }
+public async Task<bool> DeleteAsync(int id)
+{
+    var category = await _unitOfWork.GlobalCategoryRepository.GetByIdAsync(id);
+    if (category == null) throw new NotFoundException("Không tìm thấy danh mục!");
+    
+    var hasRelatedServices = await _unitOfWork.ServiceRepository.GetQueryable()
+        .AnyAsync(s => s.CategoryId == id && s.IsActive);
+
+    if (hasRelatedServices)
+    {
+        throw new BadRequestException("Không thể ẩn danh mục này vì vẫn còn các dịch vụ đang hoạt động bên trong. Vui lòng xóa hoặc chuyển các dịch vụ đó trước.");
+    }
+    
+    category.IsActive = false;
+
+    _unitOfWork.GlobalCategoryRepository.Update(category);
+    await _unitOfWork.SaveChangesAsync();
+
+    return true;
+}
     }
 }

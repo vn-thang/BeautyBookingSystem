@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
 import '../models/notification_model.dart';
-import '../../../core/utils/date_formatter.dart'; 
+import '../../../core/utils/formatters.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
 
 class NotificationDetailSheet extends StatelessWidget {
   final NotificationModel notification;
@@ -11,53 +16,52 @@ class NotificationDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        left: 20, 
-        right: 20, 
-        top: 24, 
-        bottom: MediaQuery.of(context).padding.bottom + 20
+        left: AppDimens.paddingLarge, 
+        right: AppDimens.paddingLarge, 
+        top: AppDimens.paddingLarge, 
+        bottom: MediaQuery.of(context).padding.bottom + AppDimens.paddingLarge
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-         
           Center(
             child: Container(
               width: 40, height: 5,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(10)),
+              margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: AppColors.textSub.withValues(alpha: 0.3), 
+                borderRadius: BorderRadius.circular(10)
+              ),
             ),
           ),
           
-          Text(notification.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
+          Text(
+            notification.title, 
+            style: AppTextStyles.heading1.copyWith(fontSize: 18)
+          ),
+          const SizedBox(height: AppSpacing.sm),
           
           Text(
-            DateFormatter.formatDateTime(notification.createdAt),
-            style: const TextStyle(fontSize: 14, color: Colors.grey),
+            Formatters.formatDateTime(notification.createdAt),
+            style: AppTextStyles.labelSmall,
           ),
-          const Divider(height: 30),
+          
+          const Divider(height: 30, color: AppColors.surface),
 
           Flexible(
             child: SingleChildScrollView(
               child: Text(
                 notification.message,
-                style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+                style: AppTextStyles.bodyText.copyWith(fontSize: 15, height: 1.5),
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppDimens.paddingLarge),
           
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Đóng', style: TextStyle(fontSize: 16)),
-            ),
+          AppPrimaryButton(
+            text: 'Đóng',
+            onPressed: () => Navigator.pop(context),
           ),
         ],
       ),

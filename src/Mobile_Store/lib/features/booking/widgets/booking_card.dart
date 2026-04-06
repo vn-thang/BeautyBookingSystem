@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/formatters.dart';
 import '../models/store_booking_model.dart';
 
 class BookingCard extends StatelessWidget {
@@ -11,46 +15,44 @@ class BookingCard extends StatelessWidget {
   (String, Color) _getStatusInfo(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
-        return ('Chờ duyệt', Colors.orange);
+        return ('Chờ duyệt', AppColors.warning);
       case 'confirmed':
-        return ('Đã duyệt', Colors.blue);
+        return ('Đã duyệt', const Color(0xFF0068FF)); 
       case 'completed':
-        return ('Hoàn thành', Colors.green);
+        return ('Hoàn thành', AppColors.success);
       case 'cancelled':
-        return ('Đã hủy', Colors.red);
+        return ('Đã hủy', AppColors.error);
       default:
-        return ('Không rõ', Colors.grey);
+        return ('Không rõ', AppColors.textSub);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final statusInfo = _getStatusInfo(booking.status);
-    final currencyFormat = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-    final dateFormat = DateFormat('HH:mm • EE, dd/MM/yyyy', 'vi_VN');
 
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
       child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          border: Border(bottom: BorderSide(color: AppColors.surface)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
               child: Container(
                 width: 60,
                 height: 60,
-                color: Colors.grey.shade100,
-                child: const Icon(Icons.receipt_long, color: Colors.grey, size: 30),
+                color: AppColors.surface,
+                child: const Icon(Icons.receipt_long, color: AppColors.textSub, size: 30),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             
             Expanded(
               child: Column(
@@ -62,30 +64,30 @@ class BookingCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           booking.customerName, 
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, fontSize: 16),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Text(
                         '• ${statusInfo.$1}', 
-                        style: TextStyle(color: statusInfo.$2, fontWeight: FontWeight.w600, fontSize: 13),
+                        style: AppTextStyles.labelSmall.copyWith(color: statusInfo.$2, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
-                    currencyFormat.format(booking.finalPrice), 
-                    style: const TextStyle(color: Color(0xFFDE4660), fontWeight: FontWeight.bold, fontSize: 14),
+                    Formatters.formatCurrency(booking.finalPrice),
+                    style: AppTextStyles.bodyText.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Row(
                     children: [
-                      const Icon(Icons.access_time, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
+                      const Icon(Icons.access_time, size: 14, color: AppColors.textSub),
+                      const SizedBox(width: AppSpacing.xs),
                       Text(
-                        dateFormat.format(booking.createdAt), // Ngày tạo/Ngày hẹn
-                        style: const TextStyle(color: Colors.grey, fontSize: 13),
+                        Formatters.formatDateTime(booking.createdAt), 
+                        style: AppTextStyles.labelSmall,
                       ),
                     ],
                   ),

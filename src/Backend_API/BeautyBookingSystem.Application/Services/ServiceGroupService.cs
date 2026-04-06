@@ -44,32 +44,14 @@ namespace BeautyBookingSystem.Application.Services
                 .ToListAsync();
 
             var result = _mapper.Map<List<ServiceGroupDto>>(groups);
-
-            // 2. Lấy các dịch vụ "tự do" (GroupId == null) của cửa hàng hiện tại
             var ungroupedServices = await _unitOfWork.ServiceRepository.GetQueryable()
                 .Where(s => s.StoreId == currentStoreId && s.GroupId == null)
                 .OrderBy(s => s.SortOrder)
                 .ToListAsync();
 
-            // 3. Nếu có dịch vụ tự do -> Tạo nhóm ảo ID = 0 
-            //if (ungroupedServices.Any())
-            //{
-            //    var virtualGroup = new ServiceGroupDto
-            //    {
-            //        Id = 0,
-            //        Name = "Dịch vụ tự do",
-            //        StoreId = currentStoreId,
-            //        SortOrder = -1, 
-            //        Services = _mapper.Map<List<ServiceDto>>(ungroupedServices) 
-            //    };
-
-            //    result.Insert(0, virtualGroup);
-            // 3. Nếu có dịch vụ tự do -> Tạo nhóm ảo ID = 0 
             if (ungroupedServices.Any())
             {
                 var mappedServices = _mapper.Map<List<ServiceDto>>(ungroupedServices);
-
-                // 🔥 THÊM VÒNG LẶP NÀY ĐỂ GÁN GROUP ID = 0
                 foreach (var s in mappedServices)
                 {
                     s.GroupId = 0;
@@ -97,7 +79,6 @@ namespace BeautyBookingSystem.Application.Services
 
             return _mapper.Map<ServiceGroupDto>(group);
         }
-
         public async Task<ServiceGroupDto> CreateAsync(CreateServiceGroupRequest request)
         {
             int currentStoreId = await _currentUserService.GetCurrentStoreIdAsync();
@@ -110,7 +91,6 @@ namespace BeautyBookingSystem.Application.Services
 
             return _mapper.Map<ServiceGroupDto>(newGroup);
         }
-
         public async Task<bool> UpdateAsync(int id, UpdateServiceGroupRequest request)
         {
             int currentStoreId = await _currentUserService.GetCurrentStoreIdAsync();
@@ -123,7 +103,6 @@ namespace BeautyBookingSystem.Application.Services
 
             return true;
         }
-
         public async Task<bool> DeleteAsync(int id)
         {
             int currentStoreId = await _currentUserService.GetCurrentStoreIdAsync();
@@ -137,7 +116,6 @@ namespace BeautyBookingSystem.Application.Services
 
             _unitOfWork.ServiceGroupRepository.Delete(group);
             await _unitOfWork.SaveChangesAsync();
-
             return true;
         }
     }

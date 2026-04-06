@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/circle_action_button.dart';
 import '../../booking/screens/booking_management_screen.dart';
 import '../models/store_dashboard_model.dart';
@@ -25,7 +28,7 @@ class BookingsCard extends StatelessWidget {
       child: CircleActionButton(
         icon: icon, 
         label: '$label\n($count)', 
-        bgColor: Colors.pink[50]!, 
+        bgColor: AppColors.primary.withValues(alpha: 0.1), 
         iconColor: AppColors.primary
       ),
     );
@@ -34,31 +37,39 @@ class BookingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0, 
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppDimens.paddingMedium),
         child: Column(
           children: [
             InkWell(
               onTap: onViewAllBookings,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.list_alt, color: Colors.orange, size: 24), SizedBox(width: 8),
-                        Text('Đơn đặt lịch', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const Icon(Icons.list_alt, color: AppColors.warning, size: 24), 
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          'Đơn đặt lịch', 
+                          style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.bold)
+                        ),
                       ],
                     ),
-                    Text('Xem tất cả >', style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w500)),
+                    Text(
+                      'Xem tất cả >', 
+                      style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500)
+                    ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [

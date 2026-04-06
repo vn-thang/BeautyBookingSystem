@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
 
 class AuthGlassBackground extends StatelessWidget {
   final Widget child;
@@ -21,127 +23,23 @@ class AuthGlassBackground extends StatelessWidget {
       child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingLarge, vertical: AppDimens.paddingMedium),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(40),
+              borderRadius: BorderRadius.circular(AppDimens.radiusLarge * 1.5), // Bo góc mượt mà hơn
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                 child: Container(
-                  padding: const EdgeInsets.all(25),
+                  padding: const EdgeInsets.all(AppDimens.paddingLarge),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15), 
-                    borderRadius: BorderRadius.circular(40),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                    color: AppColors.white.withValues(alpha: 0.15), 
+                    borderRadius: BorderRadius.circular(AppDimens.radiusLarge * 1.5),
+                    border: Border.all(color: AppColors.white.withValues(alpha: 0.3), width: 1.5),
                   ),
                   child: child,
                 ),
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class AuthErrorBox extends StatelessWidget {
-  final String errorMessage;
-
-  const AuthErrorBox({super.key, required this.errorMessage});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.red.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                errorMessage,
-                style: const TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class AuthGradientButton extends StatelessWidget {
-  final String text;
-  final bool isLoading;
-  final VoidCallback? onPressed;
-
-  const AuthGradientButton({
-    super.key,
-    required this.text,
-    required this.isLoading,
-    this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: isLoading ? null : onPressed,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        width: double.infinity,
-        height: 50,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          gradient: LinearGradient(
-            colors: isLoading
-                ? [Colors.grey, Colors.grey.shade400]
-                : [const Color(0xFFFF7EB3), const Color(0xFFFF758C)],
-          ),
-          boxShadow: isLoading ? [] : [
-            BoxShadow(
-              color: Colors.pinkAccent.withValues(alpha: 0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Center(
-          child: isLoading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : Text(text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-        ),
-      ),
-    );
-  }
-}
-
-class AuthOutlineButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onTap;
-
-  const AuthOutlineButton({super.key, required this.text, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: 45,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: const Color(0xFF2563EB), width: 1.5),
-        ),
-        child: Center(
-          child: Text(text, style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
         ),
       ),
     );

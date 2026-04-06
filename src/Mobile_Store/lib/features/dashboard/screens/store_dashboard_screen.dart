@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_store/features/support/screens/contact_support_screen.dart';
+import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../services/dashboard_service.dart';
 import '../../store/screens/update_profile_screen.dart';
 import '../../booking/screens/booking_management_screen.dart';
@@ -93,7 +97,9 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
 
   Widget _buildBody() {
     if (_isLoading && _dashboardData == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
     }
     
     if (_errorMessage != null && _dashboardData == null) {
@@ -101,7 +107,12 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
     }
     
     if (_dashboardData == null) {
-      return const Center(child: Text("Không có dữ liệu"));
+      return Center(
+        child: Text(
+          "Không có dữ liệu",
+          style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub),
+        ),
+      );
     }
 
     final data = _dashboardData!;
@@ -109,7 +120,9 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
 
     if (status == 'incomplete') {
       _redirectToUpdateProfile();
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      );
     }
 
     if (status == 'locked') {
@@ -127,9 +140,9 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
           children: [
             DashboardHeader(header: data.header),
             if (isPending) const PendingBanner(),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingMedium),
               child: Opacity(
                 opacity: _isLoading ? 0.6 : 1.0,
                 child: Column(
@@ -148,13 +161,13 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
                               onFilterChanged: _onFilterChanged,
                               onDateChanged: _onDateChanged, 
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: AppSpacing.lg),
                             CommissionCard(comm: data.commission),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.lg),
                     BookingsCard(
                       counts: data.bookingCounts,
                       onViewAllBookings: () {
@@ -164,7 +177,7 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
                         );
                       },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppDimens.paddingLarge),
                   ],
                 ),
               ),
@@ -185,37 +198,37 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
     });
   }
 
-    Widget _buildLockedState() {
+  Widget _buildLockedState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(AppDimens.paddingLarge),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.lock_person, color: Colors.red, size: 80),
-            const SizedBox(height: 16),
-            const Text(
+            const Icon(Icons.lock_person, color: AppColors.error, size: 80),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
               "Tài khoản bị khóa",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: AppTextStyles.heading1.copyWith(fontSize: 20),
             ),
-            const SizedBox(height: 8),
-            const Text(
+            const SizedBox(height: AppSpacing.sm),
+            Text(
               "Tài khoản của bạn đã bị tạm khóa do vi phạm chính sách hoặc theo yêu cầu của hệ thống. Vui lòng liên hệ hỗ trợ.",
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub),
             ),
-            const SizedBox(height: 24),
-           ElevatedButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ContactSupportScreen(), 
-      ),
-    );
-  },
-  child: const Text("Liên hệ hỗ trợ"),
-)
+            const SizedBox(height: AppDimens.paddingLarge),
+            AppPrimaryButton(
+              text: "Liên hệ hỗ trợ",
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ContactSupportScreen(), 
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -224,18 +237,28 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
 
   Widget _buildErrorState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 50),
-          const SizedBox(height: 16),
-          Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _fetchDashboardData,
-            child: const Text("Thử lại"),
-          )
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(AppDimens.paddingLarge),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.error, size: 50),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              _errorMessage!, 
+              style: AppTextStyles.bodyText.copyWith(
+                color: AppColors.error, 
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppOutlineButton(
+              text: "Thử lại",
+              onTap: _fetchDashboardData,
+            )
+          ],
+        ),
       ),
     );
   }

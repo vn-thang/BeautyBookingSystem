@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
+import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../shared/widgets/inputs/app_text_field.dart'; 
 import '../models/voucher_model.dart';
 import '../services/voucher_api.dart';
 
@@ -23,7 +30,7 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
   int _discountType = 0; 
   DateTime? _startDate;
   DateTime? _endDate;
-  final Color primaryColor = const Color(0xFFDE4660);
+  bool _isSubmitting = false; 
 
   bool get isEdit => widget.voucher != null;
 
@@ -58,9 +65,11 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
 
   void _showMessage(String msg, {bool isError = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: isError ? Colors.red : Colors.green)
-    );
+    if (isError) {
+      SnackBarHelper.showError(context, msg);
+    } else {
+      SnackBarHelper.showSuccess(context, msg);
+    }
   }
 
   double _parseDouble(String value) => double.tryParse(value.trim()) ?? 0.0;
@@ -77,12 +86,30 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
       initialDate: isStart ? _startDate! : _endDate!,
       firstDate: isEdit ? _endDate! : DateTime.now(),
       lastDate: DateTime(2030),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: AppColors.white,
+            onSurface: AppColors.textMain,
+          ),
+        ),
+        child: child!,
+      ),
     );
     if (date == null || !mounted) return;
 
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(isStart ? _startDate! : _endDate!),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(
+            primary: AppColors.primary,
+          ),
+        ),
+        child: child!,
+      ),
     );
     if (time == null) return;
 
@@ -106,6 +133,8 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
     if (!_endDate!.isAfter(_startDate!)) {
       return _showMessage('Thời gian kết thúc phải lớn hơn thời gian bắt đầu!', isError: true);
     }
+
+    setState(() => _isSubmitting = true);
 
     try {
       if (isEdit) {
@@ -134,33 +163,22 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
       _showMessage(isEdit ? 'Cập nhật thành công!' : 'Tạo mới thành công!');
     } catch (e) {
       _showMessage(e.toString(), isError: true);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
-  }
-
-  Widget _buildTextField({required TextEditingController controller, required String label, bool enabled = true, TextInputType type = TextInputType.text}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextField(
-        controller: controller,
-        enabled: enabled,
-        keyboardType: type,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        ),
-      ),
-    );
   }
 
   Widget _buildDatePickerTile(String title, DateTime date, bool isStart) {
     return Expanded(
       child: ListTile(
         contentPadding: EdgeInsets.zero,
-        title: Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        title: Text(title, style: AppTextStyles.labelSmall),
         subtitle: Text(
-          DateFormat('dd/MM/yyyy HH:mm').format(date), 
-          style: TextStyle(fontWeight: FontWeight.bold, color: (isEdit && isStart) ? Colors.grey : Colors.black)
+          Formatters.formatDateTime(date), 
+          style: AppTextStyles.bodyText.copyWith(
+            fontWeight: FontWeight.bold, 
+            color: (isEdit && isStart) ? AppColors.textSub : AppColors.textMain
+          )
         ),
         onTap: () => _pickDateTime(isStart),
       ),
@@ -169,68 +187,135 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom, 
-        left: 24, right: 24, top: 24
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.91, 
       ),
-      child: SingleChildScrollView( 
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(isEdit ? 'Sửa Khuyến Mãi' : 'Tạo Khuyến Mãi', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            
-            _buildTextField(controller: _codeCtrl, label: 'Mã Voucher (VD: TET2026)', enabled: !isEdit),
-            
-            if (!isEdit) ...[
-              DropdownButtonFormField<int>(
-                initialValue: _discountType,
-                decoration: InputDecoration(labelText: 'Loại giảm', border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                items: const [
-                  DropdownMenuItem(value: 0, child: Text('Giảm theo số tiền (VNĐ)')),
-                  DropdownMenuItem(value: 1, child: Text('Giảm theo Phần trăm (%)')),
-                ],
-                onChanged: (val) => setState(() => _discountType = val!),
-              ),
-              const SizedBox(height: 12),
-              
-              Row(
-                children: [
-                  Expanded(child: _buildTextField(controller: _discountValueCtrl, label: 'Mức giảm', type: TextInputType.number)),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildTextField(controller: _maxDiscountCtrl, label: 'Giảm tối đa (VNĐ)', type: TextInputType.number)),
-                ],
-              ),
-              
-              _buildTextField(controller: _minOrderCtrl, label: 'Đơn tối thiểu (VNĐ)', type: TextInputType.number),
-            ],
-
-            _buildTextField(controller: _usageLimitCtrl, label: 'Số lượng phát hành', type: TextInputType.number),
-
-            Row(
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusLarge)),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom, 
+          left: AppDimens.paddingLarge, 
+          right: AppDimens.paddingLarge, 
+          top: AppDimens.paddingLarge
+        ),
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: SingleChildScrollView( 
+            child: Column(
+              mainAxisSize: MainAxisSize.min, 
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildDatePickerTile('Bắt đầu', _startDate!, true),
-                _buildDatePickerTile('Kết thúc', _endDate!, false),
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+                    decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                Text(isEdit ? 'Sửa Khuyến Mãi' : 'Tạo Khuyến Mãi', style: AppTextStyles.heading1.copyWith(fontSize: 20)),
+                const SizedBox(height: AppSpacing.lg),
+                
+                AbsorbPointer(
+                  absorbing: isEdit, 
+                  child: AppTextField(
+                    controller: _codeCtrl, 
+                    label: 'Mã Voucher', 
+                    hint: 'VD: TET2026', 
+                    icon: Icons.local_offer_outlined,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                
+                if (!isEdit) ...[
+                  Text('Loại giảm', style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.surface, width: 1.5),
+                      borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        value: _discountType,
+                        isExpanded: true,
+                        icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSub),
+                        items: [
+                          DropdownMenuItem(value: 0, child: Text('Giảm theo số tiền (VNĐ)', style: AppTextStyles.bodyText)),
+                          DropdownMenuItem(value: 1, child: Text('Giảm theo Phần trăm (%)', style: AppTextStyles.bodyText)),
+                        ],
+                        onChanged: (val) => setState(() => _discountType = val!),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppTextField(
+                          controller: _discountValueCtrl, 
+                          label: 'Mức giảm', 
+                          hint: 'Nhập số...', 
+                          icon: Icons.money_off_csred_outlined, 
+                          keyboardType: TextInputType.number
+                        )
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: AppTextField(
+                          controller: _maxDiscountCtrl, 
+                          label: 'Giảm tối đa', 
+                          hint: '(VNĐ)', 
+                          icon: Icons.price_check_outlined, 
+                          keyboardType: TextInputType.number
+                        )
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  
+                  AppTextField(
+                    controller: _minOrderCtrl, 
+                    label: 'Đơn tối thiểu (VNĐ)', 
+                    hint: 'Bắt buộc...', 
+                    icon: Icons.shopping_cart_checkout_outlined, 
+                    keyboardType: TextInputType.number
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+
+                AppTextField(
+                  controller: _usageLimitCtrl, 
+                  label: 'Số lượng phát hành', 
+                  hint: 'Nhập số lượng...', 
+                  icon: Icons.numbers_outlined, 
+                  keyboardType: TextInputType.number
+                ),
+                const SizedBox(height: AppSpacing.sm),
+
+                Row(
+                  children: [
+                    _buildDatePickerTile('Bắt đầu từ', _startDate!, true),
+                    _buildDatePickerTile('Kết thúc vào', _endDate!, false),
+                  ],
+                ),
+                
+                const SizedBox(height: AppSpacing.lg),
+                
+                AppPrimaryButton(
+                  text: 'LƯU VOUCHER',
+                  isLoading: _isSubmitting,
+                  onPressed: _submit,
+                ),
+                const SizedBox(height: AppDimens.paddingLarge),
               ],
             ),
-            
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor, 
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
-                ),
-                child: const Text('LƯU VOUCHER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
+          ),
         ),
       ),
     );

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../../shared/widgets/app_text_field.dart';
-import '../../../shared/widgets/app_buttons.dart'; 
-import '../../../shared/widgets/app_error_box.dart';
-import '../../../shared/widgets/app_image_picker.dart';
-import '../../../core/utils/form_validators.dart';
+import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
+import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
+import 'package:mobile_store/shared/widgets/inputs/app_header.dart';
 import '../services/account_service.dart';
+import '../../../core/utils/form_validators.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/inputs/app_text_field.dart';
+import '../../../shared/widgets/inputs/locked_text_field.dart'; 
+import '../../../shared/widgets/inputs/app_image_picker.dart';   
+import '../../../shared/widgets/feedback/app_error_box.dart';
 
 class AccountUpdateProfileScreen extends StatefulWidget {
   const AccountUpdateProfileScreen({super.key});
@@ -29,8 +34,9 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProfile(); // Gọi hàm lấy dữ liệu ngay khi mở màn hình
+    _loadProfile();
   }
+
   Future<void> _loadProfile() async {
     final result = await AccountService.getProfile();
     
@@ -38,7 +44,6 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
 
     if (result.isSuccess && result.data != null) {
       final user = result.data!;
-      //Gán dữ liệu từ API vào các Controller để nó hiện lên màn hình
       setState(() {
         _fullNameCtrl.text = user.fullName;
         _emailCtrl.text = user.email ?? 'Chưa cập nhật';
@@ -52,31 +57,6 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
         _isFetching = false;
       });
     }
-  }
-
-  // --- Widget cho ô bị khóa (Email, SĐT) ---
-  Widget _buildReadOnlyField({required String label, required TextEditingController controller, required IconData icon}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller, 
-          enabled: false,
-          style: const TextStyle(fontSize: 14, color: Colors.black54),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.grey[100], 
-            prefixIcon: Icon(icon, size: 20, color: AppColors.textSub),
-            suffixIcon: const Icon(Icons.lock_outline, size: 16, color: AppColors.textSub),
-            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide.none),
-            disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: BorderSide.none),
-          ),
-        ),
-      ],
-    );
   }
 
   Future<void> _submit() async {
@@ -96,9 +76,7 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
     setState(() => _isUpdating = false);
 
     if (result.isSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cập nhật thành công!'), backgroundColor: Colors.green),
-      );
+      SnackBarHelper.showSuccess(context, 'Cập nhật thành công!');
     } else {
       setState(() => _errorMessage = result.errorMessage);
     }
@@ -114,38 +92,27 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      backgroundColor: Colors.white, 
-      appBar: AppBar(
-        title: const Text(
-          'Tài khoản của tôi',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true, 
-        backgroundColor: AppColors.primary, 
-        foregroundColor: AppColors.background, 
-        elevation: 0,
-      ),
+      backgroundColor: AppColors.background, 
+      appBar: const AppHeader(title: 'Tài khoản của tôi'),
       body: _isFetching
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary)) 
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppDimens.paddingLarge),
               child: Form(
                 key: _formKey,
                 child: Column(
                   children: [
-                   Center(
+                    Center(
                       child: AppImagePicker(
-                        folderName: 'avatars', // Tạo thư mục avatars trên mây
+                        folderName: 'avatars',
                         isCircle: true,        
                         width: 120,            
                         height: 120,
                         initialImageUrl: _avatarUrl,
                         onImageUploaded: (url) {
-                      
                           setState(() {
-                            _avatarUrl = url; // Lưu lại để lát gửi về API C#
+                            _avatarUrl = url;
                           });
                         },
                       ),
@@ -154,10 +121,9 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
 
                     if (_errorMessage != null) ...[
                       AppErrorBox(errorMessage: _errorMessage!),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: AppSpacing.xl),
                     ],
 
-                    // Ô nhập họ tên (Cho phép sửa)
                     AppTextField(
                       label: 'Họ và Tên (*)',
                       hint: 'Nhập họ và tên',
@@ -165,31 +131,27 @@ class _UpdateProfileScreenState extends State<AccountUpdateProfileScreen> {
                       controller: _fullNameCtrl,
                       validator: (val) => FormValidators.requiredField(val, 'Vui lòng nhập họ tên'),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.lg),
                     
-                    _buildReadOnlyField(
+                    LockedTextField(
                       label: 'Số điện thoại',
                       controller: _phoneCtrl, 
                       icon: Icons.phone_outlined,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.lg),
 
-                    _buildReadOnlyField(
+                    LockedTextField(
                       label: 'Email',
                       controller: _emailCtrl, 
                       icon: Icons.email_outlined,
                     ),
-                    
                     const SizedBox(height: 30),
 
-                    AppGradientButton(
+                    AppPrimaryButton(
                       text: 'LƯU THAY ĐỔI',
                       isLoading: _isUpdating,
                       onPressed: _submit,
                     ),
-
-                    const SizedBox(height: 20),
-                    const Divider(),
                   ],
                 ),
               ),

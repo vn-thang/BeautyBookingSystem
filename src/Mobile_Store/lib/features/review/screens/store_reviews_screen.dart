@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
+import 'package:mobile_store/shared/widgets/inputs/app_header.dart';
 import '../models/store_review_model.dart';
 import '../services/store_review_api.dart';
 import '../widgets/review_filter_widget.dart';
 import '../widgets/review_card_widget.dart';
 import '../widgets/reply_dialog_widget.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_text_styles.dart';
+
 
 class StoreReviewsScreen extends StatefulWidget {
   const StoreReviewsScreen({super.key});
@@ -35,13 +40,13 @@ class _StoreReviewsScreenState extends State<StoreReviewsScreen> {
       );
       setState(() => _reviews = data);
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+      if (mounted) SnackBarHelper.showError(context, e.toString());
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
- Future<void> _handleReplyAction(StoreReviewModel review) async {
+  Future<void> _handleReplyAction(StoreReviewModel review) async {
     final replyContent = await showDialog<String>(
       context: context,
       builder: (context) => ReplyDialogWidget(initialReply: review.reply),
@@ -53,7 +58,7 @@ class _StoreReviewsScreenState extends State<StoreReviewsScreen> {
       showDialog(
         context: context, 
         barrierDismissible: false,
-        builder: (_) => Center(child: CircularProgressIndicator(color: AppColors.primary)), 
+        builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.primary)), 
       );
 
       try {
@@ -66,17 +71,12 @@ class _StoreReviewsScreenState extends State<StoreReviewsScreen> {
           review.reply = replyContent;
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gửi phản hồi thành công!'), backgroundColor: Colors.green)
-        );
-        
+        SnackBarHelper.showSuccess(context, 'Gửi phản hồi thành công!');
       } catch (e) {
         if (!mounted) return; 
         
         Navigator.pop(context); 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red)
-        );
+        SnackBarHelper.showError(context, e.toString());
       }
     }
   }
@@ -84,10 +84,9 @@ class _StoreReviewsScreenState extends State<StoreReviewsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Đánh giá của khách', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
+      backgroundColor: AppColors.background,
+      appBar: const AppHeader(
+        title: 'Đánh giá của khách',
       ),
       body: Column(
         children: [
@@ -105,14 +104,14 @@ class _StoreReviewsScreenState extends State<StoreReviewsScreen> {
           
           Expanded(
             child: _isLoading 
-              ? Center(child: CircularProgressIndicator(color: AppColors.primary)) 
+              ? const Center(child: CircularProgressIndicator(color: AppColors.primary)) 
               : _reviews.isEmpty
-                  ? const Center(child: Text("Không tìm thấy đánh giá nào."))
+                  ? Center(child: Text("Không tìm thấy đánh giá nào.", style: AppTextStyles.bodyText))
                   : RefreshIndicator(
                       color: AppColors.primary, 
                       onRefresh: _fetchReviews,
                       child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(AppDimens.paddingLarge),
                         itemCount: _reviews.length,
                         itemBuilder: (context, index) {
                           final review = _reviews[index];

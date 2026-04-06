@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
 import '../models/staff_model.dart';
 import '../services/staff_api.dart';
-import '../../../shared/widgets/app_image_picker.dart'; 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/widgets/inputs/app_image_picker.dart';
+import '../../../shared/widgets/buttons/app_buttons.dart';
+import '../../../shared/widgets/inputs/app_text_field.dart'; // Thêm import này
 
 class StaffFormBottomSheet extends StatefulWidget {
   final StaffModel? staff;
@@ -22,9 +29,7 @@ class _StaffFormBottomSheetState extends State<StaffFormBottomSheet> {
   final _positionCtrl = TextEditingController();
   
   String _avatarUrl = ''; 
-  
   bool _isActive = true;
-  final Color primaryColor = const Color(0xFFDE4660);
 
   bool get isEdit => widget.staff != null;
 
@@ -34,7 +39,6 @@ class _StaffFormBottomSheetState extends State<StaffFormBottomSheet> {
     if (isEdit) {
       _nameCtrl.text = widget.staff!.fullName;
       _positionCtrl.text = widget.staff!.position;
-      
       _avatarUrl = widget.staff!.avatarUrl ?? '';
       _isActive = widget.staff!.isActive;
     }
@@ -47,16 +51,9 @@ class _StaffFormBottomSheetState extends State<StaffFormBottomSheet> {
     super.dispose();
   }
 
-  void _showMessage(String msg, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: isError ? Colors.red : Colors.green),
-    );
-  }
-
   Future<void> _submitForm() async {
     if (_nameCtrl.text.trim().isEmpty || _positionCtrl.text.trim().isEmpty) {
-      _showMessage('Vui lòng nhập tên và vị trí!', isError: true);
+      SnackBarHelper.showError(context, 'Vui lòng nhập tên và vị trí!');
       return;
     }
 
@@ -68,7 +65,6 @@ class _StaffFormBottomSheetState extends State<StaffFormBottomSheet> {
           id: widget.staff!.id,
           fullName: _nameCtrl.text.trim(),
           position: _positionCtrl.text.trim(),
-          
           avatarUrl: _avatarUrl, 
           isActive: _isActive,
         );
@@ -76,41 +72,47 @@ class _StaffFormBottomSheetState extends State<StaffFormBottomSheet> {
         await StaffApi.createStaff(
           fullName: _nameCtrl.text.trim(),
           position: _positionCtrl.text.trim(),
-          
           avatarUrl: _avatarUrl, 
         );
       }
       
       if (!mounted) return;
       widget.onSuccess();
-      _showMessage(isEdit ? 'Cập nhật thành công!' : 'Thêm thành công!');
+      SnackBarHelper.showSuccess(context, isEdit ? 'Cập nhật thành công!' : 'Thêm thành công!');
       
     } catch (e) {
-      _showMessage('Lỗi: $e', isError: true);
+      if (!mounted) return;
+      SnackBarHelper.showError(context, e.toString());
     }
-  }
-
-  InputDecoration _buildInputDecoration(String label) {
-    return InputDecoration(
-      labelText: label,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusLarge)),
+      ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 24, right: 24, top: 24,
+        left: AppDimens.paddingLarge, 
+        right: AppDimens.paddingLarge, 
+        top: AppDimens.paddingLarge,
       ),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(isEdit ? 'Sửa thông tin' : 'Thêm nhân viên mới', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+                decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            Text(isEdit ? 'Sửa thông tin' : 'Thêm nhân viên mới', style: AppTextStyles.heading1.copyWith(fontSize: 20)),
+            const SizedBox(height: AppSpacing.xl),
             
             Center(
               child: AppImagePicker(
@@ -126,39 +128,48 @@ class _StaffFormBottomSheetState extends State<StaffFormBottomSheet> {
                 },
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.xl),
 
-            TextField(controller: _nameCtrl, decoration: _buildInputDecoration('Tên nhân viên (*)')),
-            const SizedBox(height: 16),
+            AppTextField(
+              controller: _nameCtrl, 
+              label: 'Tên nhân viên (*)',
+              hint: 'Nhập tên...',
+              icon: Icons.person_outline,
+            ),
+            const SizedBox(height: AppSpacing.lg),
             
-            TextField(controller: _positionCtrl, decoration: _buildInputDecoration('Vị trí (VD: Thợ chính, Thợ phụ) (*)')),
-            const SizedBox(height: 16),
+            AppTextField(
+              controller: _positionCtrl, 
+              label: 'Vị trí (*)',
+              hint: 'VD: Thợ chính, Thợ phụ...',
+              icon: Icons.badge_outlined,
+            ),
+            const SizedBox(height: AppSpacing.lg),
 
             if (isEdit) ...[
               SwitchListTile(
-                title: const Text('Trạng thái hoạt động', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(_isActive ? 'Đang làm việc' : 'Đã nghỉ / Tạm ẩn', style: TextStyle(color: _isActive ? Colors.green : Colors.red)),
+                title: Text('Trạng thái hoạt động', style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  _isActive ? 'Đang làm việc' : 'Đã nghỉ / Tạm ẩn', 
+                  style: AppTextStyles.labelSmall.copyWith(color: _isActive ? AppColors.success : AppColors.error)
+                ),
                 value: _isActive,
-                activeThumbColor: primaryColor,
+                activeThumbColor: AppColors.white,
+                activeTrackColor: AppColors.success,
+                inactiveThumbColor: AppColors.white,
+                inactiveTrackColor: AppColors.textSub.withValues(alpha: 0.3),
+                trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
                 onChanged: (val) => setState(() => _isActive = val),
                 contentPadding: EdgeInsets.zero,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
             ],
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submitForm,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor, 
-                  padding: const EdgeInsets.symmetric(vertical: 16), 
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: Text(isEdit ? 'LƯU THAY ĐỔI' : 'THÊM NHÂN VIÊN', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
+            AppPrimaryButton(
+              text: isEdit ? 'LƯU THAY ĐỔI' : 'THÊM NHÂN VIÊN',
+              onPressed: _submitForm,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppDimens.paddingLarge),
           ],
         ),
       ),

@@ -14,5 +14,7 @@ namespace BeautyBookingSystem.Application.Interfaces
         Task<StoreAdminDetailDto?> GetStoreByIdAsync(int id);
         Task<bool> ApproveStoreAsync(int id, ApproveStoreRequest request);
         Task<bool> ChangeStoreStatusAsync(int id, UpdateStoreStatusRequest request);
+        Task<IEnumerable<StoreDropdownDto>> GetStoresForDropdownAsync();
+        Task<bool> UpdateStoreFeeConfigAsync(int id, UpdateStoreFeeConfigRequest request);
     }
 }

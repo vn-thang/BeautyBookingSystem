@@ -15,18 +15,19 @@ namespace BeautyBookingSystem.Domain.Entities
 
         public int StoreId { get; set; }
         public virtual Store Store { get; set; } = null!;
-
         public int? VoucherId { get; set; }
         public virtual Voucher? Voucher { get; set; }
-
         public decimal TotalPrice { get; set; }
         public decimal DiscountAmount { get; set; }
+        public decimal DepositAmount { get; set; } = 0;
         public decimal FinalPrice { get; set; }
 
         public BookingStatus Status { get; set; }
         public string? CustomerNote { get; set; }
         public CancelledByType? CancelledBy { get; set; }
         public string? CancelReason { get; set; }
+        public decimal SystemFee { get; set; } = 0;
+        public virtual ICollection<WalletTransaction> WalletTransactions { get; set; } = new List<WalletTransaction>();
 
         public virtual ICollection<BookingDetail> BookingDetails { get; set; } = new List<BookingDetail>();
         public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();

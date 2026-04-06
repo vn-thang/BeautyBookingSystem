@@ -26,6 +26,11 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         public IGenericRepository<Review> ReviewRepository { get; private set; }
         public IGenericRepository<Voucher> VoucherRepository { get; private set; }
         public IGenericRepository<Notification> NotificationRepository { get; private set; }
+        public IGenericRepository<WalletTransaction> WalletTransactionRepository { get; private set; }
+        public IGenericRepository<SystemConfig> SystemConfigRepository { get; private set; }
+        public IGenericRepository<SystemContent> SystemContentRepository { get; private set; }
+         public IGenericRepository<WithdrawalRequest> WithdrawalRequestRepository { get; private set; }
+
 
      
 
@@ -45,6 +50,10 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
             ReviewRepository = new GenericRepository<Review>(_context);
             VoucherRepository = new GenericRepository<Voucher>(_context);
             NotificationRepository = new GenericRepository<Notification>(_context);
+            WalletTransactionRepository = new GenericRepository<WalletTransaction>(_context);
+            SystemConfigRepository = new GenericRepository<SystemConfig>(_context);
+            SystemContentRepository = new GenericRepository<SystemContent>(_context);
+            WithdrawalRequestRepository = new GenericRepository<WithdrawalRequest>(_context);
         }
 
         public async Task<int> SaveChangesAsync()

@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
+import 'package:mobile_store/features/service/widgets/shared_service_widgets.dart' hide SnackBarHelper;
 import '../services/service_api.dart';
 import '../models/global_category_model.dart';
 import '../models/service_model.dart';
-import '../../../shared/widgets/shared_service_widgets.dart';
-import '../../../shared/widgets/app_image_picker.dart'; 
+import '../../../shared/widgets/inputs/app_image_picker.dart'; 
+import '../../../shared/widgets/buttons/app_buttons.dart'; 
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_text_styles.dart';
 
 class ServiceBottomSheet extends StatefulWidget {
   final int storeId;
@@ -94,7 +100,6 @@ class _ServiceBottomSheetState extends State<ServiceBottomSheet> {
           price: price,
           durationMinutes: duration,
           description: _descriptionController.text.trim(),
-          
           imageUrl: _imageUrl, 
           isActive: _isActive,
         );
@@ -107,7 +112,6 @@ class _ServiceBottomSheetState extends State<ServiceBottomSheet> {
           price: price,
           durationMinutes: duration,
           description: _descriptionController.text.trim(),
-          
           imageUrl: _imageUrl, 
         );
       }
@@ -126,133 +130,140 @@ class _ServiceBottomSheetState extends State<ServiceBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 20, right: 20, top: 24,
-      ),
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              BottomSheetHeader(title: isEdit ? 'Chỉnh sửa dịch vụ' : 'Thêm dịch vụ mới'),
-              const SizedBox(height: 4),
-              Text('Thuộc nhóm: ${widget.groupName ?? "Dịch vụ tự do"}', style: const TextStyle(color: kPrimaryColor, fontSize: 14, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 24),
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + AppDimens.paddingLarge,
+          left: AppDimens.paddingLarge, 
+          right: AppDimens.paddingLarge, 
+          top: AppDimens.paddingLarge,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            BottomSheetHeader(title: isEdit ? 'Chỉnh sửa dịch vụ' : 'Thêm dịch vụ mới'),
+            const SizedBox(height: 4),
+            Text(
+              'Thuộc nhóm: ${widget.groupName ?? "Dịch vụ tự do"}', 
+              style: AppTextStyles.bodyText.copyWith(color: AppColors.primary)
+            ),
+            const SizedBox(height: AppDimens.paddingLarge),
 
-              FutureBuilder<List<GlobalCategoryModel>>(
-                future: _categoriesFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Text('Không tải được danh mục', style: TextStyle(color: Colors.red));
-                  }
-                  
-                  bool idExists = snapshot.data!.any((cat) => cat.id == _selectedCategoryId);
-                  return DropdownButtonFormField<int>(
-                    decoration: buildCustomInputDecoration('Danh mục hệ thống (*)', 'Chọn danh mục...'),
-                    initialValue: idExists ? _selectedCategoryId : null,
-                    items: snapshot.data!.map((cat) => DropdownMenuItem<int>(value: cat.id, child: Text(cat.name))).toList(),
-                    onChanged: (val) => setState(() => _selectedCategoryId = val),
-                    validator: (value) => value == null ? 'Vui lòng chọn danh mục' : null,
-                  );
+            FutureBuilder<List<GlobalCategoryModel>>(
+              future: _categoriesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                }
+                if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Text('Không tải được danh mục', style: AppTextStyles.bodyText.copyWith(color: AppColors.error));
+                }
+                
+                bool idExists = snapshot.data!.any((cat) => cat.id == _selectedCategoryId);
+                return DropdownButtonFormField<int>(
+                  decoration: buildCustomInputDecoration('Danh mục hệ thống (*)', 'Chọn danh mục...'),
+                  initialValue: idExists ? _selectedCategoryId : null,
+                  items: snapshot.data!.map((cat) => DropdownMenuItem<int>(value: cat.id, child: Text(cat.name))).toList(),
+                  onChanged: (val) => setState(() => _selectedCategoryId = val),
+                  validator: (value) => value == null ? 'Vui lòng chọn danh mục' : null,
+                );
+              },
+            ),
+            const SizedBox(height: AppDimens.paddingMedium),
+
+            TextFormField(
+              controller: _nameController,
+              decoration: buildCustomInputDecoration('Tên dịch vụ (*)', 'VD: Cắt Fade + Gội...'),
+              validator: (value) => (value == null || value.trim().isEmpty) ? 'Vui lòng nhập tên dịch vụ' : null,
+            ),
+            const SizedBox(height: AppDimens.paddingMedium),
+
+            Row(
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: TextFormField(
+                    controller: _priceController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: buildCustomInputDecoration('Giá tiền (VNĐ)', 'VD: 100000'),
+                    validator: (value) => (value == null || value.trim().isEmpty) ? 'Nhập giá' : null,
+                  ),
+                ),
+                const SizedBox(width: AppDimens.paddingMedium),
+                Expanded(
+                  flex: 4,
+                  child: TextFormField(
+                    controller: _durationController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: buildCustomInputDecoration('Thời gian', 'Phút (VD: 45)'),
+                    validator: (value) => (value == null || value.trim().isEmpty) ? 'Nhập phút' : null,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppDimens.paddingMedium),
+
+            TextFormField(
+              controller: _descriptionController,
+              maxLines: 3,
+              decoration: buildCustomInputDecoration('Mô tả dịch vụ (Không bắt buộc)', 'Nhập mô tả chi tiết...'),
+            ),
+            const SizedBox(height: AppDimens.paddingMedium),
+
+            Text('Hình ảnh dịch vụ', style: AppTextStyles.labelSmall),
+            const SizedBox(height: AppDimens.paddingSmall),
+            Center(
+              child: AppImagePicker(
+                folderName: 'services', 
+                isCircle: false,
+                width: 120,
+                height: 120,
+                initialImageUrl: _imageUrl.isNotEmpty ? _imageUrl : null,
+                onImageUploaded: (url) {
+                  setState(() {
+                    _imageUrl = url; 
+                  });
                 },
               ),
-              const SizedBox(height: 16),
+            ),
+            const SizedBox(height: AppDimens.paddingMedium),
 
-              TextFormField(
-                controller: _nameController,
-                decoration: buildCustomInputDecoration('Tên dịch vụ (*)', 'VD: Cắt Fade + Gội...'),
-                validator: (value) => (value == null || value.trim().isEmpty) ? 'Vui lòng nhập tên dịch vụ' : null,
-              ),
-              const SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Expanded(
-                    flex: 5,
-                    child: TextFormField(
-                      controller: _priceController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: buildCustomInputDecoration('Giá tiền (VNĐ)', 'VD: 100000'),
-                      validator: (value) => (value == null || value.trim().isEmpty) ? 'Nhập giá' : null,
+            if (isEdit) ...[
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.background, 
+                  borderRadius: BorderRadius.circular(AppDimens.radiusMedium)
+                ),
+                child: SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingMedium, vertical: 4),
+                  activeThumbColor: AppColors.primary,
+                  title: Text('Trạng thái hoạt động', style: AppTextStyles.labelSmall),
+                  subtitle: Text(
+                    _isActive ? 'Đang hiển thị cho khách đặt' : 'Đang tạm ẩn',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: _isActive ? AppColors.success : AppColors.error
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: 4,
-                    child: TextFormField(
-                      controller: _durationController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: buildCustomInputDecoration('Thời gian', 'Phút (VD: 45)'),
-                      validator: (value) => (value == null || value.trim().isEmpty) ? 'Nhập phút' : null,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _descriptionController,
-                maxLines: 3,
-                decoration: buildCustomInputDecoration('Mô tả dịch vụ (Không bắt buộc)', 'Nhập mô tả chi tiết...'),
-              ),
-              const SizedBox(height: 16),
-
-              const Text('Hình ảnh dịch vụ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const SizedBox(height: 8),
-              Center(
-                child: AppImagePicker(
-                  folderName: 'services', 
-                  isCircle: false,
-                  width: 120,
-                  height: 120,
-                  initialImageUrl: _imageUrl.isNotEmpty ? _imageUrl : null,
-                  onImageUploaded: (url) {
-                    setState(() {
-                      _imageUrl = url; 
-                    });
-                  },
+                  value: _isActive,
+                  onChanged: (val) => setState(() => _isActive = val),
                 ),
               ),
-              const SizedBox(height: 16),
-
-              if (isEdit) ...[
-                Container(
-                  decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
-                  child: SwitchListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    activeThumbColor: kPrimaryColor,
-                    title: const Text('Trạng thái hoạt động', style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text(
-                      _isActive ? 'Đang hiển thị cho khách đặt' : 'Đang tạm ẩn',
-                      style: TextStyle(color: _isActive ? Colors.green : Colors.redAccent, fontSize: 12),
-                    ),
-                    value: _isActive,
-                    onChanged: (val) => setState(() => _isActive = val),
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-
-              LoadingSubmitButton(
-                isLoading: _isLoading,
-                onPressed: _submitForm,
-                text: isEdit ? 'Cập nhật dịch vụ' : 'Lưu dịch vụ',
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppDimens.paddingLarge),
             ],
-          ),
+
+            AppPrimaryButton(
+              text: isEdit ? 'CẬP NHẬT DỊCH VỤ' : 'LƯU DỊCH VỤ',
+              isLoading: _isLoading,
+              onPressed: _submitForm,
+            ),
+            const SizedBox(height: AppDimens.paddingLarge),
+          ],
         ),
       ),
     );
   }
 }
-

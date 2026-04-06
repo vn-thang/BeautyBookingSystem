@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/operating_hour.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../shared/widgets/feedback/snackbar_helper.dart'; 
 
 class OperatingHoursPicker extends StatefulWidget {
   final List<OperatingHour> operatingHours;
@@ -17,13 +21,7 @@ class OperatingHoursPicker extends StatefulWidget {
 
 class _OperatingHoursPickerState extends State<OperatingHoursPicker> {
   final List<String> _days = [
-    "Chủ nhật",
-    "Thứ 2",
-    "Thứ 3",
-    "Thứ 4",
-    "Thứ 5",
-    "Thứ 6",
-    "Thứ 7"
+    "Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"
   ];
 
   Future<void> _pickTime(OperatingHour day, bool isOpeningTime) async {
@@ -62,13 +60,7 @@ class _OperatingHoursPickerState extends State<OperatingHoursPicker> {
            final closeMinutes = int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
 
            if (openMinutes >= closeMinutes) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Lưu ý: Giờ đóng cửa đang sớm hơn hoặc bằng giờ mở cửa!"),
-                  backgroundColor: Colors.orange,
-                  duration: Duration(seconds: 2),
-                )
-              );
+             SnackBarHelper.showError(context, "Giờ đóng cửa đang sớm hơn hoặc bằng giờ mở cửa!");
            }
         }
       });
@@ -82,8 +74,8 @@ class _OperatingHoursPickerState extends State<OperatingHoursPicker> {
       child: ExpansionTile(
         tilePadding: EdgeInsets.zero,
         leading: Icon(Icons.calendar_month_outlined, color: widget.primaryColor),
-        title: const Text("Chi tiết giờ hoạt động (7 ngày)",
-            style: TextStyle(fontSize: 15, color: Colors.black87)),
+        title: Text("Chi tiết giờ hoạt động (7 ngày)",
+            style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.w600)),
         children: List.generate(widget.operatingHours.length, (index) {
           final day = widget.operatingHours[index];
           return Padding(
@@ -98,22 +90,22 @@ class _OperatingHoursPickerState extends State<OperatingHoursPicker> {
                 SizedBox(
                     width: 70,
                     child: Text(_days[day.dayOfWeek],
-                        style: const TextStyle(fontSize: 13))),
+                        style: AppTextStyles.bodyText.copyWith(fontSize: 13))),
                 if (day.isActive) ...[
                   Expanded(
                       child: _buildTimeBox(
                           day.openTime, () => _pickTime(day, true))),
-                  const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4),
-                      child: Text("-", style: TextStyle(color: Colors.grey))),
+                  Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text("-", style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub))),
                   Expanded(
                       child: _buildTimeBox(
                           day.closeTime, () => _pickTime(day, false))),
                 ] else
-                  const Expanded(
+                  Expanded(
                       child: Text(" Nghỉ",
-                          style: TextStyle(
-                              color: Colors.red,
+                          style: AppTextStyles.bodyText.copyWith(
+                              color: AppColors.error,
                               fontStyle: FontStyle.italic,
                               fontSize: 13))),
               ],
@@ -124,17 +116,18 @@ class _OperatingHoursPickerState extends State<OperatingHoursPicker> {
     );
   }
 
-  // 4. Widget con
+  // Khung chứa giờ
   Widget _buildTimeBox(String time, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
-            borderRadius: BorderRadius.circular(4)),
+            border: Border.all(color: AppColors.surface, width: 1.5),
+            borderRadius: BorderRadius.circular(AppDimens.radiusMedium)),
         alignment: Alignment.center,
-        child: Text(time, style: const TextStyle(fontSize: 13)),
+        child: Text(time, style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.w500)),
       ),
     );
   }

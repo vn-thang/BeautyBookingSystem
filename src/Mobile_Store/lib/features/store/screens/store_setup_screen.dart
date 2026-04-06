@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
+import 'package:mobile_store/shared/widgets/inputs/app_header.dart';
 import '../services/store_service.dart';
 import '../widgets/store_profile_form.dart';
 import '../../home/screens/main_screen.dart';
@@ -28,18 +30,14 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
     setState(() => _isLoading = false);
 
     if (isSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Thông tin đã được gửi!"), backgroundColor: Colors.green),
-      );
+      SnackBarHelper.showSuccess(context, "Thông tin đã được gửi!");
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const MainScreen()),
         (route) => false,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Có lỗi xảy ra, vui lòng thử lại!"), backgroundColor: Colors.red),
-      );
+      SnackBarHelper.showError(context, "Có lỗi xảy ra, vui lòng thử lại!");
     }
   }
 
@@ -47,16 +45,7 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text(
-          "Thiết lập cửa hàng",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        backgroundColor: AppColors.primary,
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
-        centerTitle: true,
-      ),
+      appBar: const AppHeader(title: "Thiết lập cửa hàng"), 
       body: StoreProfileForm(
         showAppBar: false, 
         initialData: null,

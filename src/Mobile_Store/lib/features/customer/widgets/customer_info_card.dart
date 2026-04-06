@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../models/customer_profile_model.dart';
 
 class CustomerInfoCard extends StatelessWidget {
@@ -9,13 +13,13 @@ class CustomerInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(AppDimens.paddingMedium),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: AppColors.textSub.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -24,23 +28,23 @@ class CustomerInfoCard extends StatelessWidget {
       child: Row(
         children: [
           _buildAvatar(),
-          const SizedBox(width: 16),
+          const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   profile.fullName,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.heading1.copyWith(fontSize: 20),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    const Icon(Icons.phone, size: 16, color: Colors.grey),
-                    const SizedBox(width: 6),
+                    const Icon(Icons.phone, size: 16, color: AppColors.textSub),
+                    const SizedBox(width: AppSpacing.xs),
                     Text(
                       profile.phone,
-                      style: const TextStyle(fontSize: 16, color: Colors.black87),
+                      style: AppTextStyles.bodyText.copyWith(fontSize: 16),
                     ),
                   ],
                 ),
@@ -55,14 +59,17 @@ class CustomerInfoCard extends StatelessWidget {
   Widget _buildAvatar() {
     return CircleAvatar(
       radius: 36,
-      backgroundColor: Colors.blue.shade50,
+      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
       backgroundImage: (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty)
           ? NetworkImage(profile.avatarUrl!)
           : null,
       child: (profile.avatarUrl == null || profile.avatarUrl!.isEmpty)
           ? Text(
               profile.fullName.isNotEmpty ? profile.fullName[0].toUpperCase() : '?',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28, color: Colors.blue.shade700),
+              style: AppTextStyles.heading1.copyWith(
+                fontSize: 28, 
+                color: AppColors.primary,
+              ),
             )
           : null,
     );

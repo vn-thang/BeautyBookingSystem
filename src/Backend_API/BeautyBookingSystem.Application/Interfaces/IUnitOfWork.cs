@@ -22,6 +22,10 @@ namespace BeautyBookingSystem.Application.Interfaces
         IGenericRepository<Review> ReviewRepository { get; }
         IGenericRepository<Voucher> VoucherRepository { get; }
         IGenericRepository<Notification> NotificationRepository { get; }
+        IGenericRepository<WalletTransaction> WalletTransactionRepository { get; }
+         IGenericRepository<SystemConfig> SystemConfigRepository { get; }
+         IGenericRepository<SystemContent> SystemContentRepository { get; }
+         IGenericRepository<WithdrawalRequest> WithdrawalRequestRepository { get; }
         Task<int> SaveChangesAsync();
     }
 }
