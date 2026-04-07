@@ -1,5 +1,5 @@
 ﻿using BeautyBookingSystem.Application.DTOs.Reviews;
-using BeautyBookingSystem.Application.Services;
+using BeautyBookingSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -11,9 +11,9 @@ namespace BeautyBookingSystem.API.Controllers
     [Authorize(Roles = "Customer")]
     public class ReviewsController : ControllerBase
     {
-        private readonly ReviewService _reviewService;
+        private readonly IReviewService _reviewService;
 
-        public ReviewsController(ReviewService reviewService)
+        public ReviewsController(IReviewService reviewService)
         {
             _reviewService = reviewService;
         }
