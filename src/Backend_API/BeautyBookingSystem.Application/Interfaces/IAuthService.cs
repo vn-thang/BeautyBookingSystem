@@ -1,4 +1,5 @@
 ﻿using BeautyBookingSystem.Application.DTOs.Auth;
+using BeautyBookingSystem.Application.DTOs.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;

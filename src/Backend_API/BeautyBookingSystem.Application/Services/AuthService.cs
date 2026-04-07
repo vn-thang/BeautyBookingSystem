@@ -28,13 +28,12 @@ namespace BeautyBookingSystem.Application.Services
             _emailService = emailService;
             _mapper = mapper;
         }
+
         public async Task<TokenResponse> RegisterAsync(RegisterRequest request)
         {
-
             await CheckDuplicateUserAsync(request.Phone, request.Email);
 
             var newUser = _mapper.Map<User>(request);
-
             newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password).Trim();
             newUser.Role = Role.Customer;
             newUser.Status = UserStatus.Active;
@@ -45,44 +44,44 @@ namespace BeautyBookingSystem.Application.Services
             return await GenerateTokensAndUpdateUserAsync(newUser);
         }
 
-       public async Task<TokenResponse> LoginAsync(LoginRequest request)
-{
-    var user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(
-        u => u.Phone == request.EmailOrPhone || u.Email == request.EmailOrPhone);
-
-    if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-        throw new BadRequestException("Số điện thoại/Email hoặc mật khẩu không đúng.");
-
-    if (user.Status != UserStatus.Active)
-        throw new BadRequestException("Tài khoản của bạn đã bị khóa.");
-        
-    if (!string.IsNullOrEmpty(request.FcmToken))
-    {
-        user.FcmToken = request.FcmToken;
-    }
-    int? currentStoreId = null;
-    string? currentStoreStatus = null;
-
-    if (user.Role == Role.StoreOwner)
-    {
-        var store = await _unitOfWork.StoreRepository.FirstOrDefaultAsync(s => s.OwnerId == user.Id);
-        if (store != null)
+        public async Task<TokenResponse> LoginAsync(LoginRequest request)
         {
-            currentStoreId = store.Id;
-            currentStoreStatus = store.ApprovalStatus.ToString(); 
+            var user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(
+                u => u.Phone == request.EmailOrPhone || u.Email == request.EmailOrPhone);
+
+            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                throw new BadRequestException("Số điện thoại/Email hoặc mật khẩu không đúng.");
+
+            if (user.Status != UserStatus.Active)
+                throw new BadRequestException("Tài khoản của bạn đã bị khóa.");
+                
+            if (!string.IsNullOrEmpty(request.FcmToken))
+            {
+                user.FcmToken = request.FcmToken;
+            }
+            int? currentStoreId = null;
+            string? currentStoreStatus = null;
+
+            if (user.Role == Role.StoreOwner)
+            {
+                var store = await _unitOfWork.StoreRepository.FirstOrDefaultAsync(s => s.OwnerId == user.Id);
+                if (store != null)
+                {
+                    currentStoreId = store.Id;
+                    currentStoreStatus = store.ApprovalStatus.ToString(); 
+                }
+            }
+
+            var tokenResponse = await GenerateTokensAndUpdateUserAsync(user, currentStoreId);
+            tokenResponse.Role = user.Role.ToString(); 
+            
+            if (currentStoreStatus != null)
+            {
+                tokenResponse.StoreStatus = currentStoreStatus;
+            }
+
+            return tokenResponse;
         }
-    }
-
-    var tokenResponse = await GenerateTokensAndUpdateUserAsync(user, currentStoreId);
-    tokenResponse.Role = user.Role.ToString(); 
-    
-    if (currentStoreStatus != null)
-    {
-        tokenResponse.StoreStatus = currentStoreStatus;
-    }
-
-    return tokenResponse;
-}
 
         public async Task<TokenResponse> RefreshTokenAsync(RefreshTokenRequest request)
         {
@@ -97,30 +96,32 @@ namespace BeautyBookingSystem.Application.Services
             {
                 throw new BadRequestException("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
             }
-           int? currentStoreId = null;
-           if (user.Role == Role.StoreOwner)
-    {
-        var store = await _unitOfWork.StoreRepository.FirstOrDefaultAsync(s => s.OwnerId == user.Id);
-        currentStoreId = store?.Id;
-    }
+            
+            int? currentStoreId = null;
+            if (user.Role == Role.StoreOwner)
+            {
+                var store = await _unitOfWork.StoreRepository.FirstOrDefaultAsync(s => s.OwnerId == user.Id);
+                currentStoreId = store?.Id;
+            }
             return await GenerateTokensAndUpdateUserAsync(user, currentStoreId);
         }
+
         private async Task<TokenResponse> GenerateTokensAndUpdateUserAsync(User user, int? storeId = null)
         {
             var accessToken = CreateAccessToken(user, storeId);
             var refreshToken = CreateRefreshToken(); 
 
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); 
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
 
             _unitOfWork.UserRepository.Update(user);
             await _unitOfWork.SaveChangesAsync();
 
             return new TokenResponse { AccessToken = accessToken, RefreshToken = refreshToken };
         }
+
         private string CreateAccessToken(User user, int? storeId = null)
         {
-           
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -129,17 +130,20 @@ namespace BeautyBookingSystem.Application.Services
                 new Claim(ClaimTypes.MobilePhone, user.Phone),
                 new Claim(ClaimTypes.Role, user.Role.ToString())
             };
+            
             if (storeId.HasValue)
-    {
-        claims.Add(new Claim("storeId", storeId.Value.ToString()));
-    }
+            {
+                claims.Add(new Claim("storeId", storeId.Value.ToString()));
+            }
             
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
 
             var token = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],    
+                audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(15), 
+                expires: DateTime.UtcNow.AddMinutes(15),
                 signingCredentials: creds
             );
 
@@ -162,34 +166,31 @@ namespace BeautyBookingSystem.Application.Services
                 ValidateIssuer = false,
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!)),
-                ValidateLifetime = false 
+                ValidateLifetime = false
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
 
-            if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha512, StringComparison.InvariantCultureIgnoreCase))
+            if (securityToken is not JwtSecurityToken jwtSecurityToken ||
+                !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha512, StringComparison.InvariantCultureIgnoreCase))
+            {
                 throw new SecurityTokenException("Token không đúng định dạng chữ ký");
+            }
 
             return principal;
         }
-        
+
         public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request)
         {
-
             var user = await GetUserByIdAsync(userId);
 
-            bool isOldPasswordCorrect = BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash);
-            if (!isOldPasswordCorrect)
-            {
-                throw new Exception("Mật khẩu cũ không chính xác!");
-            }
+            if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash))
+                throw new BadRequestException("Mật khẩu cũ không đúng");
 
-            string hashedNewPassword = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
 
-            user.PasswordHash = hashedNewPassword;
             _unitOfWork.UserRepository.Update(user);
-
             await _unitOfWork.SaveChangesAsync();
 
             return true;
@@ -203,7 +204,6 @@ namespace BeautyBookingSystem.Application.Services
             user.RefreshTokenExpiryTime = null;
             user.FcmToken = null;
 
-
             _unitOfWork.UserRepository.Update(user);
             await _unitOfWork.SaveChangesAsync();
 
@@ -214,9 +214,7 @@ namespace BeautyBookingSystem.Application.Services
         {
             var user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
-            {
-                throw new BadRequestException("Email này chưa được đăng ký trong hệ thống!");
-            }
+                throw new NotFoundException("Email chưa được đăng ký");
 
             string otp = new Random().Next(100000, 999999).ToString();
 
@@ -226,17 +224,8 @@ namespace BeautyBookingSystem.Application.Services
             _unitOfWork.UserRepository.Update(user);
             await _unitOfWork.SaveChangesAsync();
 
-            string subject = "Mã xác nhận khôi phục mật khẩu - Beauty Booking";
-            string body = $@"
-            <div style='font-family: Arial, sans-serif; padding: 20px;'>
-            <h2>Khôi phục mật khẩu</h2>
-            <p>Chào bạn,</p>
-            <p>Mã OTP để đặt lại mật khẩu của bạn là:</p>
-            <h1 style='color: #d9534f; font-size: 32px; letter-spacing: 5px;'>{otp}</h1>
-            <p>Mã này sẽ hết hạn sau <b>5 phút</b>. Tuyệt đối không chia sẻ mã này cho người khác.</p>
-            </div>";
+            await _emailService.SendEmailAsync(user.Email, "Mã OTP Đặt Lại Mật Khẩu", $"Mã OTP của bạn là: {otp}. Mã này sẽ hết hạn trong 5 phút.");
 
-            await _emailService.SendEmailAsync(user.Email, subject, body);
             return true;
         }
 
@@ -244,25 +233,24 @@ namespace BeautyBookingSystem.Application.Services
         {
             var user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
-                throw new BadRequestException("Tài khoản không tồn tại!");
+                throw new NotFoundException("Tài khoản không tồn tại");
 
             if (user.ResetPasswordOtp != request.Otp)
-                throw new BadRequestException("Mã OTP không chính xác!");
+                throw new BadRequestException("Mã OTP không đúng");
 
             if (user.ResetPasswordOtpExpiry < DateTime.UtcNow)
-                throw new BadRequestException("Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới!");
+                throw new BadRequestException("Mã OTP đã hết hạn");
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             user.ResetPasswordOtp = null;
             user.ResetPasswordOtpExpiry = null;
-            user.RefreshToken = null;
-            user.RefreshTokenExpiryTime = null;
 
             _unitOfWork.UserRepository.Update(user);
             await _unitOfWork.SaveChangesAsync();
 
             return true;
         }
+
         public async Task<bool> RegisterPartnerAsync(RegisterRequest request)
         {
             await CheckDuplicateUserAsync(request.Phone, request.Email);
@@ -292,6 +280,7 @@ namespace BeautyBookingSystem.Application.Services
 
             return true;
         }
+
         private async Task CheckDuplicateUserAsync(string phone, string email)
         {
             bool isPhoneExist = await _unitOfWork.UserRepository.GetQueryable().AnyAsync(u => u.Phone == phone);

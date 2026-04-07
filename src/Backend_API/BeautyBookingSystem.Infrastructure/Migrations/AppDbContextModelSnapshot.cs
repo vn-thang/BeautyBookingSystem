@@ -132,6 +132,78 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.ToTable("BookingDetails");
                 });
 
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.ChatMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChatSessionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ToolName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChatSessionId");
+
+                    b.ToTable("ChatMessages");
+                });
+
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.ChatSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("LastActivityAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SessionKey")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "SessionKey")
+                        .IsUnique();
+
+                    b.ToTable("ChatSessions");
+                });
+
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.CustomerFavorite", b =>
                 {
                     b.Property<int>("Id")
@@ -572,6 +644,49 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.ToTable("Stores");
                 });
 
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.StoreBanner", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("StoreBanners");
+                });
+
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.StoreOperatingHour", b =>
                 {
                     b.Property<int>("Id")
@@ -932,6 +1047,9 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("MaxDiscount")
                         .HasColumnType("decimal(18,2)");
 
@@ -1119,6 +1237,28 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Navigation("Staff");
                 });
 
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.ChatMessage", b =>
+                {
+                    b.HasOne("BeautyBookingSystem.Domain.Entities.ChatSession", "ChatSession")
+                        .WithMany("Messages")
+                        .HasForeignKey("ChatSessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChatSession");
+                });
+
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.ChatSession", b =>
+                {
+                    b.HasOne("BeautyBookingSystem.Domain.Entities.User", "User")
+                        .WithMany("ChatSessions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.CustomerFavorite", b =>
                 {
                     b.HasOne("BeautyBookingSystem.Domain.Entities.User", "Customer")
@@ -1263,6 +1403,17 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.StoreBanner", b =>
+                {
+                    b.HasOne("BeautyBookingSystem.Domain.Entities.Store", "Store")
+                        .WithMany("Banners")
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Store");
+                });
+
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.StoreOperatingHour", b =>
                 {
                     b.HasOne("BeautyBookingSystem.Domain.Entities.Store", "Store")
@@ -1351,6 +1502,11 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Navigation("WalletTransactions");
                 });
 
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.ChatSession", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.GlobalCategory", b =>
                 {
                     b.Navigation("Services");
@@ -1373,6 +1529,8 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.Store", b =>
                 {
+                    b.Navigation("Banners");
+
                     b.Navigation("Bookings");
 
                     b.Navigation("OperatingHours");
@@ -1393,6 +1551,8 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.User", b =>
                 {
                     b.Navigation("Bookings");
+
+                    b.Navigation("ChatSessions");
 
                     b.Navigation("Favorites");
 

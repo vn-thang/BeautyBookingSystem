@@ -3,12 +3,14 @@ using BeautyBookingSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Threading.Tasks;
+using System;
 
 namespace BeautyBookingSystem.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/store/[controller]")] // Đổi route thêm chữ store cho rõ ràng
     [ApiController]
-    [Authorize]
+    [Authorize(Roles ="StoreOwner")]
     public class StoreUserController : ControllerBase
     {
         private readonly IStoreUserService _userService;
@@ -24,7 +26,8 @@ namespace BeautyBookingSystem.API.Controllers
             try
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userId)) return Unauthorized();
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized();
 
                 var profile = await _userService.GetProfileAsync(userId);
                 return Ok(profile);
@@ -34,13 +37,16 @@ namespace BeautyBookingSystem.API.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
             try
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (string.IsNullOrEmpty(userId)) return Unauthorized();
+                if (string.IsNullOrEmpty(userId)) 
+                    return Unauthorized();
+
                 await _userService.UpdateProfileAsync(userId, request);
                 return Ok(new { message = "Cập nhật thông tin thành công!" });
             }

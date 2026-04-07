@@ -50,5 +50,6 @@ namespace BeautyBookingSystem.Domain.Entities
         public virtual ICollection<Voucher> Vouchers { get; set; } = new List<Voucher>();
         public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
         public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
+        public ICollection<StoreBanner> Banners { get; set; } = new List<StoreBanner>();
     }
 }
