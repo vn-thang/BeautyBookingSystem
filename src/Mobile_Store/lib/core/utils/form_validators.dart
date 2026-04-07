@@ -1,0 +1,47 @@
+
+class FormValidators {
+  static String? requiredField(String? value, [String message = 'Trường này không được để trống']) {
+    if (value == null || value.trim().isEmpty) {
+      return message;
+    }
+    return null;
+  }
+
+  static String? email(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Vui lòng nhập email';
+    final emailRegex = RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value.trim())) return 'Email không hợp lệ';
+    return null;
+  }
+
+  static String? phone(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Vui lòng nhập số điện thoại';
+    final phoneRegex = RegExp(r'^(0|\+84)[0-9]{8,9}$');
+    if (!phoneRegex.hasMatch(value.trim())) return 'Số điện thoại không hợp lệ';
+    return null;
+  }
+
+  static String? emailOrPhone(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Vui lòng nhập email hoặc số điện thoại';
+    final trimmed = value.trim();
+    final emailRegex = RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$');
+    final phoneRegex = RegExp(r'^(0|\+84)[0-9]{8,9}$');
+
+    if (!emailRegex.hasMatch(trimmed) && !phoneRegex.hasMatch(trimmed)) {
+      return 'Thông tin không hợp lệ';
+    }
+    return null;
+  }
+
+  static String? password(String? value, {int minLength = 6}) {
+    if (value == null || value.isEmpty) return 'Vui lòng nhập mật khẩu';
+    if (value.length < minLength) return 'Mật khẩu phải có ít nhất $minLength ký tự';
+    return null;
+  }
+
+  static String? confirmPassword(String? value, String originalPassword) {
+    if (value == null || value.isEmpty) return 'Vui lòng xác nhận mật khẩu';
+    if (value != originalPassword) return 'Mật khẩu không khớp';
+    return null;
+  }
+}

@@ -60,6 +60,9 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Property<int>("StoreId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("SystemFee")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(18,2)");
 
@@ -566,11 +569,29 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Property<decimal>("AverageRating")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<string>("BankAccountName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BankAccountNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BankName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("CommissionRate")
+                        .HasColumnType("int");
+
                     b.Property<string>("CoverImageUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("DepositPercent")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("DepositThreshold")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
@@ -587,9 +608,18 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Property<double?>("Longitude")
                         .HasColumnType("float");
 
+                    b.Property<decimal>("MinimumBalance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MonthlyAppFee")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("NextBillingDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("OwnerId")
                         .HasColumnType("int");
@@ -603,6 +633,9 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<decimal>("WalletBalance")
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -685,6 +718,179 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.HasIndex("StoreId");
 
                     b.ToTable("StoreOperatingHours");
+                });
+
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.SystemConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Group")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("SystemConfigs");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(2159),
+                            Description = "Tỷ lệ hoa hồng mặc định (%)",
+                            Group = "Finance",
+                            Key = "DefaultCommissionRate",
+                            Type = "number",
+                            Value = "10"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(5490),
+                            Description = "Phí duy trì mặc định hàng tháng (VNĐ)",
+                            Group = "Finance",
+                            Key = "DefaultMonthlyAppFee",
+                            Type = "number",
+                            Value = "50000"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(5496),
+                            Description = "Tỷ lệ phí Admin thu trên tiền cọc khi khách bùng lịch (%)",
+                            Group = "Finance",
+                            Key = "PENALTY_COMMISSION_PERCENT",
+                            Type = "number",
+                            Value = "15"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(5499),
+                            Description = "Số ngày dùng thử miễn phí cho Cửa hàng mới duyệt",
+                            Group = "General",
+                            Key = "FreeTrialDays",
+                            Type = "number",
+                            Value = "30"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(5503),
+                            Description = "Bật/tắt chế độ bảo trì toàn hệ thống",
+                            Group = "General",
+                            Key = "MAINTENANCE_MODE",
+                            Type = "boolean",
+                            Value = "false"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(5506),
+                            Description = "Số điện thoại tổng đài hỗ trợ",
+                            Group = "General",
+                            Key = "HOTLINE",
+                            Type = "string",
+                            Value = "1900 1234"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(5509),
+                            Description = "Email hỗ trợ khách hàng",
+                            Group = "General",
+                            Key = "SUPPORT_EMAIL",
+                            Type = "string",
+                            Value = "support@beautybooking.com"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(5512),
+                            Description = "Khách hàng phải đặt trước tối thiểu bao nhiêu giờ",
+                            Group = "Booking",
+                            Key = "BOOKING_MIN_HOURS",
+                            Type = "number",
+                            Value = "1"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(5515),
+                            Description = "Số giờ tối thiểu để hủy lịch mà không bị phạt (mất cọc)",
+                            Group = "Booking",
+                            Key = "CANCEL_BEFORE_HOURS",
+                            Type = "number",
+                            Value = "2"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(5518),
+                            Description = "Thời gian giữ chỗ (phút) cho phép khách hàng đến trễ",
+                            Group = "Booking",
+                            Key = "GRACE_PERIOD_MINUTES",
+                            Type = "number",
+                            Value = "15"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(5520),
+                            Description = "Số lần tối đa khách hàng được phép hủy lịch trong 1 ngày",
+                            Group = "Behavior",
+                            Key = "MAX_CANCEL_PER_DAY",
+                            Type = "number",
+                            Value = "5"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(5524),
+                            Description = "Số lần 'Boom hàng' (No-show) tối đa trước khi bị khóa",
+                            Group = "Behavior",
+                            Key = "NOSHOW_LIMIT",
+                            Type = "number",
+                            Value = "5"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            CreatedAt = new DateTime(2026, 4, 5, 2, 24, 10, 958, DateTimeKind.Utc).AddTicks(5527),
+                            Description = "Tự động khóa tài khoản khách hàng nếu vượt giới hạn Boom hàng",
+                            Group = "Behavior",
+                            Key = "BLOCK_USER_IF_NOSHOW",
+                            Type = "boolean",
+                            Value = "true"
+                        });
                 });
 
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.SystemContent", b =>
@@ -875,6 +1081,108 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.HasIndex("StoreId");
 
                     b.ToTable("Vouchers");
+                });
+
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.WalletTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("BalanceAfter")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("BalanceBefore")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId");
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("WalletTransactions");
+                });
+
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.WithdrawalRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("BankAccountName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BankAccountNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ProcessedByAdminId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReceiptImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StoreId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoreId");
+
+                    b.ToTable("WithdrawalRequests");
                 });
 
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.Booking", b =>
@@ -1111,7 +1419,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.HasOne("BeautyBookingSystem.Domain.Entities.Store", "Store")
                         .WithMany("OperatingHours")
                         .HasForeignKey("StoreId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Store");
@@ -1154,6 +1462,35 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Navigation("Store");
                 });
 
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.WalletTransaction", b =>
+                {
+                    b.HasOne("BeautyBookingSystem.Domain.Entities.Booking", "Booking")
+                        .WithMany("WalletTransactions")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("BeautyBookingSystem.Domain.Entities.Store", "Store")
+                        .WithMany("WalletTransactions")
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("Store");
+                });
+
+            modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.WithdrawalRequest", b =>
+                {
+                    b.HasOne("BeautyBookingSystem.Domain.Entities.Store", "Store")
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Store");
+                });
+
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.Booking", b =>
                 {
                     b.Navigation("BookingDetails");
@@ -1161,6 +1498,8 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Navigation("Payments");
 
                     b.Navigation("Reviews");
+
+                    b.Navigation("WalletTransactions");
                 });
 
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.ChatSession", b =>
@@ -1205,6 +1544,8 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Navigation("Staffs");
 
                     b.Navigation("Vouchers");
+
+                    b.Navigation("WalletTransactions");
                 });
 
             modelBuilder.Entity("BeautyBookingSystem.Domain.Entities.User", b =>

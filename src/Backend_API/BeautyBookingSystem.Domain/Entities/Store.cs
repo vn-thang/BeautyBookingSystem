@@ -3,6 +3,7 @@ using BeautyBookingSystem.Domain.Enums;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,9 +27,22 @@ namespace BeautyBookingSystem.Domain.Entities
         public bool IsOpen { get; set; }
         public decimal AverageRating { get; set; } = 0; 
         public int TotalReviews { get; set; } = 0;
+        public int DepositPercent { get; set; } = 0;
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal DepositThreshold { get; set; } = 0m;
         public ApprovalStatus ApprovalStatus { get; set; }
+        public decimal WalletBalance { get; set; } = 0; 
+        public decimal MinimumBalance { get; set; } = 0; 
+        public int? CommissionRate { get; set; } 
+       [Column(TypeName = "decimal(18,2)")]
+        public decimal MonthlyAppFee { get; set; } = 50000m; 
+        public DateTime? NextBillingDate { get; set; }
+        public string? BankName { get; set; } 
+        public string? BankAccountNumber { get; set; }
+        public string? BankAccountName { get; set; }
 
-        // Navigation Properties
+        public virtual ICollection<WalletTransaction> WalletTransactions { get; set; } = new List<WalletTransaction>();
+
         public virtual ICollection<StoreOperatingHour> OperatingHours { get; set; } = new List<StoreOperatingHour>();
         public virtual ICollection<Staff> Staffs { get; set; } = new List<Staff>();
         public virtual ICollection<ServiceGroup> ServiceGroups { get; set; } = new List<ServiceGroup>();

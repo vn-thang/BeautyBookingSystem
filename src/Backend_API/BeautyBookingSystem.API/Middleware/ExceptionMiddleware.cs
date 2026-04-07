@@ -48,14 +48,24 @@ namespace BeautyBookingSystem.API.Middleware
                     message = badRequest.Message;
                     break;
 
-                case UnauthorizedAccessException:
+                case UnauthorizedException unauthorized: 
                     statusCode = HttpStatusCode.Unauthorized;
-                    message = "Bạn chưa đăng nhập.";
+                    message = unauthorized.Message;
+                    break;
+
+                case ForbiddenException forbidden: 
+                    statusCode = HttpStatusCode.Forbidden;
+                    message = forbidden.Message;
+                    break;
+
+                case NotFoundException notFound: 
+                    statusCode = HttpStatusCode.NotFound;
+                    message = notFound.Message;
                     break;
 
                 case KeyNotFoundException:
                     statusCode = HttpStatusCode.NotFound;
-                    message = "Không tìm thấy dữ liệu.";
+                    message = "Không tìm thấy dữ liệu yêu cầu.";
                     break;
             }
 

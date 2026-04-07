@@ -40,3 +40,13 @@ key.properties
 .idea/
 .DS_Store
 Thumbs.db
+# Firebase & Secrets
+**/firebase-key.json
+**/google-services.json
+**/firebase_options.dart
+
+# Mobile Store specific
+Mobile_Store/.flutter-plugins
+Mobile_Store/.flutter-plugins-dependencies
+Mobile_Store/.dart_tool/
+Mobile_Store/build/

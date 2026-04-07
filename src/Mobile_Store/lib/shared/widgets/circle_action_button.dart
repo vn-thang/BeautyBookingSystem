@@ -7,12 +7,12 @@ class CircleActionButton extends StatelessWidget {
   final Color iconColor;
 
   const CircleActionButton({
-    Key? key,
+ super.key,
     required this.icon,
     required this.label,
     required this.bgColor,
     required this.iconColor,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -110,7 +110,7 @@ namespace BeautyBookingSystem.API.Controllers
         }
 
         [HttpPost("register-partner")]
-        public async Task<IActionResult> RegisterPartner([FromBody] RegisterPartnerRequest request)
+        public async Task<IActionResult> RegisterPartner([FromBody] RegisterRequest request)
         {
             var result = await _authService.RegisterPartnerAsync(request);
 

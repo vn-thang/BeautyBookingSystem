@@ -15,7 +15,7 @@ namespace BeautyBookingSystem.Domain.Entities
         public int CategoryId { get; set; }
         public virtual GlobalCategory Category { get; set; } = null!;
 
-        public int? GroupId { get; set; } // Có thể Null
+        public int? GroupId { get; set; }
         public virtual ServiceGroup? Group { get; set; }
 
         public string Name { get; set; } = string.Empty;

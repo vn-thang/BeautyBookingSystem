@@ -26,7 +26,6 @@ namespace BeautyBookingSystem.Domain.Entities
         public DateTime? ResetPasswordOtpExpiry { get; set; }
         public string? FcmToken { get; set; }
 
-        // Navigation Properties (Các bảng liên kết với User)
         public virtual ICollection<Store> Stores { get; set; } = new List<Store>();
         public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
         public virtual ICollection<UserVoucher> UserVouchers { get; set; } = new List<UserVoucher>();

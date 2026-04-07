@@ -17,7 +17,6 @@ namespace BeautyBookingSystem.Domain.Entities
         public string? Position { get; set; }
         public bool IsActive { get; set; }
 
-        // Navigation Properties
         public virtual ICollection<BookingDetail> BookingDetails { get; set; } = new List<BookingDetail>();
     }
 }

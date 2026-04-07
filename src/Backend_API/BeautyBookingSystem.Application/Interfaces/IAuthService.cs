@@ -10,13 +10,13 @@ namespace BeautyBookingSystem.Application.Interfaces
 {
     public interface IAuthService
     {
-        Task<ApiResponse<TokenResponse>> RegisterAsync(RegisterRequest request);
-        Task<ApiResponse<TokenResponse>> LoginAsync(LoginRequest request);
-        Task<ApiResponse<TokenResponse>> RefreshTokenAsync(RefreshTokenRequest request);
-        Task<ApiResponse<bool>> ChangePasswordAsync(string userId, ChangePasswordRequest request);
-        Task<ApiResponse<bool>> LogoutAsync(string userId);
-        Task<ApiResponse<bool>> ForgotPasswordAsync(ForgotPasswordRequest request);
-        Task<ApiResponse<bool>> ResetPasswordAsync(ResetPasswordRequest request);
-        Task<ApiResponse<bool>> RegisterPartnerAsync(RegisterPartnerRequest request);
+        Task<TokenResponse> RegisterAsync(RegisterRequest request);
+        Task<TokenResponse> LoginAsync(LoginRequest request);
+        Task<TokenResponse> RefreshTokenAsync(RefreshTokenRequest request);
+        Task<bool> ChangePasswordAsync(string userId, ChangePasswordRequest request);
+        Task<bool> LogoutAsync(string userId);
+        Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request);
+        Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
+        Task<bool> RegisterPartnerAsync(RegisterRequest request);
     }
 }
