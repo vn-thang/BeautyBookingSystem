@@ -1,10 +1,12 @@
 ﻿using BeautyBookingSystem.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BeautyBookingSystem.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Customer")]
     public class VoucherController : ControllerBase
     {
         private readonly IVoucherService _voucherService;

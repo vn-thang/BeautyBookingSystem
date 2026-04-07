@@ -1,8 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
-
 import 'package:mobile_customer/core/theme/app_colors.dart';
 import 'package:mobile_customer/core/theme/app_decorations.dart';
 import 'package:mobile_customer/core/theme/app_text_styles.dart';
@@ -256,7 +254,7 @@ class _BookingPageState extends State<BookingPage> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 28),
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.96),
+            color: AppColors.surface.withValues(alpha: 0.96),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: AppColors.border),
             boxShadow: AppDecorations.cardShadow,
@@ -268,7 +266,7 @@ class _BookingPageState extends State<BookingPage> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.08),
+                  color: AppColors.primary.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -322,7 +320,7 @@ class _BookingPageState extends State<BookingPage> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 26),
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.96),
+            color: AppColors.surface.withValues(alpha: 0.96),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: AppColors.border),
             boxShadow: AppDecorations.cardShadow,
@@ -381,7 +379,7 @@ class _BookingPageState extends State<BookingPage> {
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.96),
+        color: AppColors.surface.withValues(alpha: 0.96),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.border),
         boxShadow: AppDecorations.topBarShadow,
@@ -424,7 +422,7 @@ class _BookingCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.96),
+        color: AppColors.surface.withValues(alpha: 0.96),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
         boxShadow: AppDecorations.softShadow,
@@ -589,7 +587,7 @@ class _StoreAvatar extends StatelessWidget {
       child: Container(
         width: 48,
         height: 48,
-        color: AppColors.primary.withOpacity(0.10),
+        color: AppColors.primary.withValues(alpha: 0.10),
         child: avatarUrl.isNotEmpty
             ? Image.network(
                 avatarUrl,
@@ -632,9 +630,9 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
+        color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withOpacity(0.20)),
+        border: Border.all(color: color.withValues(alpha: 0.20)),
       ),
       child: Text(
         label,

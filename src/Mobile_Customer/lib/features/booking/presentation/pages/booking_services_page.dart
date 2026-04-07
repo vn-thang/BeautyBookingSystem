@@ -160,7 +160,7 @@ class _BookingServicesPageState extends State<BookingServicesPage> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
                 decoration: BoxDecoration(
-                  color: AppColors.surface.withOpacity(0.94),
+                  color: AppColors.surface.withValues(alpha: 0.94),
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(color: AppColors.border),
                   boxShadow: AppDecorations.cardShadow,
@@ -254,7 +254,7 @@ class _BookingServicesPageState extends State<BookingServicesPage> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.surface.withOpacity(0.96),
+                    color: AppColors.surface.withValues(alpha: 0.96),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: AppColors.border),
                     boxShadow: AppDecorations.softShadow,
@@ -321,7 +321,7 @@ class _BookingServicesPageState extends State<BookingServicesPage> {
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.surface.withOpacity(0.96),
+                          color: AppColors.surface.withValues(alpha: 0.96),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color:
@@ -331,7 +331,7 @@ class _BookingServicesPageState extends State<BookingServicesPage> {
                           boxShadow: selected
                               ? [
                                   BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.08),
+                                    color: AppColors.primary.withValues(alpha: 0.08),
                                     blurRadius: 12,
                                     offset: const Offset(0, 6),
                                   ),
@@ -401,7 +401,7 @@ class _BookingServicesPageState extends State<BookingServicesPage> {
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.98),
+            color: AppColors.surface.withValues(alpha: 0.98),
             border: Border(
               top: BorderSide(color: AppColors.border),
             ),
@@ -436,7 +436,7 @@ class _BookingServicesPageState extends State<BookingServicesPage> {
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.surface,
                     disabledBackgroundColor:
-                        AppColors.primary.withOpacity(0.35),
+                        AppColors.primary.withValues(alpha: 0.35),
                     disabledForegroundColor: AppColors.surface,
                     padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
@@ -538,7 +538,7 @@ class _BookingServicesPageState extends State<BookingServicesPage> {
         width: 38,
         height: 38,
         decoration: BoxDecoration(
-          color: AppColors.surface.withOpacity(0.96),
+          color: AppColors.surface.withValues(alpha: 0.96),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border),
           boxShadow: AppDecorations.topBarShadow,

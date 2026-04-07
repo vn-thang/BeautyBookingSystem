@@ -1,5 +1,5 @@
 using BeautyBookingSystem.Application.Common;
-using BeautyBookingSystem.Application.DTOs.CustomerStore; // Thư mục mới nãy mình dọn
+using BeautyBookingSystem.Application.DTOs.StoreCustomer;
 using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;

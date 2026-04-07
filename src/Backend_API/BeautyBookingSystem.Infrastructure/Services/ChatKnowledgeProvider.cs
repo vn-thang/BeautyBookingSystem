@@ -13,7 +13,7 @@ namespace BeautyBookingSystem.Infrastructure.Services
         private readonly IHomeService _homeService;
         private readonly ISearchService _searchService;
         private readonly IBookingService _bookingService;
-        private readonly IStoreService _storeService;
+        private readonly IPublicStoreService _storeService;
         private readonly IServiceService _serviceService;
         private readonly IVoucherRepository _voucherRepository;
 
@@ -21,7 +21,7 @@ namespace BeautyBookingSystem.Infrastructure.Services
             IHomeService homeService,
             ISearchService searchService,
             IBookingService bookingService,
-            IStoreService storeService,
+            IPublicStoreService storeService,
             IServiceService serviceService,
             IVoucherRepository voucherRepository)
         {

@@ -6,7 +6,7 @@ using System.Security.Claims;
 
 namespace BeautyBookingSystem.Api.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Customer")]
     [ApiController]
     [Route("api/search-histories")]
     public class SearchHistoriesController : ControllerBase

@@ -56,7 +56,7 @@ class _ServiceGroupStoresViewState extends State<ServiceGroupStoresView> {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: AppColors.surface.withOpacity(0.95),
+                          color: AppColors.surface.withValues(alpha: 0.95),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: AppColors.borderSoft),
                           boxShadow: AppDecorations.topBarShadow,

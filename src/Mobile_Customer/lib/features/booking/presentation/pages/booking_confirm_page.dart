@@ -662,7 +662,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                                     ),
                                     decoration: BoxDecoration(
                                       color:
-                                          AppColors.surface.withOpacity(0.96),
+                                          AppColors.surface.withValues(alpha: 0.96),
                                       borderRadius: BorderRadius.circular(18),
                                       border:
                                           Border.all(color: AppColors.border),
@@ -903,7 +903,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
           child: Container(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             decoration: BoxDecoration(
-              color: AppColors.surface.withOpacity(0.97),
+              color: AppColors.surface.withValues(alpha: 0.97),
               border: const Border(
                 top: BorderSide(color: AppColors.border),
               ),
@@ -938,7 +938,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       disabledBackgroundColor:
-                          AppColors.primary.withOpacity(0.35),
+                          AppColors.primary.withValues(alpha: 0.35),
                       disabledForegroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       shape: RoundedRectangleBorder(
@@ -974,7 +974,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: AppColors.surface.withOpacity(0.95),
+          color: AppColors.surface.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(20),
           boxShadow: AppDecorations.cardShadow,
           border: Border.all(color: AppColors.borderSoft),
@@ -1015,7 +1015,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: AppColors.surface.withOpacity(0.95),
+                  color: AppColors.surface.withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.border),
                   boxShadow: AppDecorations.cardShadow,
@@ -1073,7 +1073,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.95),
+        color: AppColors.surface.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
         boxShadow: AppDecorations.cardShadow,
@@ -1196,7 +1196,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: selected
-                ? AppColors.primary.withOpacity(0.08)
+                ? AppColors.primary.withValues(alpha: 0.08)
                 : AppColors.surfaceSoft,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
@@ -1261,7 +1261,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: AppColors.surface.withOpacity(0.96),
+          color: AppColors.surface.withValues(alpha: 0.96),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border),
           boxShadow: AppDecorations.softShadow,

@@ -166,7 +166,7 @@ class _CustomerFavoriteButtonState extends State<CustomerFavoriteButton> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.surface.withOpacity(0.94),
+                  color: AppColors.surface.withValues(alpha: 0.94),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: AppColors.borderSoft),
                   boxShadow: AppDecorations.softShadow,

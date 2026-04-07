@@ -150,7 +150,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                                       end: Alignment.bottomCenter,
                                       colors: [
                                         Colors.transparent,
-                                        AppColors.overlay.withOpacity(0.72),
+                                        AppColors.overlay.withValues(alpha: 0.72),
                                       ],
                                     ),
                                   ),
@@ -165,7 +165,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                                         _pill(
                                           text: 'Nổi bật',
                                           bgColor: AppColors.overlay
-                                              .withOpacity(0.58),
+                                              .withValues(alpha: 0.58),
                                         ),
                                       if (s.isFeatured && s.isActive)
                                         const SizedBox(width: 8),
@@ -173,13 +173,13 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                                         _pill(
                                           text: 'Đang hoạt động',
                                           bgColor: AppColors.overlay
-                                              .withOpacity(0.58),
+                                              .withValues(alpha: 0.58),
                                         )
                                       else
                                         _pill(
                                           text: 'Tạm ngưng',
                                           bgColor: AppColors.danger
-                                              .withOpacity(0.72),
+                                              .withValues(alpha: 0.72),
                                         ),
                                     ],
                                   ),
@@ -197,7 +197,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                           width: double.infinity,
                           padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                            color: AppColors.surface.withOpacity(0.94),
+                            color: AppColors.surface.withValues(alpha: 0.94),
                             borderRadius: BorderRadius.circular(22),
                             border: Border.all(color: AppColors.borderSoft),
                             boxShadow: AppDecorations.cardShadow,
@@ -458,7 +458,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.94),
+        color: AppColors.surface.withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.borderSoft),
         boxShadow: AppDecorations.softShadow,
@@ -525,7 +525,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: bgColor ?? AppColors.overlay.withOpacity(0.48),
+        color: bgColor ?? AppColors.overlay.withValues(alpha: 0.48),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -553,7 +553,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: AppColors.surface.withOpacity(0.9),
+          color: AppColors.surface.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.borderSoft),
           boxShadow: AppDecorations.topBarShadow,

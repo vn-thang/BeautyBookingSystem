@@ -2,7 +2,7 @@
 using BeautyBookingSystem.Application.DTOs.GlobalCategory;
 using BeautyBookingSystem.Application.DTOs.Home;
 using BeautyBookingSystem.Application.DTOs.ServiceGroup;
-using BeautyBookingSystem.Application.DTOs.Store;
+using BeautyBookingSystem.Application.DTOs.StoreCustomer;
 using BeautyBookingSystem.Application.DTOs.SystemContent;
 using BeautyBookingSystem.Application.DTOs.Voucher;
 using BeautyBookingSystem.Application.Interfaces;
@@ -156,11 +156,11 @@ namespace BeautyBookingSystem.Application.Services
                     MinOrderValue = v.MinOrderValue,
                     MaxDiscount = v.MaxDiscount,
 
-                    DiscountAmount = v.DiscountType == DiscountType.Percentage
+                    DiscountAmount = v.DiscountType == DiscountType.Percent
                         ? (v.Service.Price * v.DiscountValue / 100)
                         : v.DiscountValue,
 
-                    DiscountedPrice = v.DiscountType == DiscountType.Percentage
+                    DiscountedPrice = v.DiscountType == DiscountType.Percent
                         ? v.Service.Price - (v.Service.Price * v.DiscountValue / 100)
                         : v.Service.Price - v.DiscountValue,
 

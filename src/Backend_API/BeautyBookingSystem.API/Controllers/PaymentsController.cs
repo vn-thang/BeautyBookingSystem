@@ -1,6 +1,7 @@
 ﻿using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Entities;
 using BeautyBookingSystem.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 using System.Net;
@@ -11,6 +12,7 @@ namespace BeautyBookingSystem.API.Controllers
 {
     [ApiController]
     [Route("api/payments")]
+    [Authorize(Roles = "Customer")]
     public class PaymentsController : ControllerBase
     {
         private readonly IConfiguration _config;

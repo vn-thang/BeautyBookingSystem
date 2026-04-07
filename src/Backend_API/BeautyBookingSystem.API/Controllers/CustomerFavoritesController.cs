@@ -7,7 +7,7 @@ namespace BeautyBookingSystem.Api.Controllers
 {
     [ApiController]
     [Route("api/customer-favorites")]
-    [Authorize]
+    [Authorize(Roles ="Customer")]
     public class CustomerFavoritesController : ControllerBase
     {
         private readonly ICustomerFavoriteService _favoriteService;

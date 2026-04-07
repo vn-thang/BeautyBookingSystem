@@ -1,6 +1,6 @@
 ﻿using BeautyBookingSystem.Application.DTOs.GlobalCategory;
 using BeautyBookingSystem.Application.DTOs.ServiceGroup;
-using BeautyBookingSystem.Application.DTOs.Store;
+using BeautyBookingSystem.Application.DTOs.StoreCustomer;
 using BeautyBookingSystem.Application.DTOs.SystemContent;
 using BeautyBookingSystem.Application.DTOs.Voucher;
 using System;
@@ -19,8 +19,8 @@ namespace BeautyBookingSystem.Application.DTOs.Home
         public List<GlobalCategoryDto> Categories { get; set; } = new();
         public List<ServiceGroupDto> ServiceGroups { get; set; } = new();
         public List<StoreNearbyDto> NearbyStores { get; set; } = new();
-        public List<StoreNearbyDto> TopRatedStores { get; set; }
-        public List<ServiceVoucherHomeDto> Vouchers { get; set; } 
-        public List<SystemContentDto> SystemContents { get; set; }
+        public List<StoreNearbyDto>? TopRatedStores { get; set; }
+        public List<ServiceVoucherHomeDto>? Vouchers { get; set; } 
+        public List<SystemContentDto>? SystemContents { get; set; }
     }
 }

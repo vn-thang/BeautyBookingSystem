@@ -223,10 +223,10 @@ class _ChatPageState extends State<ChatPage> {
                                   vertical: 10,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.danger.withOpacity(0.08),
+                                  color: AppColors.danger.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: AppColors.danger.withOpacity(0.18),
+                                    color: AppColors.danger.withValues(alpha: 0.18),
                                   ),
                                 ),
                                 child: Text(

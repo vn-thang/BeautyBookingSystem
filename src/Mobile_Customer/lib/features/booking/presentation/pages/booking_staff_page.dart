@@ -156,7 +156,7 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 18, vertical: 20),
                         decoration: BoxDecoration(
-                          color: AppColors.surface.withOpacity(0.96),
+                          color: AppColors.surface.withValues(alpha: 0.96),
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(color: AppColors.border),
                           boxShadow: AppDecorations.cardShadow,
@@ -354,7 +354,7 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.98),
+            color: AppColors.surface.withValues(alpha: 0.98),
             border: Border(
               top: BorderSide(color: AppColors.border),
             ),
@@ -432,7 +432,7 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.96),
+            color: AppColors.surface.withValues(alpha: 0.96),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: selected ? AppColors.primary : AppColors.border,
@@ -441,7 +441,7 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
             boxShadow: selected
                 ? [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.08),
+                      color: AppColors.primary.withValues(alpha: 0.08),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     ),
@@ -492,7 +492,7 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
   Widget _avatarFallback(String name) {
     final initials = _initials(name);
     return Container(
-      color: AppColors.primary.withOpacity(0.08),
+      color: AppColors.primary.withValues(alpha: 0.08),
       alignment: Alignment.center,
       child: Text(
         initials,
@@ -524,7 +524,7 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: AppColors.surface.withOpacity(0.96),
+          color: AppColors.surface.withValues(alpha: 0.96),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border),
           boxShadow: AppDecorations.topBarShadow,
@@ -543,7 +543,7 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.96),
+        color: AppColors.surface.withValues(alpha: 0.96),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.border),
         boxShadow: AppDecorations.softShadow,

@@ -55,7 +55,7 @@ class _CategoryStoresViewState extends State<CategoryStoresView> {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: AppColors.surface.withOpacity(0.95),
+                          color: AppColors.surface.withValues(alpha: 0.95),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: AppColors.borderSoft),
                           boxShadow: AppDecorations.topBarShadow,
@@ -133,7 +133,7 @@ class _CategoryStoresViewState extends State<CategoryStoresView> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
             decoration: BoxDecoration(
-              color: AppColors.surface.withOpacity(0.88),
+              color: AppColors.surface.withValues(alpha: 0.88),
               borderRadius: BorderRadius.circular(28),
               border: Border.all(color: AppColors.borderSoft),
               boxShadow: AppDecorations.softShadow,
@@ -264,7 +264,7 @@ class _CategoryStoresViewState extends State<CategoryStoresView> {
                           vertical: 7,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.surface.withOpacity(0.92),
+                          color: AppColors.surface.withValues(alpha: 0.92),
                           borderRadius: BorderRadius.circular(999),
                           border: Border.all(color: AppColors.borderSoft),
                           boxShadow: AppDecorations.softShadow,

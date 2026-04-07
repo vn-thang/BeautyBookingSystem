@@ -216,7 +216,7 @@ class _HomeViewState extends State<HomeView> {
             height: 32,
             margin: const EdgeInsets.only(top: 2),
             decoration: BoxDecoration(
-              color: AppColors.surface.withOpacity(0.96),
+              color: AppColors.surface.withValues(alpha: 0.96),
               borderRadius: BorderRadius.circular(11),
               boxShadow: AppDecorations.avatarShadow,
             ),
@@ -231,7 +231,7 @@ class _HomeViewState extends State<HomeView> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
-                color: AppColors.surface.withOpacity(0.72),
+                color: AppColors.surface.withValues(alpha: 0.72),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppColors.borderSoft),
               ),
@@ -594,7 +594,7 @@ class _HomeViewState extends State<HomeView> {
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceSoft.withOpacity(0.55),
+        color: AppColors.surfaceSoft.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(24),
         boxShadow: AppDecorations.softShadow, // làm mềm đường ngang nền
       ),
@@ -809,7 +809,7 @@ class _HomeViewState extends State<HomeView> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 12,
               spreadRadius: 1,
               offset: Offset(0, 2),
@@ -900,7 +900,7 @@ class _HomeViewState extends State<HomeView> {
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.only(top: 8),
       decoration: BoxDecoration(
-        color: AppColors.surfaceSoft.withOpacity(0.55),
+        color: AppColors.surfaceSoft.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(24),
         boxShadow: AppDecorations.softShadow,
       ),
@@ -993,7 +993,7 @@ class _HomeViewState extends State<HomeView> {
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.danger.withOpacity(0.92),
+                                    color: AppColors.danger.withValues(alpha: 0.92),
                                     borderRadius: BorderRadius.circular(999),
                                     boxShadow: AppDecorations.softShadow,
                                   ),

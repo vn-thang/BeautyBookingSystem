@@ -22,34 +22,23 @@ namespace BeautyBookingSystem.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
+            // AuthService sẽ ném Exception nếu lỗi, nên đến đây chắc chắn là thành công
             var result = await _authService.RegisterAsync(request);
-
-            if (!result.Success)
-                return BadRequest(result);
-
-            return Ok(result);
+            return Ok(ApiResponse<TokenResponse>.Ok(result, "Đăng ký thành công!"));
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var result = await _authService.LoginAsync(request);
-
-            if (!result.Success)
-                return BadRequest(result);
-
-            return Ok(result);
+            return Ok(ApiResponse<TokenResponse>.Ok(result, "Đăng nhập thành công!"));
         }
 
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             var result = await _authService.RefreshTokenAsync(request);
-
-            if (!result.Success)
-                return BadRequest(result);
-
-            return Ok(result);
+            return Ok(ApiResponse<TokenResponse>.Ok(result, "Làm mới token thành công!"));
         }
 
         [HttpPut("change-password")]
@@ -60,65 +49,46 @@ namespace BeautyBookingSystem.API.Controllers
              ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(ApiResponse<bool>.Fail("Token không hợp lệ"));
+                return Unauthorized(ApiResponse<bool>.Fail("Token không hợp lệ hoặc không chứa ID."));
 
             var result = await _authService.ChangePasswordAsync(userId, request);
-
-            if (!result.Success)
-                return BadRequest(result);
-
-            return Ok(result);
+            return Ok(ApiResponse<bool>.Ok(result, "Đổi mật khẩu thành công!"));
         }
 
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> Logout()
         {
-            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            // Cập nhật lại cách lấy userId cho đồng bộ
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) 
+                ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(ApiResponse<bool>.Fail("Token không hợp lệ"));
+                return Unauthorized(ApiResponse<bool>.Fail("Token không hợp lệ!"));
 
             var result = await _authService.LogoutAsync(userId);
-
-            if (!result.Success)
-                return BadRequest(result);
-
-            return Ok(result);
+            return Ok(ApiResponse<bool>.Ok(result, "Đăng xuất thành công!"));
         }
 
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
             var result = await _authService.ForgotPasswordAsync(request);
-
-            if (!result.Success)
-                return BadRequest(result);
-
-            return Ok(result);
+            return Ok(ApiResponse<bool>.Ok(result, "Mã OTP đã được gửi đến Email của bạn!"));
         }
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
             var result = await _authService.ResetPasswordAsync(request);
-
-            if (!result.Success)
-                return BadRequest(result);
-
-            return Ok(result);
+            return Ok(ApiResponse<bool>.Ok(result, "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới."));
         }
 
         [HttpPost("register-partner")]
         public async Task<IActionResult> RegisterPartner([FromBody] RegisterRequest request)
         {
             var result = await _authService.RegisterPartnerAsync(request);
-
-            if (!result.Success)
-                return BadRequest(result);
-
-            return Ok(result);
+            return Ok(ApiResponse<bool>.Ok(result, "Đăng ký tài khoản Đối tác thành công! Cửa hàng của bạn đang ở trạng thái Chờ phê duyệt. Bạn có thể đăng nhập vào App Đối tác ngay bây giờ."));
         }
-
     }
 }

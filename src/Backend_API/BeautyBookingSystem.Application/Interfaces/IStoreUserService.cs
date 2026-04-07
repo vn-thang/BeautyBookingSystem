@@ -11,6 +11,5 @@ namespace BeautyBookingSystem.Application.Interfaces
     {
         Task<UserProfileResponse> GetProfileAsync(string userId);
         Task<bool> UpdateProfileAsync(string userId, UpdateProfileRequest request);
-        Task<string> UpdateAvatarAsync(int userId, Stream fileStream, string fileName);
     }
 }

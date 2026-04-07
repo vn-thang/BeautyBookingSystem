@@ -427,7 +427,7 @@ namespace BeautyBookingSystem.Application.Services
             decimal discount;
 
             if (voucher.DiscountType == DiscountType.Percent ||
-                voucher.DiscountType == DiscountType.Percentage)
+                voucher.DiscountType == DiscountType.Percent)
             {
                 discount = baseAmount * voucher.DiscountValue / 100m;
             }

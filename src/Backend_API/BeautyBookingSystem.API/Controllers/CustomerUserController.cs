@@ -1,6 +1,7 @@
-﻿using BeautyBookingSystem.Application.DTOs.StoreUser;
+using BeautyBookingSystem.Application.DTOs.User;
 using BeautyBookingSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -8,14 +9,14 @@ using System;
 
 namespace BeautyBookingSystem.API.Controllers
 {
-    [Route("api/store/[controller]")] // Đổi route thêm chữ store cho rõ ràng
+    [Route("api/customer/[controller]")] // Đổi route thêm chữ customer
     [ApiController]
-    [Authorize(Roles ="StoreOwner")]
-    public class StoreUserController : ControllerBase
+    [Authorize(Roles = "Customer")]
+    public class CustomerUserController : ControllerBase
     {
-        private readonly IStoreUserService _userService;
+        private readonly ICustomerUserService _userService;
 
-        public StoreUserController(IStoreUserService userService)
+        public CustomerUserController(ICustomerUserService userService)
         {
             _userService = userService;
         }
@@ -49,6 +50,31 @@ namespace BeautyBookingSystem.API.Controllers
 
                 await _userService.UpdateProfileAsync(userId, request);
                 return Ok(new { message = "Cập nhật thông tin thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("upload-avatar")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadAvatar([FromForm] IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                    return BadRequest(new { error = "File is empty" });
+
+                var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userIdValue) || !int.TryParse(userIdValue, out var userId))
+                    return Unauthorized();
+
+                using var stream = file.OpenReadStream();
+
+                var url = await _userService.UpdateAvatarAsync(userId, stream, file.FileName);
+
+                return Ok(new { avatarUrl = url });
             }
             catch (Exception ex)
             {

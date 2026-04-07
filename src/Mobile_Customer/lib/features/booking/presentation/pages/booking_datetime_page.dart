@@ -269,7 +269,7 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.surface.withOpacity(0.96),
+                    color: AppColors.surface.withValues(alpha: 0.96),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: AppColors.border),
                     boxShadow: AppDecorations.softShadow,
@@ -328,7 +328,7 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
                       vertical: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.surface.withOpacity(0.96),
+                      color: AppColors.surface.withValues(alpha: 0.96),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: AppColors.border),
                       boxShadow: AppDecorations.softShadow,
@@ -451,7 +451,7 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
         child: Container(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.98),
+            color: AppColors.surface.withValues(alpha: 0.98),
             border: Border(
               top: BorderSide(color: AppColors.border),
             ),
@@ -488,7 +488,7 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.surface,
                     disabledBackgroundColor:
-                        AppColors.primary.withOpacity(0.35),
+                        AppColors.primary.withValues(alpha: 0.35),
                     disabledForegroundColor: AppColors.surface,
                     padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
@@ -578,7 +578,7 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
         width: double.infinity,
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: AppColors.surface.withOpacity(0.96),
+          color: AppColors.surface.withValues(alpha: 0.96),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.border),
           boxShadow: AppDecorations.softShadow,
@@ -600,7 +600,7 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: AppColors.surface.withOpacity(0.96),
+          color: AppColors.surface.withValues(alpha: 0.96),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border),
           boxShadow: AppDecorations.topBarShadow,

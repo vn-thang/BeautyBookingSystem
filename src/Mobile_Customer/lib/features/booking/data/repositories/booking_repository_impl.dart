@@ -2,7 +2,6 @@ import '../../domain/entities/booking_request.dart';
 import '../../domain/repositories/booking_repository.dart';
 import '../datasources/booking_remote_datasource.dart';
 import '../models/booking_request_model.dart';
-import '../models/available_staff_model.dart';
 import '../../domain/entities/available_staff.dart';
 
 class BookingRepositoryImpl implements BookingRepository {

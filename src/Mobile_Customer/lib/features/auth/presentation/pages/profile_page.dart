@@ -75,7 +75,7 @@ class ProfilePage extends StatelessWidget {
                         vertical: 24,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.surface.withOpacity(0.88),
+                        color: AppColors.surface.withValues(alpha: 0.88),
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(color: AppColors.borderSoft),
                         boxShadow: AppDecorations.cardShadow,
@@ -220,7 +220,7 @@ class ProfilePage extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.88),
+        color: AppColors.surface.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(color: AppColors.borderSoft),
         boxShadow: AppDecorations.cardShadow,
@@ -326,7 +326,7 @@ class ProfilePage extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.92),
+            color: AppColors.surface.withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.borderSoft),
             boxShadow: AppDecorations.softShadow,
@@ -778,7 +778,7 @@ class ProfilePage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.92),
+        color: AppColors.surface.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.borderSoft),
         boxShadow: AppDecorations.softShadow,
@@ -1348,7 +1348,7 @@ class ProfilePage extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.92),
+            color: AppColors.surface.withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.borderSoft),
             boxShadow: AppDecorations.softShadow,
@@ -1444,7 +1444,7 @@ class ProfilePage extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.92),
+            color: AppColors.surface.withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.borderSoft),
             boxShadow: AppDecorations.softShadow,
