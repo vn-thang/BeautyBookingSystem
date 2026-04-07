@@ -68,6 +68,9 @@ builder.Services.AddScoped<ISearchService, SearchService>();
 builder.Services.AddScoped<ICustomerFavoriteService, CustomerFavoriteService>();
 builder.Services.AddScoped<ISearchHistoryService, SearchHistoryService>();
 builder.Services.AddScoped<ReviewService>(); // Review cho khách
+builder.Services.AddScoped<ICustomerUserService, CustomerUserService>();
+builder.Services.AddScoped<IPublicStoreService, PublicStoreService>();
+
 
 // Chat – AI & Auto Reply Pipeline
 builder.Services.AddScoped<IChatKnowledgeProvider, ChatKnowledgeProvider>();
