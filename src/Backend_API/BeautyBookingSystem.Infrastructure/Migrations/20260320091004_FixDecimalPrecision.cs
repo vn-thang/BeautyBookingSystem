@@ -10,11 +10,6 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "ServiceId",
-                table: "Vouchers",
-                type: "int",
-                nullable: true);
 
             migrationBuilder.AddColumn<decimal>(
                 name: "DepositAmount",
@@ -23,18 +18,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                 nullable: false,
                 defaultValue: 0m);
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Vouchers_ServiceId",
-                table: "Vouchers",
-                column: "ServiceId");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_Vouchers_Services_ServiceId",
-                table: "Vouchers",
-                column: "ServiceId",
-                principalTable: "Services",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
@@ -48,9 +32,6 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                 name: "IX_Vouchers_ServiceId",
                 table: "Vouchers");
 
-            migrationBuilder.DropColumn(
-                name: "ServiceId",
-                table: "Vouchers");
 
             migrationBuilder.DropColumn(
                 name: "DepositAmount",

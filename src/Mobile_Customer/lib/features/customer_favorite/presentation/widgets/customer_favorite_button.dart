@@ -73,9 +73,7 @@ class _CustomerFavoriteButtonState extends State<CustomerFavoriteButton> {
     }
 
     if (!state.isFavorite) {
-      context
-          .read<CustomerFavoriteBloc>()
-          .add(CustomerFavoriteFavoritePressed());
+      _bloc.add(CustomerFavoriteFavoritePressed());
       return;
     }
 
@@ -120,9 +118,7 @@ class _CustomerFavoriteButtonState extends State<CustomerFavoriteButton> {
     );
 
     if (confirm == true) {
-      context
-          .read<CustomerFavoriteBloc>()
-          .add(CustomerFavoriteUnfavoritePressed());
+      _bloc.add(CustomerFavoriteUnfavoritePressed());
     }
   }
 

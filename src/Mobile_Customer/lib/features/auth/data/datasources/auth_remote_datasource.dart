@@ -32,40 +32,27 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<LoginResponseModel> login(String emailOrPhone, String password) async {
-    try {
-      final response = await dio.post('/auth/login', data: {
-        "emailOrPhone": emailOrPhone,
-        "password": password,
-      });
+    final response = await dio.post('auth/login', data: {
+      "emailOrPhone": emailOrPhone,
+      "password": password,
+    });
 
-      if (response.data["success"] == false) {
-        throw Exception(response.data["message"]);
-      }
-
-      final data = response.data["data"];
-      return LoginResponseModel.fromJson(data);
-    } on DioException catch (e) {
-      String message = "Đăng nhập thất bại";
-
-      if (e.response != null) {
-        final data = e.response?.data;
-
-        if (data is Map && data["message"] != null) {
-          message = data["message"];
-        } else if (data is String) {
-          message = data;
-        }
-      }
-
-      throw Exception(message);
+    if (response.data["success"] == false) {
+      throw Exception(response.data["message"]);
     }
+
+    return LoginResponseModel.fromJson(response.data["data"]);
   }
 
   @override
   Future<UserModel> getProfile() async {
     try {
-      final response = await dio.get('/user/me');
-      return UserModel.fromJson(response.data);
+      final response = await dio.get('customer/customeruser/me');
+      final data =
+          response.data is Map<String, dynamic> && response.data['data'] != null
+              ? response.data['data']
+              : response.data;
+      return UserModel.fromJson(Map<String, dynamic>.from(data as Map));
     } on DioException catch (e) {
       final message =
           e.response?.data?["message"] ?? "Không lấy được thông tin người dùng";
@@ -80,35 +67,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String email,
     String password,
   ) async {
-    try {
-      final response = await dio.post('/auth/register', data: {
-        "fullName": fullName,
-        "phone": phone,
-        "email": email,
-        "password": password,
-      });
+    final response = await dio.post('auth/register', data: {
+      "fullName": fullName,
+      "phone": phone,
+      "email": email,
+      "password": password,
+    });
 
-      if (response.data["success"] == false) {
-        throw Exception(response.data["message"]);
-      }
-
-      final data = response.data["data"];
-      return LoginResponseModel.fromJson(data);
-    } on DioException catch (e) {
-      String message = "Đăng ký thất bại";
-
-      if (e.response != null) {
-        final data = e.response?.data;
-
-        if (data is Map && data["message"] != null) {
-          message = data["message"];
-        } else if (data is String) {
-          message = data;
-        }
-      }
-
-      throw Exception(message);
+    if (response.data["success"] == false) {
+      throw Exception(response.data["message"]);
     }
+
+    return LoginResponseModel.fromJson(response.data["data"]);
   }
 
   @override
@@ -116,57 +86,31 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String accessToken,
     String refreshToken,
   ) async {
-    try {
-      final response = await dio.post('/auth/refresh-token', data: {
-        "accessToken": accessToken,
-        "refreshToken": refreshToken,
-      });
+    final response = await dio.post('auth/refresh-token', data: {
+      "accessToken": accessToken,
+      "refreshToken": refreshToken,
+    });
 
-      if (response.data["success"] == false) {
-        throw Exception(response.data["message"]);
-      }
-
-      final data = response.data["data"];
-      return LoginResponseModel.fromJson(data);
-    } on DioException catch (e) {
-      String message = "Refresh token thất bại";
-
-      if (e.response != null) {
-        final data = e.response?.data;
-
-        if (data is Map && data["message"] != null) {
-          message = data["message"];
-        } else if (data is String) {
-          message = data;
-        }
-      }
-
-      throw Exception(message);
+    if (response.data["success"] == false) {
+      throw Exception(response.data["message"]);
     }
+
+    return LoginResponseModel.fromJson(response.data["data"]);
   }
 
   @override
   Future<void> changePassword(String oldPassword, String newPassword) async {
-    try {
-      await dio.put('/auth/change-password', data: {
-        "oldPassword": oldPassword,
-        "newPassword": newPassword,
-      });
-    } on DioException catch (e) {
-      final message = e.response?.data?["message"] ?? "Đổi mật khẩu thất bại";
-      throw Exception(message);
-    }
+    await dio.put('auth/change-password', data: {
+      "oldPassword": oldPassword,
+      "newPassword": newPassword,
+    });
   }
 
   @override
   Future<void> forgotPassword(String email) async {
-    try {
-      await dio.post('/auth/forgot-password', data: {
-        "email": email,
-      });
-    } on DioException catch (e) {
-      throw Exception(e.response?.data["message"] ?? "Lỗi gửi OTP");
-    }
+    await dio.post('auth/forgot-password', data: {
+      "email": email,
+    });
   }
 
   @override
@@ -175,48 +119,34 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String otp,
     String newPassword,
   ) async {
-    try {
-      await dio.post('/auth/reset-password', data: {
-        "email": email,
-        "otp": otp,
-        "newPassword": newPassword,
-      });
-    } on DioException catch (e) {
-      throw Exception(e.response?.data["message"] ?? "Reset thất bại");
-    }
+    await dio.post('auth/reset-password', data: {
+      "email": email,
+      "otp": otp,
+      "newPassword": newPassword,
+    });
   }
 
   @override
   Future<void> updateProfile(UpdateProfileRequestModel request) async {
-    try {
-      await dio.put(
-        '/user/profile',
-        data: request.toJson(),
-      );
-    } on DioException catch (e) {
-      throw Exception(e.response?.data?["message"] ?? "Cập nhật thất bại");
-    }
+    await dio.put(
+      'customer/customeruser/profile',
+      data: request.toJson(),
+    );
   }
 
   @override
   Future<void> uploadAvatar(XFile file) async {
-    try {
-      final formData = FormData.fromMap({
-        "file": await MultipartFile.fromFile(
-          file.path,
-          filename: file.name,
-        ),
-      });
+    final formData = FormData.fromMap({
+      "file": await MultipartFile.fromFile(
+        file.path,
+        filename: file.name,
+      ),
+    });
 
-      await dio.post(
-        '/user/upload-avatar',
-        data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-        ),
-      );
-    } on DioException catch (e) {
-      throw Exception(e.response?.data?["message"] ?? "Upload avatar thất bại");
-    }
+    await dio.post(
+      'customer/customeruser/upload-avatar',
+      data: formData,
+      options: Options(contentType: 'multipart/form-data'),
+    );
   }
 }

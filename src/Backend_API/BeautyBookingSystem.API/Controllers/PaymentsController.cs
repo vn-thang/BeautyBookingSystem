@@ -177,6 +177,7 @@ namespace BeautyBookingSystem.API.Controllers
         }
 
         [HttpGet("vnpay/ipn")]
+        [AllowAnonymous]
         public async Task<IActionResult> VnpayIpn()
         {
             var result = await ProcessVnpayCallbackAsync(Request.Query);
@@ -189,6 +190,7 @@ namespace BeautyBookingSystem.API.Controllers
         }
 
         [HttpGet("vnpay/return")]
+        [AllowAnonymous]
         public async Task<IActionResult> VnPayReturn()
         {
             var result = await ProcessVnpayCallbackAsync(Request.Query);

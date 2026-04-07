@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import 'package:mobile_customer/features/customer_favorite/presentation/bloc/customer_favorite_bloc.dart';
 import 'package:mobile_customer/features/customer_favorite/presentation/widgets/customer_favorite_button.dart';
+import '../../../customer_favorite/presentation/bloc/customer_favorite_bloc.dart';
 import '../../../store_reviews/presentation/bloc/store_reviews_bloc.dart';
 import '../../data/models/store_model.dart';
 import '../bloc/store_detail_bloc.dart';
@@ -320,140 +320,223 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppDecorations.pageGradient,
-        ),
-        child: SafeArea(
-          child: BlocBuilder<StoreDetailBloc, StoreDetailState>(
-            builder: (context, state) {
-              if (state is StoreDetailLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                  ),
-                );
-              }
-
-              if (state is StoreDetailError) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      state.message,
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.error,
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.of(context).pop(_favoriteChanged);
+        return false;
+      },
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: AppDecorations.pageGradient,
+          ),
+          child: SafeArea(
+            child: BlocBuilder<StoreDetailBloc, StoreDetailState>(
+              builder: (context, state) {
+                if (state is StoreDetailLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
                     ),
-                  ),
-                );
-              }
+                  );
+                }
 
-              if (state is StoreDetailLoaded) {
-                final s = state.store;
-                final banners = s.banners;
-
-                return CustomScrollView(
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        child: Row(
-                          children: [
-                            _backButton(context),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                s.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.pageTitle,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            CustomerFavoriteButton(
-                              type: CustomerFavoriteType.store,
-                              targetId: widget.storeId,
-                              initialIsFavorite: s.isFavorite ?? false,
-                              removeConfirmTitle: 'Bỏ yêu thích',
-                              removeConfirmMessage:
-                                  'Bạn có chắc muốn bỏ store này khỏi danh sách yêu thích không?',
-                              onChanged: () {
-                                _favoriteChanged = true;
-                                if (mounted) {
-                                  context
-                                      .read<StoreDetailBloc>()
-                                      .add(FetchStoreDetail(widget.storeId));
-                                }
-                              },
-                            ),
-                          ],
-                        ),
+                if (state is StoreDetailError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        state.message,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.error,
                       ),
                     ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-                        child: Container(
-                          height: 210,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(28),
-                            boxShadow: AppDecorations.cardShadow,
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(28),
-                            child: Stack(
-                              children: [
-                                if (banners.isNotEmpty)
-                                  PageView.builder(
-                                    controller: _bannerController,
-                                    itemCount: banners.length,
-                                    onPageChanged: (index) {
-                                      setState(() {
-                                        _bannerIndex = index;
-                                      });
-                                    },
-                                    itemBuilder: (context, index) {
-                                      final banner = banners[index];
-                                      final imageUrl = banner.imageUrl.trim();
+                  );
+                }
 
-                                      return Stack(
-                                        fit: StackFit.expand,
-                                        children: [
-                                          Image.network(
-                                            imageUrl,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (_, __, ___) =>
-                                                _bannerPlaceholder(),
-                                          ),
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                begin: Alignment.topCenter,
-                                                end: Alignment.bottomCenter,
-                                                colors: [
-                                                  Colors.transparent,
-                                                  AppColors.overlay
-                                                      .withOpacity(0.30),
-                                                ],
+                if (state is StoreDetailLoaded) {
+                  final s = state.store;
+                  final banners = s.banners;
+
+                  return CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                          child: Row(
+                            children: [
+                              _backButton(context),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  s.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.pageTitle,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              CustomerFavoriteButton(
+                                type: CustomerFavoriteType.store,
+                                targetId: widget.storeId,
+                                initialIsFavorite: s.isFavorite ?? false,
+                                removeConfirmTitle: 'Bỏ yêu thích',
+                                removeConfirmMessage:
+                                    'Bạn có chắc muốn bỏ store này khỏi danh sách yêu thích không?',
+                                onChanged: () {
+                                  _favoriteChanged = true;
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                          child: Container(
+                            height: 210,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(28),
+                              boxShadow: AppDecorations.cardShadow,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(28),
+                              child: Stack(
+                                children: [
+                                  if (banners.isNotEmpty)
+                                    PageView.builder(
+                                      controller: _bannerController,
+                                      itemCount: banners.length,
+                                      onPageChanged: (index) {
+                                        setState(() {
+                                          _bannerIndex = index;
+                                        });
+                                      },
+                                      itemBuilder: (context, index) {
+                                        final banner = banners[index];
+                                        final imageUrl = banner.imageUrl.trim();
+
+                                        return Stack(
+                                          fit: StackFit.expand,
+                                          children: [
+                                            Image.network(
+                                              imageUrl,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) =>
+                                                  _bannerPlaceholder(),
+                                            ),
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topCenter,
+                                                  end: Alignment.bottomCenter,
+                                                  colors: [
+                                                    Colors.transparent,
+                                                    AppColors.overlay
+                                                        .withOpacity(0.30),
+                                                  ],
+                                                ),
                                               ),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    )
+                                  else
+                                    _bannerPlaceholder(),
+                                  Positioned(
+                                    left: 16,
+                                    right: 16,
+                                    bottom: 14,
+                                    child: Row(
+                                      children: [
+                                        if (banners.isNotEmpty)
+                                          _bannerIndicator(banners.length),
+                                        const Spacer(),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface.withOpacity(0.92),
+                              borderRadius: BorderRadius.circular(28),
+                              border: Border.all(color: AppColors.borderSoft),
+                              boxShadow: AppDecorations.cardShadow,
+                            ),
+                            child: Row(
+                              children: [
+                                _storeAvatar(
+                                  logoUrl: s.logoUrl,
+                                  name: s.name,
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        s.name,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTextStyles.sectionTitle,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Icon(
+                                            Icons.storefront_rounded,
+                                            size: 16,
+                                            color: AppColors.primary,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              s.address,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: AppTextStyles.bodyMuted,
                                             ),
                                           ),
                                         ],
-                                      );
-                                    },
-                                  )
-                                else
-                                  _bannerPlaceholder(),
-                                Positioned(
-                                  left: 16,
-                                  right: 16,
-                                  bottom: 14,
-                                  child: Row(
-                                    children: [
-                                      if (banners.isNotEmpty)
-                                        _bannerIndicator(banners.length),
-                                      const Spacer(),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.star_rounded,
+                                            size: 18,
+                                            color: AppColors.warning,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            s.averageRating != null
+                                                ? '${s.averageRating!.toStringAsFixed(1)} / 5'
+                                                : 'Chưa có đánh giá',
+                                            style: AppTextStyles.body.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            '• ${s.totalReviews ?? 0} lượt',
+                                            style: AppTextStyles.caption,
+                                          ),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -462,443 +545,376 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                           ),
                         ),
                       ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface.withOpacity(0.92),
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(color: AppColors.borderSoft),
-                            boxShadow: AppDecorations.cardShadow,
-                          ),
-                          child: Row(
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _storeAvatar(
-                                logoUrl: s.logoUrl,
-                                name: s.name,
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      s.name,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTextStyles.sectionTitle,
+                              _sectionHeader('Dịch vụ'),
+                              const SizedBox(height: 10),
+                              if (s.services.isEmpty)
+                                _sectionCard(
+                                  child: Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 18,
+                                      ),
+                                      child: Text(
+                                        'Hiện chưa có dịch vụ nào',
+                                        style: AppTextStyles.bodyMuted,
+                                      ),
                                     ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Icon(
-                                          Icons.storefront_rounded,
-                                          size: 16,
-                                          color: AppColors.primary,
+                                  ),
+                                )
+                              else
+                                Column(
+                                  children: s.services.map((sv) {
+                                    return Container(
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.surface,
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: AppColors.borderSoft,
                                         ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: Text(
-                                            s.address,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: AppTextStyles.bodyMuted,
-                                          ),
+                                        boxShadow: AppDecorations.softShadow,
+                                      ),
+                                      child: ListTile(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 10,
                                         ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.star_rounded,
-                                          size: 18,
-                                          color: AppColors.warning,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          s.averageRating != null
-                                              ? '${s.averageRating!.toStringAsFixed(1)} / 5'
-                                              : 'Chưa có đánh giá',
+                                        title: Text(
+                                          sv.name,
                                           style: AppTextStyles.body.copyWith(
                                             fontWeight: FontWeight.w700,
                                           ),
                                         ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          '• ${s.totalReviews ?? 0} lượt',
-                                          style: AppTextStyles.caption,
+                                        subtitle: Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 6),
+                                          child: Text(
+                                            '${_formatMoney(sv.price)} • ${sv.durationMinutes} phút',
+                                            style: AppTextStyles.caption,
+                                          ),
                                         ),
-                                      ],
+                                        trailing: const Icon(
+                                          Icons.chevron_right_rounded,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        onTap: () async {
+                                          final changed =
+                                              await context.push<bool>(
+                                            '/service-detail/${sv.id}',
+                                          );
+                                          if (changed == true) {
+                                            _favoriteChanged = true;
+                                          }
+                                        },
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              const SizedBox(height: 18),
+                              _sectionHeader('Thông tin liên hệ'),
+                              const SizedBox(height: 10),
+                              _sectionCard(
+                                child: Column(
+                                  children: [
+                                    _detailRow(
+                                      icon: Icons.phone_in_talk_rounded,
+                                      title: 'Điện thoại',
+                                      value: (s.phone != null &&
+                                              s.phone!.trim().isNotEmpty)
+                                          ? s.phone!.trim()
+                                          : 'Chưa cập nhật',
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _detailRow(
+                                      icon: Icons.location_on_rounded,
+                                      title: 'Địa chỉ',
+                                      value: s.address.trim().isNotEmpty
+                                          ? s.address.trim()
+                                          : 'Chưa cập nhật',
+                                    ),
+                                    const SizedBox(height: 14),
+                                    InkWell(
+                                      borderRadius: BorderRadius.circular(14),
+                                      onTap: () {
+                                        _showOperatingHoursSheet(
+                                          context,
+                                          s.operatingHours,
+                                        );
+                                      },
+                                      child: _detailRow(
+                                        icon: Icons.schedule_rounded,
+                                        title: 'Giờ hoạt động',
+                                        value:
+                                            '${_openStatusText(s.operatingHours)} • ${_todayRange(s.operatingHours)}',
+                                        valueColor:
+                                            _isStoreOpenNow(s.operatingHours)
+                                                ? AppColors.success
+                                                : AppColors.danger,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _sectionHeader('Dịch vụ'),
-                            const SizedBox(height: 10),
-                            if (s.services.isEmpty)
-                              _sectionCard(
-                                child: Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 18,
-                                    ),
-                                    child: Text(
-                                      'Hiện chưa có dịch vụ nào',
-                                      style: AppTextStyles.bodyMuted,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            else
-                              Column(
-                                children: s.services.map((sv) {
-                                  return Container(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.surface,
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: AppColors.borderSoft,
-                                      ),
-                                      boxShadow: AppDecorations.softShadow,
-                                    ),
-                                    child: ListTile(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 10,
-                                      ),
-                                      title: Text(
-                                        sv.name,
-                                        style: AppTextStyles.body.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      subtitle: Padding(
-                                        padding: const EdgeInsets.only(top: 6),
-                                        child: Text(
-                                          '${_formatMoney(sv.price)} • ${sv.durationMinutes} phút',
-                                          style: AppTextStyles.caption,
-                                        ),
-                                      ),
-                                      trailing: const Icon(
-                                        Icons.chevron_right_rounded,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                      onTap: () {
-                                        context
-                                            .push('/service-detail/${sv.id}');
-                                      },
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            const SizedBox(height: 18),
-                            _sectionHeader('Thông tin liên hệ'),
-                            const SizedBox(height: 10),
-                            _sectionCard(
-                              child: Column(
-                                children: [
-                                  _detailRow(
-                                    icon: Icons.phone_in_talk_rounded,
-                                    title: 'Điện thoại',
-                                    value: (s.phone != null &&
-                                            s.phone!.trim().isNotEmpty)
-                                        ? s.phone!.trim()
-                                        : 'Chưa cập nhật',
-                                  ),
-                                  const SizedBox(height: 14),
-                                  _detailRow(
-                                    icon: Icons.location_on_rounded,
-                                    title: 'Địa chỉ',
-                                    value: s.address.trim().isNotEmpty
-                                        ? s.address.trim()
-                                        : 'Chưa cập nhật',
-                                  ),
-                                  const SizedBox(height: 14),
-                                  InkWell(
-                                    borderRadius: BorderRadius.circular(14),
-                                    onTap: () {
-                                      _showOperatingHoursSheet(
-                                        context,
-                                        s.operatingHours,
-                                      );
-                                    },
-                                    child: _detailRow(
-                                      icon: Icons.schedule_rounded,
-                                      title: 'Giờ hoạt động',
-                                      value:
-                                          '${_openStatusText(s.operatingHours)} • ${_todayRange(s.operatingHours)}',
-                                      valueColor:
-                                          _isStoreOpenNow(s.operatingHours)
-                                              ? AppColors.success
-                                              : AppColors.danger,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            BlocBuilder<StoreReviewsBloc, StoreReviewsState>(
-                              builder: (context, reviewState) {
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _sectionHeader('Đánh giá từ booking'),
-                                    const SizedBox(height: 10),
-                                    _sectionCard(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              const Expanded(
-                                                child: Text(
-                                                  'Đánh giá gần nhất',
-                                                  style: TextStyle(
-                                                    fontSize: 14.5,
-                                                    fontWeight: FontWeight.w800,
-                                                    color:
-                                                        AppColors.textPrimary,
-                                                  ),
-                                                ),
-                                              ),
-                                              TextButton(
-                                                onPressed: () {
-                                                  context.push(
-                                                    '/store-reviews/${widget.storeId}?name=${Uri.encodeComponent(s.name)}',
-                                                  );
-                                                },
-                                                child: const Text('Xem tất cả'),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          if (reviewState
-                                              is StoreReviewsLoading)
-                                            const Padding(
-                                              padding: EdgeInsets.symmetric(
-                                                vertical: 12,
-                                              ),
-                                              child: Center(
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  color: AppColors.primary,
-                                                ),
-                                              ),
-                                            )
-                                          else if (reviewState
-                                              is StoreReviewsError)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                vertical: 12,
-                                              ),
-                                              child: Text(
-                                                reviewState.message,
-                                                style: TextStyle(
-                                                  color: AppColors.danger,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
-                                            )
-                                          else if (reviewState
-                                                  is StoreReviewsLoaded &&
-                                              reviewState.items.isNotEmpty)
-                                            Column(
-                                              children: reviewState.items
-                                                  .take(5)
-                                                  .map((r) {
-                                                return Container(
-                                                  margin: const EdgeInsets.only(
-                                                    bottom: 10,
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.all(12),
-                                                  decoration: BoxDecoration(
-                                                    color:
-                                                        AppColors.surfaceSoft,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                      16,
-                                                    ),
-                                                    border: Border.all(
+                              const SizedBox(height: 18),
+                              BlocBuilder<StoreReviewsBloc, StoreReviewsState>(
+                                builder: (context, reviewState) {
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _sectionHeader('Đánh giá từ booking'),
+                                      const SizedBox(height: 10),
+                                      _sectionCard(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                const Expanded(
+                                                  child: Text(
+                                                    'Đánh giá gần nhất',
+                                                    style: TextStyle(
+                                                      fontSize: 14.5,
+                                                      fontWeight:
+                                                          FontWeight.w800,
                                                       color:
-                                                          AppColors.borderSoft,
+                                                          AppColors.textPrimary,
                                                     ),
                                                   ),
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Row(
-                                                        children: [
-                                                          CircleAvatar(
-                                                            radius: 16,
-                                                            backgroundColor:
-                                                                AppColors
-                                                                    .placeholderStart
-                                                                    .withOpacity(
-                                                              0.35,
-                                                            ),
-                                                            backgroundImage: (r
-                                                                            .customer
-                                                                            .avatarUrl !=
-                                                                        null &&
-                                                                    r.customer
-                                                                        .avatarUrl!
-                                                                        .trim()
-                                                                        .isNotEmpty)
-                                                                ? NetworkImage(
-                                                                    r.customer
-                                                                        .avatarUrl!
-                                                                        .trim(),
-                                                                  )
-                                                                : null,
-                                                            child: (r.customer
-                                                                            .avatarUrl ==
-                                                                        null ||
-                                                                    r.customer
-                                                                        .avatarUrl!
-                                                                        .trim()
-                                                                        .isEmpty)
-                                                                ? Text(
-                                                                    _initials(
+                                                ),
+                                                TextButton(
+                                                  onPressed: () {
+                                                    context.push(
+                                                      '/store-reviews/${widget.storeId}?name=${Uri.encodeComponent(s.name)}',
+                                                    );
+                                                  },
+                                                  child:
+                                                      const Text('Xem tất cả'),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            if (reviewState
+                                                is StoreReviewsLoading)
+                                              const Padding(
+                                                padding: EdgeInsets.symmetric(
+                                                  vertical: 12,
+                                                ),
+                                                child: Center(
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    color: AppColors.primary,
+                                                  ),
+                                                ),
+                                              )
+                                            else if (reviewState
+                                                is StoreReviewsError)
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  vertical: 12,
+                                                ),
+                                                child: Text(
+                                                  reviewState.message,
+                                                  style: TextStyle(
+                                                    color: AppColors.danger,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              )
+                                            else if (reviewState
+                                                    is StoreReviewsLoaded &&
+                                                reviewState.items.isNotEmpty)
+                                              Column(
+                                                children: reviewState.items
+                                                    .take(5)
+                                                    .map((r) {
+                                                  return Container(
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                      bottom: 10,
+                                                    ),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            12),
+                                                    decoration: BoxDecoration(
+                                                      color:
+                                                          AppColors.surfaceSoft,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                        16,
+                                                      ),
+                                                      border: Border.all(
+                                                        color: AppColors
+                                                            .borderSoft,
+                                                      ),
+                                                    ),
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Row(
+                                                          children: [
+                                                            CircleAvatar(
+                                                              radius: 16,
+                                                              backgroundColor:
+                                                                  AppColors
+                                                                      .placeholderStart
+                                                                      .withOpacity(
+                                                                0.35,
+                                                              ),
+                                                              backgroundImage: (r
+                                                                              .customer
+                                                                              .avatarUrl !=
+                                                                          null &&
                                                                       r.customer
-                                                                          .fullName,
-                                                                    ),
-                                                                    style:
-                                                                        const TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w800,
-                                                                      color: AppColors
-                                                                          .primary,
-                                                                    ),
-                                                                  )
-                                                                : null,
-                                                          ),
-                                                          const SizedBox(
-                                                            width: 10,
-                                                          ),
-                                                          Expanded(
-                                                            child: Text(
-                                                              r.customer
-                                                                  .fullName,
+                                                                          .avatarUrl!
+                                                                          .trim()
+                                                                          .isNotEmpty)
+                                                                  ? NetworkImage(
+                                                                      r.customer
+                                                                          .avatarUrl!
+                                                                          .trim(),
+                                                                    )
+                                                                  : null,
+                                                              child: (r.customer
+                                                                              .avatarUrl ==
+                                                                          null ||
+                                                                      r.customer
+                                                                          .avatarUrl!
+                                                                          .trim()
+                                                                          .isEmpty)
+                                                                  ? Text(
+                                                                      _initials(
+                                                                        r.customer
+                                                                            .fullName,
+                                                                      ),
+                                                                      style:
+                                                                          const TextStyle(
+                                                                        fontWeight:
+                                                                            FontWeight.w800,
+                                                                        color: AppColors
+                                                                            .primary,
+                                                                      ),
+                                                                    )
+                                                                  : null,
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 10,
+                                                            ),
+                                                            Expanded(
+                                                              child: Text(
+                                                                r.customer
+                                                                    .fullName,
+                                                                style:
+                                                                    const TextStyle(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w700,
+                                                                  color: AppColors
+                                                                      .textPrimary,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            const Icon(
+                                                              Icons
+                                                                  .star_rounded,
+                                                              size: 18,
+                                                              color: AppColors
+                                                                  .warning,
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 4,
+                                                            ),
+                                                            Text(
+                                                              r.rating
+                                                                  .toString(),
                                                               style:
                                                                   const TextStyle(
                                                                 fontWeight:
                                                                     FontWeight
                                                                         .w700,
-                                                                color: AppColors
-                                                                    .textPrimary,
                                                               ),
                                                             ),
-                                                          ),
-                                                          const Icon(
-                                                            Icons.star_rounded,
-                                                            size: 18,
-                                                            color: AppColors
-                                                                .warning,
-                                                          ),
+                                                          ],
+                                                        ),
+                                                        if ((r.comment ?? '')
+                                                            .trim()
+                                                            .isNotEmpty) ...[
                                                           const SizedBox(
-                                                            width: 4,
+                                                            height: 8,
                                                           ),
                                                           Text(
-                                                            r.rating.toString(),
-                                                            style:
-                                                                const TextStyle(
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .w700,
-                                                            ),
+                                                            r.comment!.trim(),
+                                                            maxLines: 3,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: AppTextStyles
+                                                                .bodyMuted,
                                                           ),
                                                         ],
-                                                      ),
-                                                      if ((r.comment ?? '')
-                                                          .trim()
-                                                          .isNotEmpty) ...[
-                                                        const SizedBox(
-                                                          height: 8,
-                                                        ),
-                                                        Text(
-                                                          r.comment!.trim(),
-                                                          maxLines: 3,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                          style: AppTextStyles
-                                                              .bodyMuted,
-                                                        ),
                                                       ],
-                                                    ],
-                                                  ),
-                                                );
-                                              }).toList(),
-                                            )
-                                          else
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                vertical: 12,
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                              )
+                                            else
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  vertical: 12,
+                                                ),
+                                                child: Text(
+                                                  'Chưa có đánh giá nào',
+                                                  style:
+                                                      AppTextStyles.bodyMuted,
+                                                ),
                                               ),
-                                              child: Text(
-                                                'Chưa có đánh giá nào',
-                                                style: AppTextStyles.bodyMuted,
-                                              ),
-                                            ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 18),
-                            _sectionHeader('Giới thiệu'),
-                            const SizedBox(height: 10),
-                            if ((s.description ?? '').trim().isNotEmpty)
-                              _sectionCard(
-                                child: Text(
-                                  s.description!.trim(),
-                                  style: AppTextStyles.body,
-                                ),
-                              )
-                            else
-                              _sectionCard(
-                                child: Text(
-                                  'Chưa có giới thiệu cho shop này',
-                                  style: AppTextStyles.bodyMuted,
-                                ),
+                                    ],
+                                  );
+                                },
                               ),
-                          ],
+                              const SizedBox(height: 18),
+                              _sectionHeader('Giới thiệu'),
+                              const SizedBox(height: 10),
+                              if ((s.description ?? '').trim().isNotEmpty)
+                                _sectionCard(
+                                  child: Text(
+                                    s.description!.trim(),
+                                    style: AppTextStyles.body,
+                                  ),
+                                )
+                              else
+                                _sectionCard(
+                                  child: Text(
+                                    'Chưa có giới thiệu cho shop này',
+                                    style: AppTextStyles.bodyMuted,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              }
+                    ],
+                  );
+                }
 
-              return const SizedBox.shrink();
-            },
+                return const SizedBox.shrink();
+              },
+            ),
           ),
         ),
       ),
@@ -1064,13 +1080,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
   Widget _backButton(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () {
-        if (context.canPop()) {
-          context.pop(_favoriteChanged);
-        } else {
-          context.go('/');
-        }
-      },
+      onTap: () => Navigator.of(context).pop(_favoriteChanged),
       child: Container(
         width: 40,
         height: 40,
