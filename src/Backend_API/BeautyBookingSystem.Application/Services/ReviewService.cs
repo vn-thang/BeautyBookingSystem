@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace BeautyBookingSystem.Application.Services
 {
-    public class ReviewService
+    public class ReviewService : IReviewService
     {
         private readonly IUnitOfWork _unitOfWork;
 
