@@ -216,6 +216,7 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using System.IO;
 using Hangfire;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -320,10 +321,8 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!)),
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidateIssuer = false,
+        ValidateAudience = false,
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };

@@ -8,7 +8,7 @@ namespace BeautyBookingSystem.API.Controllers
 {
     [Route("api/store/my-store")] // Route rạch ròi cho chủ tiệm
     [ApiController]
-    [Authorize(Roles = "StoreOwner")]
+    [Authorize]
     public class MyStoreController : ControllerBase
     {
         private readonly IMyStoreService _storeService;
@@ -17,7 +17,7 @@ namespace BeautyBookingSystem.API.Controllers
         {
             _storeService = storeService;
         }
-
+       
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
@@ -47,5 +47,6 @@ namespace BeautyBookingSystem.API.Controllers
             if (error != null) return BadRequest(new { message = error });
             return Ok(new { message = "Cập nhật thành công!" });
         }
+
     }
 }
