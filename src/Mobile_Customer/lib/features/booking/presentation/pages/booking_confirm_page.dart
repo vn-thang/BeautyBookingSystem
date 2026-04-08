@@ -252,7 +252,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
     try {
       final dio = di.sl<Dio>();
 
-      final resp = await dio.get('stores/${widget.storeId}');
+      final resp = await dio.get('customer/stores/${widget.storeId}');
       storeData = resp.data;
 
       final servicesFromStore =
@@ -661,8 +661,8 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                                       vertical: 12,
                                     ),
                                     decoration: BoxDecoration(
-                                      color:
-                                          AppColors.surface.withValues(alpha: 0.96),
+                                      color: AppColors.surface
+                                          .withValues(alpha: 0.96),
                                       borderRadius: BorderRadius.circular(18),
                                       border:
                                           Border.all(color: AppColors.border),

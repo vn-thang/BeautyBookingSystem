@@ -17,12 +17,6 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                 nullable: false,
                 defaultValue: 0);
 
-            migrationBuilder.AddColumn<decimal>(
-                name: "DepositAmount",
-                table: "Bookings",
-                type: "decimal(18,2)",
-                nullable: false,
-                defaultValue: 0m);
         }
 
         /// <inheritdoc />

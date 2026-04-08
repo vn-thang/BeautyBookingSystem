@@ -17,11 +17,13 @@ class HomeRepositoryImpl implements HomeRepository {
     final categories = remoteHome.categories.map((e) => e.toEntity()).toList();
     final serviceGroups =
         remoteHome.serviceGroups.map((e) => e.toEntity()).toList();
-    final stores = remoteHome.stores.map((e) => e.toEntity()).toList();
+
     final nearbyStores =
         remoteHome.nearbyStores.map((e) => e.toEntity()).toList();
+
     final topRatedStores =
         remoteHome.topRatedStores.map((e) => e.toEntity()).toList();
+
     final vouchers = remoteHome.vouchers.map((e) => e.toEntity()).toList();
     final systemContents = remoteHome.systemContents;
 
@@ -61,7 +63,6 @@ class HomeRepositoryImpl implements HomeRepository {
     return HomeData(
       categories: categories,
       serviceGroups: serviceGroups,
-      stores: stores,
       nearbyStores: nearbyStores,
       topRatedStores: topRatedStores,
       vouchers: vouchers,

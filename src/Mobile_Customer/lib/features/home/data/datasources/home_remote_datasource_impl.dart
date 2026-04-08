@@ -1,4 +1,3 @@
-// lib/features/home/data/datasources/home_remote_datasource_impl.dart
 import 'package:dio/dio.dart';
 
 import '../models/global_category_model.dart';
@@ -14,24 +13,22 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
   HomeRemoteDataSourceImpl(this.dio);
 
-  /// HOME API (MAIN API)
   @override
   Future<HomeResponseModel> getHome(double lat, double lon) async {
     final response = await dio.get(
-      "home",
+      'home',
       queryParameters: {
-        "lat": lat,
-        "lon": lon,
+        'lat': lat,
+        'lon': lon,
       },
     );
-    final model = HomeResponseModel.fromJson(response.data);
-    return model;
+
+    return HomeResponseModel.fromJson(response.data);
   }
 
-  /// GLOBAL CATEGORIES
   @override
   Future<List<GlobalCategoryModel>> getCategories() async {
-    final response = await dio.get("globalcategories");
+    final response = await dio.get('globalcategories');
 
     if (response.data is List) {
       return (response.data as List)
@@ -50,10 +47,9 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     throw Exception("Unexpected categories response");
   }
 
-  /// SERVICE GROUPS
   @override
   Future<List<ServiceGroupModel>> getServiceGroups() async {
-    final response = await dio.get("servicegroups");
+    final response = await dio.get('servicegroups');
 
     if (response.data is List) {
       return (response.data as List)
@@ -70,10 +66,9 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     throw Exception("Unexpected service groups response");
   }
 
-  /// STORES
   @override
   Future<List<StoreModel>> getStores() async {
-    final response = await dio.get("stores");
+    final response = await dio.get('customer/stores');
 
     if (response.data is List) {
       return (response.data as List)
@@ -90,10 +85,9 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     throw Exception("Unexpected stores response");
   }
 
-  /// VOUCHERS
   @override
   Future<List<VoucherModel>> getVouchers() async {
-    final response = await dio.get("voucher/active");
+    final response = await dio.get('voucher/active');
 
     if (response.data is List) {
       return (response.data as List)
@@ -111,9 +105,16 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   }
 
   @override
-  Future<List<VoucherModel>> getVouchersService(int serviceId,
-      {int? storeId}) async {
-    final response = await dio.get('/voucher/service/home');
+  Future<List<VoucherModel>> getVouchersService(
+    int serviceId, {
+    int? storeId,
+  }) async {
+    final response = await dio.get(
+      'voucher/service/$serviceId/active',
+      queryParameters: {
+        if (storeId != null) 'storeId': storeId,
+      },
+    );
 
     if (response.data is List) {
       return (response.data as List)
@@ -130,12 +131,34 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     throw Exception("Unexpected vouchers by service response");
   }
 
-  /// STORES BY CATEGORY
+  Future<List<VoucherModel>> getHomeServiceVouchers({int? storeId}) async {
+    final response = await dio.get(
+      'voucher/service/home',
+      queryParameters: {
+        if (storeId != null) 'storeId': storeId,
+      },
+    );
+
+    if (response.data is List) {
+      return (response.data as List)
+          .map((e) => VoucherModel.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
+
+    if (response.data is Map && response.data["data"] is List) {
+      return (response.data["data"] as List)
+          .map((e) => VoucherModel.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    }
+
+    throw Exception("Unexpected home vouchers response");
+  }
+
   @override
   Future<List<StoreModel>> getStoresByCategory(int categoryId) async {
     final response = await dio.get(
-      "stores/by-category",
-      queryParameters: {"CategoryId": categoryId},
+      'customer/stores/by-category',
+      queryParameters: {'CategoryId': categoryId},
     );
 
     if (response.data is Map<String, dynamic>) {
@@ -153,12 +176,11 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     throw Exception("Unexpected response for stores by category");
   }
 
-  /// STORES BY GROUP
   @override
   Future<List<StoreModel>> getStoresByGroup(int groupId) async {
     final response = await dio.get(
-      "stores/by-group",
-      queryParameters: {"GroupId": groupId},
+      'customer/stores/by-group',
+      queryParameters: {'GroupId': groupId},
     );
 
     if (response.data is Map<String, dynamic>) {
@@ -176,10 +198,9 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     throw Exception("Unexpected response for stores by group");
   }
 
-  /// STORE DETAIL
   @override
   Future<StoreModel> getStoreById(int id) async {
-    final response = await dio.get("stores/$id");
+    final response = await dio.get('customer/stores/$id');
 
     if (response.data is Map<String, dynamic>) {
       return StoreModel.fromJson(Map<String, dynamic>.from(response.data));
@@ -188,13 +209,12 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
     throw Exception("Unexpected response for store detail");
   }
 
-  /// NEARBY STORES
   Future<List<StoreModel>> getNearbyStores(double lat, double lng) async {
     final response = await dio.get(
-      "stores/nearby",
+      'stores/nearby',
       queryParameters: {
-        "lat": lat,
-        "lng": lng,
+        'lat': lat,
+        'lng': lng,
       },
     );
 
@@ -209,7 +229,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
   }) async {
     try {
       final response = await dio.get(
-        '/customer-favorites/home',
+        'customer-favorites/home',
         queryParameters: {
           if (latitude != null) 'latitude': latitude,
           if (longitude != null) 'longitude': longitude,

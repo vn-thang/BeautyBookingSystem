@@ -27,7 +27,7 @@ class StoreReviewsRemoteDataSourceImpl implements StoreReviewsRemoteDataSource {
     required int pageSize,
   }) async {
     final res = await dio.get(
-      '/reviews/store/$storeId',
+      'reviews/store/$storeId',
       queryParameters: {
         'page': page,
         'pageSize': pageSize,
@@ -43,7 +43,7 @@ class StoreReviewsRemoteDataSourceImpl implements StoreReviewsRemoteDataSource {
     required int take,
   }) async {
     final res = await dio.get(
-      '/reviews/store/$storeId/top',
+      'reviews/store/$storeId/top',
       queryParameters: {'take': take},
     );
 

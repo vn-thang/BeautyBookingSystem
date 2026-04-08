@@ -48,140 +48,310 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppDecorations.pageGradient,
-        ),
-        child: SafeArea(
-          child: BlocBuilder<ServiceDetailBloc, ServiceDetailState>(
-            builder: (context, state) {
-              if (state is ServiceDetailLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                  ),
-                );
-              }
-
-              if (state is ServiceDetailError) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      state.message,
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.error,
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.of(context).pop(_favoriteChanged);
+        return false;
+      },
+      child: Scaffold(
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: AppDecorations.pageGradient,
+          ),
+          child: SafeArea(
+            child: BlocBuilder<ServiceDetailBloc, ServiceDetailState>(
+              builder: (context, state) {
+                if (state is ServiceDetailLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
                     ),
-                  ),
-                );
-              }
+                  );
+                }
 
-              if (state is ServiceDetailLoaded) {
-                final s = state.service;
-                final hasImage =
-                    s.imageUrl != null && s.imageUrl!.trim().isNotEmpty;
-
-                return CustomScrollView(
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        child: Row(
-                          children: [
-                            _backButton(context),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Text(
-                                'Chi tiết dịch vụ',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.pageTitle,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            CustomerFavoriteButton(
-                              type: CustomerFavoriteType.service,
-                              targetId: s.id,
-                              initialIsFavorite: s.isFavorite ?? false,
-                              removeConfirmTitle: 'Bỏ yêu thích',
-                              removeConfirmMessage:
-                                  'Bạn có chắc muốn bỏ dịch vụ này khỏi danh sách yêu thích không?',
-                              onChanged: () {
-                                _favoriteChanged = true;
-                                if (mounted) {
-                                  context.read<ServiceDetailBloc>().add(
-                                        FetchServiceDetail(widget.serviceId),
-                                      );
-                                }
-                              },
-                            ),
-                          ],
-                        ),
+                if (state is ServiceDetailError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        state.message,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.error,
                       ),
                     ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-                        child: Container(
-                          height: 220,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(26),
-                            boxShadow: AppDecorations.cardShadow,
+                  );
+                }
+
+                if (state is ServiceDetailLoaded) {
+                  final s = state.service;
+                  final hasImage =
+                      s.imageUrl != null && s.imageUrl!.trim().isNotEmpty;
+
+                  return CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                          child: Row(
+                            children: [
+                              _backButton(context),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  'Chi tiết dịch vụ',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.pageTitle,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              CustomerFavoriteButton(
+                                type: CustomerFavoriteType.service,
+                                targetId: s.id,
+                                initialIsFavorite: s.isFavorite ?? false,
+                                removeConfirmTitle: 'Bỏ yêu thích',
+                                removeConfirmMessage:
+                                    'Bạn có chắc muốn bỏ dịch vụ này khỏi danh sách yêu thích không?',
+                                onChanged: () {
+                                  _favoriteChanged = true;
+                                },
+                              ),
+                            ],
                           ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(26),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                if (hasImage)
-                                  Image.network(
-                                    s.imageUrl!.trim(),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
-                                        _imagePlaceholder(),
-                                  )
-                                else
-                                  _imagePlaceholder(),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Colors.transparent,
-                                        AppColors.overlay.withValues(alpha: 0.72),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                          child: Container(
+                            height: 220,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(26),
+                              boxShadow: AppDecorations.cardShadow,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(26),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  if (hasImage)
+                                    Image.network(
+                                      s.imageUrl!.trim(),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          _imagePlaceholder(),
+                                    )
+                                  else
+                                    _imagePlaceholder(),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          AppColors.overlay.withValues(
+                                            alpha: 0.72,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    left: 16,
+                                    right: 16,
+                                    bottom: 16,
+                                    child: Row(
+                                      children: [
+                                        if (s.isFeatured)
+                                          _pill(
+                                            text: 'Nổi bật',
+                                            bgColor: AppColors.overlay
+                                                .withValues(alpha: 0.58),
+                                          ),
+                                        if (s.isFeatured && s.isActive)
+                                          const SizedBox(width: 8),
+                                        if (s.isActive)
+                                          _pill(
+                                            text: 'Đang hoạt động',
+                                            bgColor: AppColors.overlay
+                                                .withValues(alpha: 0.58),
+                                          )
+                                        else
+                                          _pill(
+                                            text: 'Tạm ngưng',
+                                            bgColor: AppColors.danger
+                                                .withValues(alpha: 0.72),
+                                          ),
                                       ],
                                     ),
                                   ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface.withValues(alpha: 0.94),
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(color: AppColors.borderSoft),
+                              boxShadow: AppDecorations.cardShadow,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  s.name,
+                                  style: AppTextStyles.sectionTitle,
                                 ),
-                                Positioned(
-                                  left: 16,
-                                  right: 16,
-                                  bottom: 16,
-                                  child: Row(
-                                    children: [
-                                      if (s.isFeatured)
-                                        _pill(
-                                          text: 'Nổi bật',
-                                          bgColor: AppColors.overlay
-                                              .withValues(alpha: 0.58),
+                                const SizedBox(height: 8),
+                                Text(
+                                  s.storeName.trim().isNotEmpty
+                                      ? s.storeName
+                                      : 'Chưa có tên cửa hàng',
+                                  style: AppTextStyles.bodyMuted.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Wrap(
+                                  spacing: 10,
+                                  runSpacing: 10,
+                                  children: [
+                                    _chip(
+                                      label: _formatPrice(s.price),
+                                    ),
+                                    _chip(
+                                      label: '${s.durationMinutes} phút',
+                                    ),
+                                    _chip(
+                                      label:
+                                          s.isActive ? 'Đang mở' : 'Đang đóng',
+                                      valueColor: s.isActive
+                                          ? AppColors.success
+                                          : AppColors.danger,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      foregroundColor: AppColors.surface,
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Thêm vào lịch hẹn',
+                                      style: TextStyle(
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      final storeId =
+                                          (s.storeId is int) ? s.storeId : null;
+
+                                      if (storeId == null) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Không xác định cửa hàng cho dịch vụ này',
+                                            ),
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      final isLoggedIn = context
+                                          .read<AuthBloc>()
+                                          .state is AuthAuthenticated;
+
+                                      if (!isLoggedIn) {
+                                        showDialog(
+                                          context: context,
+                                          builder: (dialogContext) =>
+                                              AlertDialog(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(22),
+                                            ),
+                                            backgroundColor:
+                                                AppColors.surfaceSoft,
+                                            title: const Text(
+                                              'Bạn cần đăng nhập',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                color: AppColors.textPrimary,
+                                              ),
+                                            ),
+                                            content: const Text(
+                                              'Vui lòng đăng nhập để đặt lịch.',
+                                              style: TextStyle(
+                                                color: AppColors.textSecondary,
+                                              ),
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                    dialogContext),
+                                                child: const Text('Hủy'),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  Navigator.pop(dialogContext);
+                                                  context.push(
+                                                    '/login',
+                                                    extra: GoRouterState.of(
+                                                            context)
+                                                        .uri
+                                                        .toString(),
+                                                  );
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      AppColors.primary,
+                                                  foregroundColor:
+                                                      AppColors.surface,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            14),
+                                                  ),
+                                                ),
+                                                child: const Text('Đăng nhập'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => BookingServicesPage(
+                                            storeId: storeId,
+                                            selectedServiceId: s.id,
+                                          ),
                                         ),
-                                      if (s.isFeatured && s.isActive)
-                                        const SizedBox(width: 8),
-                                      if (s.isActive)
-                                        _pill(
-                                          text: 'Đang hoạt động',
-                                          bgColor: AppColors.overlay
-                                              .withValues(alpha: 0.58),
-                                        )
-                                      else
-                                        _pill(
-                                          text: 'Tạm ngưng',
-                                          bgColor: AppColors.danger
-                                              .withValues(alpha: 0.72),
-                                        ),
-                                    ],
+                                      );
+                                    },
                                   ),
                                 ),
                               ],
@@ -189,244 +359,80 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                           ),
                         ),
                       ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface.withValues(alpha: 0.94),
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(color: AppColors.borderSoft),
-                            boxShadow: AppDecorations.cardShadow,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                s.name,
-                                style: AppTextStyles.sectionTitle,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                s.storeName.trim().isNotEmpty
-                                    ? s.storeName
-                                    : 'Chưa có tên cửa hàng',
-                                style: AppTextStyles.bodyMuted.copyWith(
-                                  fontWeight: FontWeight.w600,
+                      if ((s.description ?? '').trim().isNotEmpty) ...[
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _sectionHeader('Mô tả dịch vụ'),
+                                const SizedBox(height: 10),
+                                _sectionCard(
+                                  child: Text(
+                                    s.description!.trim(),
+                                    style: AppTextStyles.body,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 16),
-                              Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
-                                children: [
-                                  _chip(
-                                    label: _formatPrice(s.price),
-                                  ),
-                                  _chip(
-                                    label: '${s.durationMinutes} phút',
-                                  ),
-                                  _chip(
-                                    label: s.isActive ? 'Đang mở' : 'Đang đóng',
-                                    valueColor: s.isActive
-                                        ? AppColors.success
-                                        : AppColors.danger,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
-                                    foregroundColor: AppColors.surface,
-                                    elevation: 0,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 14,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Thêm vào lịch hẹn',
-                                    style: TextStyle(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    final storeId =
-                                        (s.storeId is int) ? s.storeId : null;
-
-                                    if (storeId == null) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Không xác định cửa hàng cho dịch vụ này',
-                                          ),
-                                        ),
-                                      );
-                                      return;
-                                    }
-
-                                    final isLoggedIn = context
-                                        .read<AuthBloc>()
-                                        .state is AuthAuthenticated;
-
-                                    if (!isLoggedIn) {
-                                      showDialog(
-                                        context: context,
-                                        builder: (dialogContext) => AlertDialog(
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(22),
-                                          ),
-                                          backgroundColor:
-                                              AppColors.surfaceSoft,
-                                          title: const Text(
-                                            'Bạn cần đăng nhập',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w700,
-                                              color: AppColors.textPrimary,
-                                            ),
-                                          ),
-                                          content: const Text(
-                                            'Vui lòng đăng nhập để đặt lịch.',
-                                            style: TextStyle(
-                                              color: AppColors.textSecondary,
-                                            ),
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(dialogContext),
-                                              child: const Text('Hủy'),
-                                            ),
-                                            ElevatedButton(
-                                              onPressed: () {
-                                                Navigator.pop(dialogContext);
-                                                context.push(
-                                                  '/login',
-                                                  extra:
-                                                      GoRouterState.of(context)
-                                                          .uri
-                                                          .toString(),
-                                                );
-                                              },
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    AppColors.primary,
-                                                foregroundColor:
-                                                    AppColors.surface,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(14),
-                                                ),
-                                              ),
-                                              child: const Text('Đăng nhập'),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                      return;
-                                    }
-
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => BookingServicesPage(
-                                          storeId: storeId,
-                                          selectedServiceId: s.id,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    if ((s.description ?? '').trim().isNotEmpty) ...[
+                      ],
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _sectionHeader('Mô tả dịch vụ'),
+                              _sectionHeader('Thông tin'),
                               const SizedBox(height: 10),
                               _sectionCard(
-                                child: Text(
-                                  s.description!.trim(),
-                                  style: AppTextStyles.body,
+                                child: Column(
+                                  children: [
+                                    _detailRow(
+                                      title: 'Cửa hàng',
+                                      value: s.storeName.trim().isNotEmpty
+                                          ? s.storeName
+                                          : 'Chưa có tên cửa hàng',
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _detailRow(
+                                      title: 'Giá',
+                                      value: _formatPrice(s.price),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _detailRow(
+                                      title: 'Thời lượng',
+                                      value: '${s.durationMinutes} phút',
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _detailRow(
+                                      title: 'Trạng thái',
+                                      value: s.isActive
+                                          ? 'Dịch vụ đang mở'
+                                          : 'Dịch vụ tạm ngưng',
+                                      valueColor: s.isActive
+                                          ? AppColors.success
+                                          : AppColors.danger,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ],
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _sectionHeader('Thông tin'),
-                            const SizedBox(height: 10),
-                            _sectionCard(
-                              child: Column(
-                                children: [
-                                  _detailRow(
-                                    title: 'Cửa hàng',
-                                    value: s.storeName.trim().isNotEmpty
-                                        ? s.storeName
-                                        : 'Chưa có tên cửa hàng',
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _detailRow(
-                                    title: 'Giá',
-                                    value: _formatPrice(s.price),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _detailRow(
-                                    title: 'Thời lượng',
-                                    value: '${s.durationMinutes} phút',
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _detailRow(
-                                    title: 'Trạng thái',
-                                    value: s.isActive
-                                        ? 'Dịch vụ đang mở'
-                                        : 'Dịch vụ tạm ngưng',
-                                    valueColor: s.isActive
-                                        ? AppColors.success
-                                        : AppColors.danger,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                      const SliverToBoxAdapter(
+                        child: SizedBox(height: 24),
                       ),
-                    ),
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: 24),
-                    ),
-                  ],
-                );
-              }
+                    ],
+                  );
+                }
 
-              return const SizedBox.shrink();
-            },
+                return const SizedBox.shrink();
+              },
+            ),
           ),
         ),
       ),
@@ -542,13 +548,7 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
   Widget _backButton(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () {
-        if (context.canPop()) {
-          context.pop(_favoriteChanged);
-        } else {
-          context.go('/');
-        }
-      },
+      onTap: () => Navigator.of(context).pop(_favoriteChanged),
       child: Container(
         width: 40,
         height: 40,

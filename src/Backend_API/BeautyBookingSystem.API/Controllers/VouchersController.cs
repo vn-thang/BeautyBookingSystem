@@ -52,6 +52,7 @@ namespace BeautyBookingSystem.API.Controllers
             return Ok(result);
         }
         [HttpGet("service/home")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetServiceVouchersForHome([FromQuery] int? storeId = null)
         {
             var result = await _voucherService.GetActiveServiceVouchersAsync(storeId);

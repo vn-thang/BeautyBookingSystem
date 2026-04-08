@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../customer_favorite/presentation/bloc/customer_favorite_bloc.dart';
+import '../../../customer_favorite/presentation/widgets/customer_favorite_button.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -536,21 +538,6 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _backButton(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(10),
-      onTap: () => context.pop(),
-      child: const Padding(
-        padding: EdgeInsets.all(4),
-        child: Icon(
-          Icons.arrow_back_ios_new_rounded,
-          size: 16,
-          color: AppColors.primary,
-        ),
-      ),
-    );
-  }
-
   Widget _iconCircle({
     required IconData icon,
     required VoidCallback onTap,
@@ -682,7 +669,7 @@ class ProfilePage extends StatelessWidget {
   }
 
   void _showFavoritesBottomSheet(BuildContext context) {
-    final future = _loadFavoriteData();
+    Future<_FavoriteBundle> future = _loadFavoriteData();
 
     showModalBottomSheet(
       context: context,
@@ -693,78 +680,90 @@ class ProfilePage extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (sheetContext) {
-        return DefaultTabController(
-          length: 2,
-          child: FutureBuilder<_FavoriteBundle>(
-            future: future,
-            builder: (context, snapshot) {
-              final loading =
-                  snapshot.connectionState == ConnectionState.waiting;
-              final error = snapshot.hasError;
-              final data = snapshot.data;
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            void reloadFavorites() {
+              setSheetState(() {
+                future = _loadFavoriteData();
+              });
+            }
 
-              return Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: SizedBox(
-                  height: MediaQuery.of(sheetContext).size.height * 0.78,
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.borderSoft,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            "Yêu thích",
-                            style: AppTextStyles.sectionTitle,
+            return DefaultTabController(
+              length: 2,
+              child: FutureBuilder<_FavoriteBundle>(
+                future: future,
+                builder: (context, snapshot) {
+                  final loading =
+                      snapshot.connectionState == ConnectionState.waiting;
+                  final error = snapshot.hasError;
+                  final data = snapshot.data;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: SizedBox(
+                      height: MediaQuery.of(sheetContext).size.height * 0.78,
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 42,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: AppColors.borderSoft,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      const TabBar(
-                        labelColor: AppColors.primary,
-                        unselectedLabelColor: AppColors.textSecondary,
-                        indicatorColor: AppColors.primary,
-                        tabs: [
-                          Tab(text: "Cửa hàng"),
-                          Tab(text: "Dịch vụ"),
+                          const SizedBox(height: 14),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                "Yêu thích",
+                                style: AppTextStyles.sectionTitle,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const TabBar(
+                            labelColor: AppColors.primary,
+                            unselectedLabelColor: AppColors.textSecondary,
+                            indicatorColor: AppColors.primary,
+                            tabs: [
+                              Tab(text: "Cửa hàng"),
+                              Tab(text: "Dịch vụ"),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Expanded(
+                            child: error
+                                ? _favoriteErrorState()
+                                : loading
+                                    ? const Center(
+                                        child: CircularProgressIndicator(
+                                          color: AppColors.primary,
+                                        ),
+                                      )
+                                    : TabBarView(
+                                        children: [
+                                          _favoriteStoreList(
+                                            data?.stores ?? const [],
+                                            reloadFavorites,
+                                          ),
+                                          _favoriteServiceList(
+                                            data?.services ?? const [],
+                                            reloadFavorites,
+                                          ),
+                                        ],
+                                      ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: error
-                            ? _favoriteErrorState()
-                            : loading
-                                ? const Center(
-                                    child: CircularProgressIndicator(
-                                      color: AppColors.primary,
-                                    ),
-                                  )
-                                : TabBarView(
-                                    children: [
-                                      _favoriteStoreList(
-                                        data?.stores ?? const [],
-                                      ),
-                                      _favoriteServiceList(
-                                        data?.services ?? const [],
-                                      ),
-                                    ],
-                                  ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
         );
       },
     );
@@ -1325,7 +1324,10 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _favoriteStoreList(List<FavoriteStore> stores) {
+  Widget _favoriteStoreList(
+    List<FavoriteStore> stores,
+    VoidCallback onChanged,
+  ) {
     if (stores.isEmpty) {
       return ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
@@ -1345,83 +1347,104 @@ class ProfilePage extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = stores[index];
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.92),
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.borderSoft),
-            boxShadow: AppDecorations.softShadow,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 62,
-                height: 62,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceSoft,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: item.coverImageUrl != null &&
-                          item.coverImageUrl!.isNotEmpty
-                      ? Image.network(
-                          item.coverImageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.storefront_rounded,
-                            color: AppColors.primary,
+            onTap: () => _openStoreDetail(context, item.id),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surface.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.borderSoft),
+                boxShadow: AppDecorations.softShadow,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 62,
+                    height: 62,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSoft,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: item.coverImageUrl != null &&
+                              item.coverImageUrl!.isNotEmpty
+                          ? Image.network(
+                              item.coverImageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.storefront_rounded,
+                                color: AppColors.primary,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.storefront_rounded,
+                              color: AppColors.primary,
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          style: AppTextStyles.body.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
                           ),
-                        )
-                      : const Icon(
-                          Icons.storefront_rounded,
-                          color: AppColors.primary,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.name,
-                      style: AppTextStyles.body.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.address ?? "Chưa có địa chỉ",
-                      style: AppTextStyles.caption,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (item.averageRating != null) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        "⭐ ${item.averageRating!.toStringAsFixed(1)}"
-                        "${item.totalReviews != null ? " (${item.totalReviews})" : ""}",
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.primary,
+                        const SizedBox(height: 4),
+                        Text(
+                          item.address ?? "Chưa có địa chỉ",
+                          style: AppTextStyles.caption,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ],
-                ),
+                        if (item.averageRating != null) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            "⭐ ${item.averageRating!.toStringAsFixed(1)}"
+                            "${item.totalReviews != null ? " (${item.totalReviews})" : ""}",
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  CustomerFavoriteButton(
+                    type: CustomerFavoriteType.store,
+                    targetId: item.id,
+                    initialIsFavorite: true,
+                    removeConfirmTitle: "Bỏ yêu thích cửa hàng?",
+                    removeConfirmMessage:
+                        "Bạn có muốn bỏ '${item.name}' khỏi danh sách yêu thích không?",
+                    onChanged: onChanged,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _favoriteServiceList(List<FavoriteService> services) {
+  Widget _favoriteServiceList(
+    List<FavoriteService> services,
+    VoidCallback onChanged,
+  ) {
     if (services.isEmpty) {
       return ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
@@ -1441,74 +1464,92 @@ class ProfilePage extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = services[index];
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.92),
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.borderSoft),
-            boxShadow: AppDecorations.softShadow,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 62,
-                height: 62,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceSoft,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          item.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.spa_rounded,
+            onTap: () => _openServiceDetail(context, item.id),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surface.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.borderSoft),
+                boxShadow: AppDecorations.softShadow,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 62,
+                    height: 62,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSoft,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                          ? Image.network(
+                              item.imageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.spa_rounded,
+                                color: AppColors.primary,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.spa_rounded,
+                              color: AppColors.primary,
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          style: AppTextStyles.body.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.storeName ?? "Chưa rõ cửa hàng",
+                          style: AppTextStyles.caption,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.price != null
+                              ? "${item.price!.toStringAsFixed(0)} đ"
+                              : "Liên hệ",
+                          style: AppTextStyles.caption.copyWith(
                             color: AppColors.primary,
                           ),
-                        )
-                      : const Icon(
-                          Icons.spa_rounded,
-                          color: AppColors.primary,
                         ),
-                ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  CustomerFavoriteButton(
+                    type: CustomerFavoriteType.service,
+                    targetId: item.id,
+                    initialIsFavorite: true,
+                    removeConfirmTitle: "Bỏ yêu thích dịch vụ?",
+                    removeConfirmMessage:
+                        "Bạn có muốn bỏ '${item.name}' khỏi danh sách yêu thích không?",
+                    onChanged: onChanged,
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.name,
-                      style: AppTextStyles.body.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.storeName ?? "Chưa rõ cửa hàng",
-                      style: AppTextStyles.caption,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.price != null
-                          ? "${item.price!.toStringAsFixed(0)} đ"
-                          : "Liên hệ",
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
@@ -1524,4 +1565,12 @@ class _FavoriteBundle {
     required this.stores,
     required this.services,
   });
+}
+
+void _openStoreDetail(BuildContext context, int storeId) {
+  context.push('customer/store/$storeId');
+}
+
+void _openServiceDetail(BuildContext context, int serviceId) {
+  context.push('/service/$serviceId');
 }
