@@ -57,7 +57,7 @@ class _BookingServicesPageState extends State<BookingServicesPage> {
     try {
       final dio = di.sl<Dio>();
 
-      final resp = await dio.get('Stores/${widget.storeId}');
+      final resp = await dio.get('customer/stores/${widget.storeId}');
       final data = resp.data;
 
       final svc = (data['services'] as List<dynamic>? ?? [])
@@ -331,7 +331,8 @@ class _BookingServicesPageState extends State<BookingServicesPage> {
                           boxShadow: selected
                               ? [
                                   BoxShadow(
-                                    color: AppColors.primary.withValues(alpha: 0.08),
+                                    color: AppColors.primary
+                                        .withValues(alpha: 0.08),
                                     blurRadius: 12,
                                     offset: const Offset(0, 6),
                                   ),

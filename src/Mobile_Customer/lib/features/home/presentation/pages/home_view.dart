@@ -42,6 +42,12 @@ class _HomeViewState extends State<HomeView> {
     return url;
   }
 
+  Future<void> _refreshHomeIfNeeded(bool? changed) async {
+    if (changed == true && mounted) {
+      context.read<HomeBloc>().add(LoadHomeEvent(forceRefresh: true));
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -302,8 +308,8 @@ class _HomeViewState extends State<HomeView> {
 
   Widget _buildBanners(BuildContext context, List systemContents) {
     final banners = systemContents
-        .where((e) => e.type == 0 && e.isActive == true)
-        .map<String>((e) => e.content.toString())
+        .where((e) => e.type == 5 && e.isActive == true)
+        .map<String>((e) => (e.content ?? '').toString())
         .where((url) => url.isNotEmpty)
         .toList();
 
@@ -678,9 +684,7 @@ class _HomeViewState extends State<HomeView> {
         return GestureDetector(
           onTap: () async {
             final changed = await context.push<bool>('/service-detail/${s.id}');
-            if (changed == true && context.mounted) {
-              context.read<HomeBloc>().add(LoadHomeEvent(forceRefresh: true));
-            }
+            await _refreshHomeIfNeeded(changed);
           },
           child: Container(
             width: 180,
@@ -797,9 +801,7 @@ class _HomeViewState extends State<HomeView> {
     return GestureDetector(
       onTap: () async {
         final changed = await context.push<bool>('/store/${s.id}');
-        if (changed == true && context.mounted) {
-          context.read<HomeBloc>().add(LoadHomeEvent(forceRefresh: true));
-        }
+        await _refreshHomeIfNeeded(changed);
       },
       child: Container(
         width: 180,
@@ -812,7 +814,7 @@ class _HomeViewState extends State<HomeView> {
               color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 12,
               spreadRadius: 1,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -993,7 +995,8 @@ class _HomeViewState extends State<HomeView> {
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.danger.withValues(alpha: 0.92),
+                                    color: AppColors.danger
+                                        .withValues(alpha: 0.92),
                                     borderRadius: BorderRadius.circular(999),
                                     boxShadow: AppDecorations.softShadow,
                                   ),
