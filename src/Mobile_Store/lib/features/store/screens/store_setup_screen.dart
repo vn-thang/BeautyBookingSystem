@@ -3,7 +3,6 @@ import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
 import 'package:mobile_store/shared/widgets/inputs/app_header.dart';
 import '../services/store_service.dart';
 import '../widgets/store_profile_form.dart';
-import '../../home/screens/main_screen.dart';
 import '../models/store_profile.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -20,24 +19,35 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
   Future<void> _handleSetupSubmit(Map<String, dynamic> formData) async {
     setState(() => _isLoading = true);
 
-    formData['averageRating'] = 0.0;
-    formData['totalReviews'] = 0;
+    try {
+      formData['averageRating'] = 0.0;
+      formData['totalReviews'] = 0;
 
-    final profilePayload = StoreProfile.fromJson(formData);
-    final isSuccess = await StoreService.updateProfile(profilePayload);
+      final profilePayload = StoreProfile.fromJson(formData);
+      final isSuccess = await StoreService.updateProfile(profilePayload);
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+      if (!mounted) return;
+      
+      setState(() => _isLoading = false);
 
-    if (isSuccess) {
-      SnackBarHelper.showSuccess(context, "Thông tin đã được gửi!");
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-        (route) => false,
-      );
-    } else {
-      SnackBarHelper.showError(context, "Có lỗi xảy ra, vui lòng thử lại!");
+      if (isSuccess) {
+        FocusManager.instance.primaryFocus?.unfocus();
+        SnackBarHelper.showSuccess(context, "Thông tin đã được lưu thành công!");
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (!mounted) return;
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/home', 
+            (route) => false,
+          );
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() => _isLoading = false);
+      String errorMessage = e.toString().replaceAll("Exception: ", "");
+      SnackBarHelper.showError(context, errorMessage);
     }
   }
 

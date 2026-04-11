@@ -1,5 +1,7 @@
 class StoreDashboardModel {
   final String status;
+  final bool isWalletLowBalance; 
+  final double minimumBalance;
   final StoreHeaderModel header;
   final StatisticsModel statistics;
   final CommissionModel commission;
@@ -7,6 +9,8 @@ class StoreDashboardModel {
 
   StoreDashboardModel({
     required this.status,
+    required this.isWalletLowBalance,
+    required this.minimumBalance,
     required this.header,
     required this.statistics,
     required this.commission,
@@ -16,6 +20,8 @@ class StoreDashboardModel {
   factory StoreDashboardModel.fromJson(Map<String, dynamic> json) {
     return StoreDashboardModel(
       status: json['status'] ?? 'pending',
+      isWalletLowBalance: json['isWalletLowBalance'] ?? false, 
+      minimumBalance: (json['minimumBalance'] ?? 0).toDouble(),
       header: StoreHeaderModel.fromJson(json['header'] ?? {}),
       statistics: StatisticsModel.fromJson(json['statistics'] ?? {}),
       commission: CommissionModel.fromJson(json['commission'] ?? {}),

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BeautyBookingSystem.Application.DTOs.StoreUser
 {
-    public class UpdateProfileRequest
+    public class StoreUpdateProfileRequest
     {
         public string FullName { get; set; } = string.Empty;
 

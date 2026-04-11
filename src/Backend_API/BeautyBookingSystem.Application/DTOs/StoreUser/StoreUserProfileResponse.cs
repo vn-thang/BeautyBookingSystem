@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BeautyBookingSystem.Application.DTOs.StoreUser
 {
-    public class UserProfileResponse
+    public class StoreUserProfileResponse
     {
         public int Id { get; set; }
         public string FullName { get; set; } = string.Empty;

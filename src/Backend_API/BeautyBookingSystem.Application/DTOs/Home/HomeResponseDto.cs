@@ -1,6 +1,5 @@
 ﻿using BeautyBookingSystem.Application.DTOs.GlobalCategory;
 using BeautyBookingSystem.Application.DTOs.ServiceGroup;
-using BeautyBookingSystem.Application.DTOs.StoreCustomer;
 using BeautyBookingSystem.Application.DTOs.SystemContent;
 using BeautyBookingSystem.Application.DTOs.Voucher;
 using System;
@@ -8,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BeautyBookingSystem.Application.DTOs.CustomerStore;
 
 namespace BeautyBookingSystem.Application.DTOs.Home
 {

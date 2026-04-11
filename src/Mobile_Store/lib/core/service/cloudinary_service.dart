@@ -3,33 +3,29 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
-class CloudinaryService {
-  static const String cloudName = 'drkpkiu7e'; 
-  static const String uploadPreset = 'flutter_app_upload'; 
+class BackendUploadService {
+  static const String baseUrl = 'http://localhost:5294'; 
 
   static Future<String?> uploadImage(File imageFile, {String folderName = 'general'}) async {
     try {
-      final Uri url = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      final Uri url = Uri.parse('$baseUrl/api/media/upload?folder=$folderName');
 
-      final request = http.MultipartRequest('POST', url)
-        ..fields['upload_preset'] = uploadPreset
-        ..fields['folder'] = folderName // Phân loại thư mục trên Cloudinary
-        ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+      final request = http.MultipartRequest('POST', url);
+      
+      request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
 
       final response = await request.send();
-
-      final responseData = await response.stream.toBytes();
-      final responseString = String.fromCharCodes(responseData);
-      final jsonMap = jsonDecode(responseString);
+      final responseData = await response.stream.bytesToString();
+      final jsonMap = jsonDecode(responseData);
 
       if (response.statusCode == 200) {
-        return jsonMap['secure_url'];
+        return jsonMap['url']; 
       } else {
-        debugPrint('Lỗi từ Cloudinary: ${jsonMap['error']['message']}');
+        debugPrint('Lỗi từ Backend: ${response.statusCode} - $responseData');
         return null;
       }
     } catch (e) {
-      debugPrint('Lỗi Exception khi upload Cloudinary: $e');
+      debugPrint('Lỗi Exception khi gửi lên Backend: $e');
       return null;
     }
   }

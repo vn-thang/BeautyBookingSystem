@@ -52,5 +52,11 @@ namespace BeautyBookingSystem.API.Controllers
             await _serviceService.DeleteAsync(id);
             return Ok(new { Message = "Đã ẩn dịch vụ thành công" });
         }
+        [HttpGet("dropdown-list")]
+            public async Task<ActionResult<List<SimpleServiceDto>>> GetDropdownList()
+            {
+                var result = await _serviceService.GetServicesForDropdownAsync();
+                return Ok(result);
+            }
     }
 }

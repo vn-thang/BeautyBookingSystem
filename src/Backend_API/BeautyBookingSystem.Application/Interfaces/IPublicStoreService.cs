@@ -1,5 +1,5 @@
 using BeautyBookingSystem.Application.Common;
-using BeautyBookingSystem.Application.DTOs.StoreCustomer;
+using BeautyBookingSystem.Application.DTOs.CustomerStore;
 
 namespace BeautyBookingSystem.Application.Interfaces
 {

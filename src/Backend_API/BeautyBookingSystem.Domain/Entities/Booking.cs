@@ -10,7 +10,7 @@ namespace BeautyBookingSystem.Domain.Entities
 {
     public class Booking : BaseEntity
     {
-        public int CustomerId { get; set; }
+        public int? CustomerId { get; set; }
         public virtual User Customer { get; set; } = null!;
 
         public int StoreId { get; set; }
@@ -27,6 +27,12 @@ namespace BeautyBookingSystem.Domain.Entities
         public CancelledByType? CancelledBy { get; set; }
         public string? CancelReason { get; set; }
         public decimal SystemFee { get; set; } = 0;
+        public int RescheduleCount { get; set; } = 0;
+        public string? RescheduleReason { get; set; }
+        public string? HangfireJobId { get; set; }
+        public string? WalkInCustomerName { get; set; }
+        public string? WalkInCustomerPhone { get; set; }
+        public BookingSource Source { get; set; } = BookingSource.CustomerApp;
         public virtual ICollection<WalletTransaction> WalletTransactions { get; set; } = new List<WalletTransaction>();
 
         public virtual ICollection<BookingDetail> BookingDetails { get; set; } = new List<BookingDetail>();

@@ -42,6 +42,13 @@ class _AssignStaffBottomSheetState extends State<AssignStaffBottomSheet> {
           endTime: service.endTime,
         );
         _availableStaffMap[service.bookingDetailId] = staffs;
+
+        if (service.staffId != null) {
+          bool staffExists = staffs.any((s) => s.id == service.staffId);
+          if (staffExists) {
+            _selectedStaffMap[service.bookingDetailId] = service.staffId!;
+          }
+        }
       }
       setState(() {
         _isLoading = false;

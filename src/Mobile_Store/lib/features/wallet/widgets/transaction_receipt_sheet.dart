@@ -54,6 +54,8 @@ class TransactionReceiptSheet extends StatelessWidget {
 
     final statusColor = isPending ? AppColors.warning : (isFailed ? AppColors.error : AppColors.success);
     final statusIcon = isPending ? Icons.access_time_filled : (isFailed ? Icons.cancel : Icons.check_circle);
+
+    final amountColor = isAdd ? AppColors.success : AppColors.error;
     final titleText = isPending ? 'Đang chờ duyệt' : (isFailed ? 'Giao dịch thất bại' : 'Giao dịch thành công');
     final statusRowText = isPending ? 'Đang chờ xử lý' : (isFailed ? 'Thất bại' : 'Thành công');
 
@@ -79,9 +81,9 @@ class TransactionReceiptSheet extends StatelessWidget {
             Text(titleText, style: AppTextStyles.heading1.copyWith(fontSize: 18)),
             const SizedBox(height: AppSpacing.sm),
             
-            Text(
+           Text(
               '$sign${Formatters.formatCurrency(transaction.amount.abs())}',
-              style: AppTextStyles.heading1.copyWith(fontSize: 28, color: statusColor),
+              style: AppTextStyles.heading1.copyWith(fontSize: 28, color: amountColor),
             ),
             
             const Padding(

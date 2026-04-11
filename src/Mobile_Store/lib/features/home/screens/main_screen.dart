@@ -83,6 +83,7 @@ class _MainScreenState extends State<MainScreen> {
     NotificationScreen(onCountChanged: _fetchUnreadCount),
     const BookingManagementScreen(),
     const StoreManagementScreen(), 
+    Container(color: Colors.white, child: const Center(child: Text('Test Store'))),
   ];
 
   void _onItemTapped(int index) {

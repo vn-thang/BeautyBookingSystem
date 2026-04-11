@@ -1,8 +1,8 @@
 ﻿using BeautyBookingSystem.Application.Common.Helpers;
+using BeautyBookingSystem.Application.DTOs.CustomerStore;
 using BeautyBookingSystem.Application.DTOs.GlobalCategory;
 using BeautyBookingSystem.Application.DTOs.Home;
 using BeautyBookingSystem.Application.DTOs.ServiceGroup;
-using BeautyBookingSystem.Application.DTOs.StoreCustomer;
 using BeautyBookingSystem.Application.DTOs.SystemContent;
 using BeautyBookingSystem.Application.DTOs.Voucher;
 using BeautyBookingSystem.Application.Interfaces;
@@ -25,7 +25,6 @@ namespace BeautyBookingSystem.Application.Services
             double? lat,
             double? lon)
         {
-            /// ===== CATEGORIES =====
             var categories = await _unitOfWork
                 .GlobalCategoryRepository
                 .GetQueryable()
@@ -38,7 +37,6 @@ namespace BeautyBookingSystem.Application.Services
                 })
                 .ToListAsync();
 
-            /// ===== SERVICE GROUPS =====
             var groups = await _unitOfWork
                 .ServiceGroupRepository
                 .GetQueryable()
@@ -49,7 +47,6 @@ namespace BeautyBookingSystem.Application.Services
                 })
                 .ToListAsync();
 
-            /// ===== STORES BASE =====
             var storeQuery = _unitOfWork
                 .StoreRepository
                 .GetQueryable()
@@ -64,7 +61,6 @@ namespace BeautyBookingSystem.Application.Services
                 lat.HasValue && lon.HasValue &&
                 lat.Value != 0 && lon.Value != 0;
 
-            /// ===== NEARBY STORES =====
             var nearbyStores = stores
                 .Select(s =>
                 {
@@ -97,7 +93,6 @@ namespace BeautyBookingSystem.Application.Services
                 .Take(10)
                 .ToList();
 
-            /// ===== TOP RATED STORES =====
             var topRatedStores = stores
                 .Select(s =>
                 {
@@ -131,7 +126,6 @@ namespace BeautyBookingSystem.Application.Services
                 .Take(10)
                 .ToList();
 
-            /// ===== VOUCHERS (FIXED) =====
             var vouchers = await _unitOfWork
                 .VoucherRepository
                 .GetQueryable()
@@ -169,7 +163,6 @@ namespace BeautyBookingSystem.Application.Services
                 })
                 .ToListAsync();
 
-            /// ===== BANNERS =====
             var banners = await _unitOfWork
                 .SystemContentRepository
                 .GetQueryable()
@@ -184,7 +177,6 @@ namespace BeautyBookingSystem.Application.Services
                 })
                 .ToListAsync();
 
-            /// ===== RESPONSE =====
             return new HomeResponseDto
             {
                 UserName = "User",

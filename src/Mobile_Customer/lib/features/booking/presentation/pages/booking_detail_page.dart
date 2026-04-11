@@ -260,14 +260,87 @@ class _BookingDetailPageState extends State<BookingDetailPage>
     );
   }
 
+  // Future<void> _requestCancel(BookingItem item) async {
+  //   if (_processingCancel) return;
+
+  //   final canCancel = _canCancel(item);
+  //   if (!canCancel) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('Chỉ được hủy trước 24 giờ của lịch hẹn'),
+  //         behavior: SnackBarBehavior.floating,
+  //       ),
+  //     );
+  //     return;
+  //   }
+
+  //   final confirmed = await showDialog<bool>(
+  //     context: context,
+  //     builder: (context) {
+  //       return AlertDialog(
+  //         title: const Text('Yêu cầu hủy booking'),
+  //         content: const Text('Bạn có chắc muốn hủy booking này không?'),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.pop(context, false),
+  //             child: const Text('Không'),
+  //           ),
+  //           ElevatedButton(
+  //             onPressed: () => Navigator.pop(context, true),
+  //             child: const Text('Có, hủy booking'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+
+  //   if (confirmed != true) return;
+
+  //   setState(() => _processingCancel = true);
+
+  //   try {
+  //     final dio = di.sl<Dio>();
+  //     await dio.post(
+  //       'bookings/${item.id}/cancel',
+  //       data: {
+  //         'reason': 'Khách yêu cầu hủy',
+  //       },
+  //     );
+
+  //     await _loadDetail();
+
+  //     if (!mounted) return;
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('Đã gửi yêu cầu hủy booking'),
+  //         behavior: SnackBarBehavior.floating,
+  //         backgroundColor: AppColors.success,
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     if (!mounted) return;
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Hủy booking thất bại: $e'),
+  //         behavior: SnackBarBehavior.floating,
+  //         backgroundColor: AppColors.danger,
+  //       ),
+  //     );
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() => _processingCancel = false);
+  //     }
+  //   }
+  // }
+
   Future<void> _requestCancel(BookingItem item) async {
     if (_processingCancel) return;
 
-    final canCancel = _canCancel(item);
-    if (!canCancel) {
+    // 1. Bỏ check 24h đi. Chỉ cần check cơ bản tránh user bấm nhầm khi đơn đã hủy/hoàn thành
+    if (item.status == 'Cancelled' || item.status == 'Completed') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Chỉ được hủy trước 24 giờ của lịch hẹn'),
+          content: Text('Lịch hẹn này đã kết thúc hoặc bị hủy, không thể thao tác thêm.'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -287,7 +360,8 @@ class _BookingDetailPageState extends State<BookingDetailPage>
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Có, hủy booking'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red), // Nút hủy nên cho màu đỏ
+              child: const Text('Có, hủy booking', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -312,16 +386,43 @@ class _BookingDetailPageState extends State<BookingDetailPage>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Đã gửi yêu cầu hủy booking'),
+          content: Text('Đã hủy booking thành công'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.success,
+        ),
+      );
+      
+    // 2. BẮT LỖI TỪ BACKEND BẰNG DioException
+    } on DioException catch (e) {
+      if (!mounted) return;
+      
+      // Trích xuất câu thông báo lỗi động từ Backend C# gửi về
+      // (Ví dụ: "Quy định cửa hàng: Chỉ được hủy trước 3 giờ...")
+      String errorMessage = 'Hủy booking thất bại';
+      
+      if (e.response != null && e.response?.data != null) {
+        final data = e.response?.data;
+        if (data is Map<String, dynamic>) {
+           // Đọc field 'message' hoặc 'title' tùy thuộc vào cách Middleware C# của bạn cấu hình trả về
+           errorMessage = data['message'] ?? data['title'] ?? data['detail'] ?? errorMessage;
+        } else {
+           errorMessage = data.toString();
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage), // Hiển thị nguyên văn lời cảnh báo của Backend
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.danger,
+          duration: const Duration(seconds: 4), // Cho hiển thị lâu hơn chút để khách kịp đọc
         ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Hủy booking thất bại: $e'),
+          content: Text('Đã có lỗi xảy ra: $e'),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.danger,
         ),

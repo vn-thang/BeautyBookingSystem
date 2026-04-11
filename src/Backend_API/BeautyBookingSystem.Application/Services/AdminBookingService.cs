@@ -115,10 +115,10 @@ namespace BeautyBookingSystem.Application.Services
             _unitOfWork.BookingRepository.Update(booking);
             var result = await _unitOfWork.SaveChangesAsync() > 0;
 
-            if (result)
+            if (result && booking.CustomerId.HasValue)
             {
                 _ = _notificationService.CreateAndSendNotificationAsync(
-                    booking.CustomerId,
+                    booking.CustomerId.Value,
                     "⚠️ Đơn đặt lịch của bạn đã bị hủy",
                     $"Lịch hẹn tại {booking.Store.Name} đã bị hủy bởi Quản trị viên hệ thống. Lý do: {request.Reason}",
                     NotificationType.SystemAlert

@@ -1,7 +1,6 @@
 ﻿using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Entities;
 using BeautyBookingSystem.Infrastructure.Data;
-using BeautyBookingSystem.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBookingSystem.Infrastructure.Repositories
@@ -21,9 +20,6 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
                 .AsNoTracking()
                 .Where(v => v.StoreId == storeId);
 
-            // Nếu có serviceId thì chỉ lấy:
-            // - voucher dùng cho toàn store (ServiceId == null)
-            // - voucher đúng service đó
             if (serviceId.HasValue)
             {
                 query = query.Where(v => v.ServiceId == null || v.ServiceId == serviceId.Value);
@@ -33,7 +29,6 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
                 .OrderByDescending(v => v.Id)
                 .ToListAsync();
         }
-
         public async Task<List<Voucher>> GetActiveByStoreAsync(int storeId, int? serviceId = null)
         {
             var now = DateTime.UtcNow;
@@ -43,22 +38,16 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
                 .Where(v =>
                     v.StoreId == storeId &&
                     v.StartDate <= now &&
-                    v.EndDate >= now &&
-                    v.UsedCount < v.UsageLimit);
+                    v.EndDate >= now && 
+                    v.UsedCount < v.UsageLimit); 
 
-            // Nếu có serviceId thì chỉ lấy:
-            // - voucher dùng cho toàn store (ServiceId == null)
-            // - voucher đúng service đó
             if (serviceId.HasValue)
             {
                 query = query.Where(v => v.ServiceId == null || v.ServiceId == serviceId.Value);
             }
 
-            return await query
-                .OrderByDescending(v => v.Id)
-                .ToListAsync();
+            return await query.OrderByDescending(v => v.Id).ToListAsync();
         }
-
         public async Task<List<Voucher>> GetAllActiveAsync()
         {
             var now = DateTime.UtcNow;
@@ -72,12 +61,16 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
                 .OrderByDescending(v => v.Id)
                 .ToListAsync();
         }
-
         public async Task<Voucher?> GetByCodeAsync(string code)
         {
+            var now = DateTime.UtcNow;
+
             return await _context.Vouchers
-                .AsNoTracking()
-                .FirstOrDefaultAsync(v => v.Code == code);
+                .FirstOrDefaultAsync(v => 
+                    v.Code == code && 
+                    v.StartDate <= now &&
+                    v.EndDate >= now && 
+                    v.UsedCount < v.UsageLimit);
         }
         public async Task<List<Voucher>> GetActiveByServiceAsync(int serviceId, int? storeId = null)
         {
@@ -98,9 +91,10 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
 
             return await query.OrderByDescending(v => v.Id).ToListAsync();
         }
+
         public async Task<List<Voucher>> GetActiveServiceVouchersAsync(int? storeId = null)
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow; 
 
             var query = _context.Vouchers
                 .AsNoTracking()

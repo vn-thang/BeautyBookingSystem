@@ -40,19 +40,56 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
     _loadStaff();
   }
 
+  // Future<void> _loadStaff() async {
+  //   try {
+  //     final dio = di.sl<Dio>();
+
+  //     final resp = await dio.post(
+  //       'bookings/available-staff',
+  //       data: {
+  //         "storeId": widget.storeId,
+  //         "serviceId": widget.services.first,
+  //         "appointmentDate":
+  //             DateFormat('yyyy-MM-dd').format(widget.appointmentDate),
+  //         "startTime": widget.startTime,
+  //       },
+  //     );
+
+  //     final data = List<Map<String, dynamic>>.from(resp.data);
+
+  //     setState(() {
+  //       staffs = data;
+  //       loading = false;
+  //       selectedStaffId = null;
+  //     });
+  //   } 
+    
+  //   catch (e) {
+  //     setState(() {
+  //       loading = false;
+  //       error = e.toString();
+  //     });
+  //   }
+  // }
+
   Future<void> _loadStaff() async {
     try {
       final dio = di.sl<Dio>();
 
+      // Đưa data ra một biến riêng để dễ log
+     final requestData = {
+        "storeId": widget.storeId,
+        "serviceIds": widget.services, // Thay bằng serviceIds và gửi nguyên cái list
+        "appointmentDate": DateFormat('yyyy-MM-dd').format(widget.appointmentDate),
+        "startTime": widget.startTime,
+      };
+
+      print('=== BẮT ĐẦU GỌI API: bookings/available-staff ===');
+      print('Data gửi lên: $requestData');
+
       final resp = await dio.post(
         'bookings/available-staff',
-        data: {
-          "storeId": widget.storeId,
-          "serviceId": widget.services.first,
-          "appointmentDate":
-              DateFormat('yyyy-MM-dd').format(widget.appointmentDate),
-          "startTime": widget.startTime,
-        },
+        data: requestData,
       );
 
       final data = List<Map<String, dynamic>>.from(resp.data);
@@ -62,7 +99,27 @@ class _BookingStaffPageState extends State<BookingStaffPage> {
         loading = false;
         selectedStaffId = null;
       });
+      
+    } on DioException catch (e) {
+      // BẮT LỖI TỪ API (Ví dụ: 400 Bad Request)
+      print('=== LỖI TỪ BACKEND (DIO EXCEPTION) ===');
+      print('Status Code: ${e.response?.statusCode}');
+      print('Data đã gửi: ${e.requestOptions.data}');
+      print('Backend trả về: ${e.response?.data}');
+      print('=======================================');
+
+      setState(() {
+        loading = false;
+        // Ưu tiên hiển thị thông báo lỗi chi tiết từ backend thay vì lỗi chung chung
+        error = e.response?.data?.toString() ?? 'Lỗi kết nối: ${e.message}';
+      });
+      
     } catch (e) {
+      // BẮT CÁC LỖI KHÁC (Ví dụ: Lỗi parse JSON, lỗi logic)
+      print('=== LỖI KHÔNG XÁC ĐỊNH ===');
+      print('Chi tiết: $e');
+      print('==========================');
+
       setState(() {
         loading = false;
         error = e.toString();

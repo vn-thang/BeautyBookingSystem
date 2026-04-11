@@ -18,7 +18,7 @@ class AccountService {
 
   static Future<AccountResult<UserProfileModel>> getProfile() async {
     try {
-      final json = await ApiClient.get('/api/User/me');
+      final json = await ApiClient.get('/api/store/StoreUser/me');
       final data = json['data'] ?? json;
       return AccountResult.success(UserProfileModel.fromJson(data));
     } catch (e) {
@@ -35,7 +35,7 @@ class AccountService {
       String? fcmToken;
       try { fcmToken = await FirebaseMessaging.instance.getToken(); } catch (_) {}
 
-      await ApiClient.put('/api/User/profile', body: {
+      await ApiClient.put('/api/store/StoreUser/profile', body: {
         'fullName': fullName,
         'email': email,
         'avatarUrl': avatarUrl,

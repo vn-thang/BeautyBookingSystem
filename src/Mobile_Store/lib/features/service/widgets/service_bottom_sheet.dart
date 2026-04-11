@@ -4,7 +4,7 @@ import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
 import 'package:mobile_store/features/service/widgets/shared_service_widgets.dart' hide SnackBarHelper;
 import '../services/service_api.dart';
 import '../models/global_category_model.dart';
-import '../models/service_model.dart';
+import '../../../shared/models/service_model.dart';
 import '../../../shared/widgets/inputs/app_image_picker.dart'; 
 import '../../../shared/widgets/buttons/app_buttons.dart'; 
 

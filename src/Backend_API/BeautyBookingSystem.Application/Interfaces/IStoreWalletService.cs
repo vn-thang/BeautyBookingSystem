@@ -17,5 +17,6 @@ namespace BeautyBookingSystem.Application.Interfaces
         Task<string> ProcessVnPayCallbackAsync();
         Task ReceiveDepositAsync(int bookingId);  
         Task ClawbackDepositAsync(int bookingId);
+        Task<decimal> ProcessBookingPenaltyAsync(int bookingId);
     }
 }

@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile_store/core/service/cloudinary_service.dart';
 import 'package:mobile_store/core/theme/app_colors.dart';
-import '../../../core/service/media_service.dart';
-import '../../../../core/service/cloudinary_service.dart';
+import '../../../core/service/media_service.dart'; 
 
 class AppImagePicker extends StatefulWidget {
   final String folderName; 
@@ -43,23 +43,25 @@ class _AppImagePickerState extends State<AppImagePicker> {
 
     setState(() => _isUploading = true);
 
-    final String? uploadedUrl = await CloudinaryService.uploadImage(
+    final String? uploadedUrl = await BackendUploadService.uploadImage(
       file,
       folderName: widget.folderName, 
     );
-      if (!mounted) return;
+    
+    if (!mounted) return;
+    
     setState(() {
       _isUploading = false;
       if (uploadedUrl != null) {
-        _currentImageUrl = uploadedUrl;
+        _currentImageUrl = uploadedUrl; 
       }
     });
 
     if (uploadedUrl != null) {
-      widget.onImageUploaded(uploadedUrl); 
+      widget.onImageUploaded(uploadedUrl);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lỗi tải ảnh lên!')),
+        const SnackBar(content: Text('Lỗi tải ảnh lên Server! Vui lòng thử lại.')),
       );
     }
   }
@@ -76,7 +78,6 @@ class _AppImagePickerState extends State<AppImagePicker> {
           shape: widget.isCircle ? BoxShape.circle : BoxShape.rectangle,
           borderRadius: widget.isCircle ? null : BorderRadius.circular(12),
           border: Border.all(color: AppColors.surface, width: 2),
-          // Hiển thị ảnh nếu đã có link
           image: _currentImageUrl != null
               ? DecorationImage(
                   image: NetworkImage(_currentImageUrl!),

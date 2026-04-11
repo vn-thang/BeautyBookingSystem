@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile_store/features/booking/screens/store_createbooking_screen.dart';
 import 'package:mobile_store/shared/widgets/inputs/app_filter_dropdown.dart';
 import 'package:mobile_store/shared/widgets/inputs/app_header.dart';
 import '../widgets/booking_list_tab.dart';
@@ -35,6 +37,8 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
   int? _staffId;
   List<SimpleStaffModel> _staffList = [];
   bool _isLoadingStaff = true;
+
+  bool _isFabExtended = true; 
 
   @override
   void initState() {
@@ -177,21 +181,59 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
             ),
             
             Expanded(
-              child: TabBarView(
-                children: [
-                  BookingListTab(status: null, startDate: _startDate, endDate: _endDate, staffId: _staffId),        
-                  BookingListTab(status: 'Pending', startDate: _startDate, endDate: _endDate, staffId: _staffId),    
-                  BookingListTab(status: 'Confirmed', startDate: _startDate, endDate: _endDate, staffId: _staffId),  
-                  BookingListTab(status: 'Completed', startDate: _startDate, endDate: _endDate, staffId: _staffId),  
-                  BookingListTab(status: 'Cancelled', startDate: _startDate, endDate: _endDate, staffId: _staffId),  
-                ],
+              child: NotificationListener<UserScrollNotification>(
+                onNotification: (notification) {
+                  if (notification.direction == ScrollDirection.forward) {
+                    if (!_isFabExtended) setState(() => _isFabExtended = true);
+                  } else if (notification.direction == ScrollDirection.reverse) {
+                    if (_isFabExtended) setState(() => _isFabExtended = false);
+                  }
+                  return true;
+                },
+                child: TabBarView(
+                  children: [
+                    BookingListTab(status: null, startDate: _startDate, endDate: _endDate, staffId: _staffId),        
+                    BookingListTab(status: 'Pending', startDate: _startDate, endDate: _endDate, staffId: _staffId),    
+                    BookingListTab(status: 'Confirmed', startDate: _startDate, endDate: _endDate, staffId: _staffId),  
+                    BookingListTab(status: 'Completed', startDate: _startDate, endDate: _endDate, staffId: _staffId),  
+                    BookingListTab(status: 'Cancelled', startDate: _startDate, endDate: _endDate, staffId: _staffId),  
+                  ],
+                ),
               ),
             ),
           ],
         ),
+
+        floatingActionButton: FloatingActionButton.extended(
+          isExtended: _isFabExtended,
+          onPressed: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StoreCreateBookingScreen(
+                  storeId: 1, 
+                ),
+              ),
+            );
+
+            if (result == true && mounted) {
+               setState(() {}); 
+            }
+          },
+          backgroundColor: AppColors.primary,
+          icon: const Icon(Icons.add, color: AppColors.white),
+          label: Text(
+            'Tạo đơn mới',
+            style: AppTextStyles.bodyText.copyWith(
+              color: AppColors.white, 
+              fontWeight: FontWeight.bold
+            ),
+          ),
+        ),
       ),
     );
   }
+
   Widget _buildDateFilterButton(String label, String value, VoidCallback onTap) {
     return Row(
       children: [

@@ -65,7 +65,7 @@ class StoreSettingsSection extends StatelessWidget {
               items: depositOptions.map((int value) => DropdownMenuItem<int>(
                 value: value,
                 child: Text(
-                  value == 0 ? "Không cọc (0%)" : "Cọc $value%",
+                  value == 0 ? "Cọc 0%" : "Cọc $value%",
                   style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.w500),
                 ),
               )).toList(),

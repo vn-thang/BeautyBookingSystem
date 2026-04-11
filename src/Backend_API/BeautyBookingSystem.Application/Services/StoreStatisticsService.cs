@@ -143,31 +143,32 @@ namespace BeautyBookingSystem.Application.Services
                 OneStarCount = starCounts.FirstOrDefault(x => x.Rating == 1)?.Count ?? 0
             };
         }
-        public async Task<List<TopPerformanceItemDto>> GetTopCustomersAsync(DateTime? startDate, DateTime? endDate, int top = 5)
-        {
-            int storeId = await _currentUserService.GetCurrentStoreIdAsync();
+public async Task<List<TopPerformanceItemDto>> GetTopCustomersAsync(DateTime? startDate, DateTime? endDate, int top = 5)
+    {
+        int storeId = await _currentUserService.GetCurrentStoreIdAsync();
 
-            var query = _unitOfWork.BookingRepository.GetQueryable()
-                .Where(b => b.StoreId == storeId && b.Status == BookingStatus.Completed);
+        var query = _unitOfWork.BookingRepository.GetQueryable()
+            .Where(b => b.StoreId == storeId && b.Status == BookingStatus.Completed)
+            .Where(b => b.CustomerId != null); 
 
-            if (startDate.HasValue) query = query.Where(b => b.CreatedAt >= startDate.Value);
-            if (endDate.HasValue) query = query.Where(b => b.CreatedAt <= endDate.Value);
+        if (startDate.HasValue) query = query.Where(b => b.CreatedAt >= startDate.Value);
+        if (endDate.HasValue) query = query.Where(b => b.CreatedAt <= endDate.Value);
 
-            var topCustomers = await query
-                .GroupBy(b => new { b.CustomerId, b.Customer.FullName }) 
-                .Select(g => new TopPerformanceItemDto
-                {
-                    Id = g.Key.CustomerId,
-                    Name = g.Key.FullName ?? "Khách hàng", 
-                    Count = g.Count(), 
-                    Revenue = g.Sum(b => b.TotalPrice) 
-                })
-                .OrderByDescending(x => x.Revenue) 
-                .Take(top)
-                .ToListAsync();
+        var topCustomers = await query
+            .GroupBy(b => new { CustomerId = b.CustomerId.Value, b.Customer.FullName }) 
+            .Select(g => new TopPerformanceItemDto
+            {
+                Id = g.Key.CustomerId, 
+                Name = g.Key.FullName ?? "Khách hàng", 
+                Count = g.Count(), 
+                Revenue = g.Sum(b => b.TotalPrice) 
+            })
+            .OrderByDescending(x => x.Revenue) 
+            .Take(top)
+            .ToListAsync();
 
-            return topCustomers;
-        }
+        return topCustomers;
+    }
 
         public async Task<List<StoreRevenueExcelDto>> GetRevenueDataForExportAsync(DateTime? startDate, DateTime? endDate)
         {

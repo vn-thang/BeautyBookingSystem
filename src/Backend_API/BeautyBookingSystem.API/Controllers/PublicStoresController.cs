@@ -1,4 +1,4 @@
-using BeautyBookingSystem.Application.DTOs.StoreCustomer;
+using BeautyBookingSystem.Application.DTOs.CustomerStore;
 using BeautyBookingSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;

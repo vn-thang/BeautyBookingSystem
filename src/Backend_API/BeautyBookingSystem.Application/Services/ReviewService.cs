@@ -15,10 +15,12 @@ namespace BeautyBookingSystem.Application.Services
     public class ReviewService : IReviewService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly INotificationService _notificationService;
 
-        public ReviewService(IUnitOfWork unitOfWork)
+        public ReviewService(IUnitOfWork unitOfWork,  INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
+            _notificationService = notificationService;
         }
 
         public async Task<ReviewResponseDto> CreateAsync(int customerId, CreateReviewRequestDto request)
@@ -51,10 +53,21 @@ namespace BeautyBookingSystem.Application.Services
             };
 
             await _unitOfWork.ReviewRepository.AddAsync(review);
-            await _unitOfWork.SaveChangesAsync();
 
             await RecalculateStoreRatingAsync(review.StoreId);
             await _unitOfWork.SaveChangesAsync();
+
+            if (booking.Store != null)
+    {
+        string customerName = booking.Customer?.FullName ?? "Một khách hàng";
+        string message = $"{customerName} vừa để lại đánh giá {request.Rating} sao cho đơn đặt lịch #{booking.Id}.";
+        _ = _notificationService.CreateAndSendNotificationAsync(
+            booking.Store.OwnerId, 
+            "⭐ Có đánh giá mới",
+            message,
+            NotificationType.SystemAlert 
+        );
+    }
 
             return new ReviewResponseDto
             {

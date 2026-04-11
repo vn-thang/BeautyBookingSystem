@@ -4,8 +4,8 @@ import '../../../shared/widgets/inputs/app_filter_dropdown.dart';
 import '../../../shared/widgets/inputs/app_header.dart';
 import '../../../shared/widgets/feedback/snackbar_helper.dart'; 
 import '../../../shared/widgets/buttons/app_buttons.dart'; 
-import '../models/service_group_model.dart';
-import '../models/service_model.dart';
+import '../../../shared/models/service_group_model.dart';
+import '../../../shared/models/service_model.dart';
 import '../services/service_api.dart';
 import '../widgets/service_group_bottom_sheet.dart';
 import '../widgets/service_bottom_sheet.dart';
@@ -201,7 +201,7 @@ class _ServiceManagementScreenState extends State<ServiceManagementScreen> {
                     sortOrder: group.sortOrder,
                     services: filteredServices,
                   );
-                }).where((group) => group.id == 0 || group.services.isNotEmpty).toList();
+                }).toList();
                 
                 final ungroupedGroup = groups.firstWhere(
                   (g) => g.id == 0,

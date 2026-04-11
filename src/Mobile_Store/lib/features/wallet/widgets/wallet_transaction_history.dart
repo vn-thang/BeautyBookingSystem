@@ -109,12 +109,12 @@ class WalletTransactionHistory extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: 130, 
+                  width: 110, 
                   child: AppFilterDropdown<int?>(
                     hint: 'Tháng',
                     value: selectedMonth, 
                     items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text('Tất cả tháng')),
+                      const DropdownMenuItem<int?>(value: null, child: Text('Tháng')),
                       ...List.generate(12, (index) => DropdownMenuItem<int?>(
                             value: index + 1, 
                             child: Text('Tháng ${index + 1}')
@@ -128,12 +128,12 @@ class WalletTransactionHistory extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
 
                 SizedBox(
-                  width: 120,
+                  width: 110,
                   child: AppFilterDropdown<int?>(
                     hint: 'Năm',
                     value: selectedYear, 
                     items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text('Tất cả năm')),
+                      const DropdownMenuItem<int?>(value: null, child: Text('Năm')),
                       ..._generateYears().map((year) {
                         return DropdownMenuItem<int?>(
                           value: year, 
@@ -149,7 +149,7 @@ class WalletTransactionHistory extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
 
                 SizedBox(
-                  width: 140,
+                  width: 120,
                   child: AppFilterDropdown<int?>(
                     hint: 'Loại GD',
                     value: selectedType, 
@@ -180,29 +180,33 @@ class WalletTransactionHistory extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: transactions.length,
               separatorBuilder: (context, index) => const Divider(height: 1, color: AppColors.surface), // Đổi màu divider
-              itemBuilder: (context, index) {
+             itemBuilder: (context, index) {
                 final tx = transactions[index];
                 
                 final String normStatus = tx.status.toLowerCase();
                 final bool isPending = normStatus == 'pending' || normStatus == '0';
                 final bool isFailed = normStatus == 'failed' || normStatus == 'cancelled' || normStatus == '2' || normStatus == '3';
                 
-                Color txColor;
+                final isAdd = tx.isAddition;
+                final sign = isAdd ? '+' : '-'; 
+
+                // 1. MÀU CỦA TRẠNG THÁI (Dành cho Icon bên trái)
+                Color statusColor;
                 IconData txIcon;
                 
                 if (isPending) {
-                  txColor = AppColors.warning;
+                  statusColor = AppColors.warning;
                   txIcon = Icons.access_time_filled;
                 } else if (isFailed) {
-                  txColor = AppColors.error;
+                  statusColor = AppColors.error;
                   txIcon = Icons.cancel;
                 } else {
-                  txColor = AppColors.success;
-                  txIcon = tx.isAddition ? Icons.arrow_downward : Icons.arrow_upward; 
+                 statusColor = isAdd ? AppColors.success : AppColors.error;
+                  txIcon = isAdd ? Icons.arrow_downward : Icons.arrow_upward; 
                 }
 
-                final isAdd = tx.isAddition;
-                final sign = isAdd ? '+' : '-'; 
+                // 2. MÀU CỦA SỐ TIỀN (+ Xanh, - Đỏ)
+                Color amountColor = isAdd ? AppColors.success : AppColors.error;
 
                 String cleanDescription = tx.description.replaceAll(RegExp(r'\[Biên lai:.*?\]'), '').trim();
 
@@ -210,8 +214,8 @@ class WalletTransactionHistory extends StatelessWidget {
                   contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4), 
                   onTap: () => onTransactionTap(tx), 
                   leading: CircleAvatar(
-                    backgroundColor: txColor.withValues(alpha: 0.1),
-                    child: Icon(txIcon, color: txColor, size: 20),
+                    backgroundColor: statusColor.withValues(alpha: 0.1),
+                    child: Icon(txIcon, color: statusColor, size: 20),
                   ),
                   title: Text(
                     cleanDescription, 
@@ -232,7 +236,8 @@ class WalletTransactionHistory extends StatelessWidget {
                   ),
                   trailing: Text(
                     '$sign${Formatters.formatCurrency(tx.amount.abs())}',
-                    style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, fontSize: 15, color: txColor),
+                    // CẬP NHẬT MÀU SỐ TIỀN Ở ĐÂY
+                    style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, fontSize: 15, color: amountColor),
                   ),
                 );
               },

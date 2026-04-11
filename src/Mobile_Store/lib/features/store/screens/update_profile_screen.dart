@@ -34,6 +34,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       oldData.latitude = formData['latitude'] ?? oldData.latitude;
       oldData.longitude = formData['longitude'] ?? oldData.longitude;
       oldData.phone = formData['phone'] ?? oldData.phone;
+      oldData.zaloPhone = formData['zaloPhone'];
+      oldData.facebookUrl = formData['facebookUrl'];
       oldData.description = formData['description'] ?? oldData.description;
       
       oldData.isOpen = formData['isOpen'] ?? oldData.isOpen;

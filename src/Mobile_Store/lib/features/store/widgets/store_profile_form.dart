@@ -48,6 +48,8 @@ class _StoreProfileFormState extends State<StoreProfileForm> {
 
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
+  final TextEditingController _zaloController = TextEditingController();
+  final TextEditingController _facebookController = TextEditingController();
   late TextEditingController _addressController;
   late TextEditingController _descController;
   
@@ -81,6 +83,8 @@ class _StoreProfileFormState extends State<StoreProfileForm> {
     final data = widget.initialData ?? {};
     _nameController = TextEditingController(text: data['name']?.toString() ?? '');
     _phoneController = TextEditingController(text: data['phone']?.toString() ?? '');
+    _zaloController.text = widget.initialData?['zaloPhone'] ?? '';
+    _facebookController.text = widget.initialData?['facebookUrl'] ?? '';
     _addressController = TextEditingController(text: data['address']?.toString() ?? '');
     _descController = TextEditingController(text: data['description']?.toString() ?? '');
     
@@ -284,11 +288,17 @@ class _StoreProfileFormState extends State<StoreProfileForm> {
   void _submitForm() {
     if (!_formKey.currentState!.validate()) return;
     final activeHours = _operatingHours.where((h) => h.isActive).toList();
-
+    String zaloText = _zaloController.text.trim();
+    String facebookText = _facebookController.text.trim();
+    if (facebookText.isNotEmpty && !facebookText.startsWith('http')) {
+      facebookText = 'https://$facebookText';
+    }
     final profileData = StoreProfile(
       name: _nameController.text.trim(),
       address: _addressController.text.trim(),
       phone: _phoneController.text.trim(),
+     zaloPhone: zaloText.isEmpty ? null : zaloText,
+      facebookUrl: facebookText.isEmpty ? null : facebookText,
       description: _descController.text.trim(),
       logoUrl: _logoUrlController.text.trim(),
       coverImageUrl: _coverUrlController.text.trim(),
@@ -331,6 +341,8 @@ class _StoreProfileFormState extends State<StoreProfileForm> {
                       nameController: _nameController,
                       addressController: _addressController,
                       phoneController: _phoneController,
+                      zaloController: _zaloController,
+                      facebookController: _facebookController,
                       isGettingLocation: _isGettingLocation,
                       latitude: _latitude,
                       longitude: _longitude,
@@ -403,6 +415,8 @@ class _StoreProfileFormState extends State<StoreProfileForm> {
     _descController.dispose(); _logoUrlController.dispose(); _coverUrlController.dispose();
     _bankNameController.dispose(); _bankAccountNumberController.dispose(); _bankAccountNameController.dispose();
     _depositThresholdController.dispose();
+    _zaloController.dispose();
+    _facebookController.dispose();
     super.dispose();
   }
 }

@@ -8,7 +8,7 @@ namespace BeautyBookingSystem.API.Controllers.Admin
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class AdminCategoriesController : ControllerBase
     {
         private readonly IAdminCategoryService _categoryService;
@@ -32,7 +32,6 @@ namespace BeautyBookingSystem.API.Controllers.Admin
             var result = await _categoryService.GetAllAsync(onlyActive: false);
             return Ok(result);
         }
-
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request)

@@ -18,5 +18,6 @@
         public const string MaxCancelPerDay = "MAX_CANCEL_PER_DAY";
         public const string NoShowLimit = "NOSHOW_LIMIT";
         public const string BlockUserIfNoShow = "BLOCK_USER_IF_NOSHOW";
+        public const string RescheduleBeforeHours = "RESCHEDULE_BEFORE_HOURS";
     }
 }

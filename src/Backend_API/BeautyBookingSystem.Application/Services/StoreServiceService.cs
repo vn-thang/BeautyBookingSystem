@@ -119,5 +119,20 @@ namespace BeautyBookingSystem.Application.Services
 
             return true;
         }
+public async Task<List<SimpleServiceDto>> GetServicesForDropdownAsync()
+{
+    int currentStoreId = await _currentUserService.GetCurrentStoreIdAsync();
+    var services = await _unitOfWork.ServiceRepository.GetQueryable()
+        .Where(s => s.StoreId == currentStoreId && s.IsActive)
+        .OrderBy(s => s.Name) 
+        .Select(s => new SimpleServiceDto
+        {
+            Id = s.Id,
+            Name = s.Name
+        })
+        .ToListAsync();
+
+    return services;
+}
     }
 }

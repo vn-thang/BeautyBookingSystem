@@ -1,17 +1,8 @@
 ﻿using BeautyBookingSystem.Application.DTOs.Voucher;
 using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Entities;
-
-public interface IVoucherService
+namespace BeautyBookingSystem.Application.Services
 {
-    Task<List<VoucherDto>> GetByStoreAsync(int storeId, int? serviceId = null);
-    Task<List<VoucherDto>> GetActiveByStoreAsync(int storeId, int? serviceId = null);
-    Task<List<VoucherDto>> GetAllActiveAsync();
-    Task<VoucherDto?> GetByCodeAsync(string code);
-    Task<List<VoucherDto>> GetActiveByServiceAsync(int serviceId, int? storeId = null);
-    Task<List<ServiceVoucherHomeDto>> GetActiveServiceVouchersAsync(int? storeId = null);
-}
-
 public class VoucherService : IVoucherService
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -110,4 +101,5 @@ public class VoucherService : IVoucherService
         var vouchers = await _unitOfWork.VoucherRepository.GetActiveServiceVouchersAsync(storeId);
         return vouchers.Select(MapToHomeDto).ToList();
     }
+}
 }

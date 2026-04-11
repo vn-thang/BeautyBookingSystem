@@ -9,7 +9,7 @@ using System;
 
 namespace BeautyBookingSystem.API.Controllers
 {
-    [Route("api/customer/[controller]")] // Đổi route thêm chữ customer
+    [Route("api/customer/[controller]")] 
     [ApiController]
     [Authorize(Roles = "Customer")]
     public class CustomerUserController : ControllerBase
@@ -59,7 +59,7 @@ namespace BeautyBookingSystem.API.Controllers
 
         [HttpPost("upload-avatar")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadAvatar([FromForm] IFormFile file)
+        public async Task<IActionResult> UploadAvatar(IFormFile file)
         {
             try
             {

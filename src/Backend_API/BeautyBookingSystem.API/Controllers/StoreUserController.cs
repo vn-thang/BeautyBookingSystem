@@ -8,7 +8,7 @@ using System;
 
 namespace BeautyBookingSystem.API.Controllers
 {
-    [Route("api/store/[controller]")] // Đổi route thêm chữ store cho rõ ràng
+    [Route("api/store/[controller]")] 
     [ApiController]
     [Authorize(Roles ="StoreOwner")]
     public class StoreUserController : ControllerBase
@@ -39,7 +39,7 @@ namespace BeautyBookingSystem.API.Controllers
         }
 
         [HttpPut("profile")]
-        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+        public async Task<IActionResult> UpdateProfile([FromBody] StoreUpdateProfileRequest request)
         {
             try
             {

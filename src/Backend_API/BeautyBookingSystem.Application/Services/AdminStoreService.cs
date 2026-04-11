@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper.QueryableExtensions;
+using BeautyBookingSystem.Domain.Constants;
 
 namespace BeautyBookingSystem.Application.Services
 {
@@ -71,7 +72,7 @@ namespace BeautyBookingSystem.Application.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<bool> ApproveStoreAsync(int id, ApproveStoreRequest request)
+      public async Task<bool> ApproveStoreAsync(int id, ApproveStoreRequest request)
         {
             var store = await _unitOfWork.StoreRepository.GetByIdAsync(id);
             if (store == null) throw new NotFoundException("Không tìm thấy cửa hàng.");
@@ -81,22 +82,74 @@ namespace BeautyBookingSystem.Application.Services
 
             store.ApprovalStatus = request.IsApproved ? ApprovalStatus.Approved : ApprovalStatus.Locked;
             
+            int freeTrialDays = 0;
+            decimal monthlyFee = 0;
+
+            if (request.IsApproved)
+            {
+                var trialConfig = await _unitOfWork.SystemConfigRepository.GetQueryable()
+                    .FirstOrDefaultAsync(c => c.Key == SystemConfigKeys.FreeTrialDays); 
+                    
+                if (trialConfig != null && int.TryParse(trialConfig.Value, out var parsedDays))
+                {
+                    freeTrialDays = parsedDays;
+                }
+                else
+                {
+                    freeTrialDays = 30; 
+                }
+                
+                store.NextBillingDate = DateTime.UtcNow.AddDays(freeTrialDays);
+
+                if (store.MonthlyAppFee > 0)
+                {
+                    monthlyFee = store.MonthlyAppFee;
+                }
+                else
+                {
+                    var feeConfig = await _unitOfWork.SystemConfigRepository.GetQueryable()
+                        .FirstOrDefaultAsync(c => c.Key == "DefaultMonthlyAppFee");
+                        
+                    monthlyFee = feeConfig != null && decimal.TryParse(feeConfig.Value, out var parsedFee) 
+                                 ? parsedFee 
+                                 : 50000m;
+                    store.MonthlyAppFee = monthlyFee; 
+                }
+            }
+
             _unitOfWork.StoreRepository.Update(store);
             var result = await _unitOfWork.SaveChangesAsync() > 0;
+            
             if (result)
             {
-                string title = request.IsApproved ? "✅Cửa hàng đã được duyệt!" : "❌Yêu cầu mở cửa hàng bị từ chối";
-                string message = request.IsApproved
-                    ? $"Chúc mừng! Cửa hàng '{store.Name}' của bạn đã được quản trị viên phê duyệt. Bạn có thể bắt đầu thiết lập dịch vụ ngay bây giờ."
-                    : $"Rất tiếc, yêu cầu mở cửa hàng '{store.Name}' của bạn đã bị từ chối. Vui lòng liên hệ quản trị viên để biết thêm chi tiết.";
+                string title;
+                string message;
 
-                _ = _notificationService.CreateAndSendNotificationAsync(
+                if (request.IsApproved)
+                {
+                    title = "Cửa hàng đã được duyệt!";
+                    
+                    var billingDateStr = store.NextBillingDate?.AddHours(7).ToString("dd/MM/yyyy");
+
+                    message = $"Chúc mừng! Cửa hàng '{store.Name}' của bạn đã được phê duyệt. " +
+                              $"Bạn được tặng {freeTrialDays} ngày dùng thử miễn phí. " +
+                              $"Hệ thống sẽ bắt đầu thu phí nền tảng ({monthlyFee:N0}đ/tháng) từ ngày {billingDateStr}. " +
+                              $"Vui lòng đảm bảo số dư ví để không bị gián đoạn dịch vụ.";
+                }
+                else
+                {
+                    title = "Yêu cầu mở cửa hàng bị từ chối";
+                    message = $"Rất tiếc, yêu cầu mở cửa hàng '{store.Name}' của bạn đã bị từ chối. Vui lòng liên hệ quản trị viên để biết thêm chi tiết.";
+                }
+
+                await _notificationService.CreateAndSendNotificationAsync(
                     store.OwnerId,
                     title,
                     message,
                     NotificationType.SystemAlert 
                 );
             }
+            
             return result;
         }
         public async Task<bool> ChangeStoreStatusAsync(int id, UpdateStoreStatusRequest request)

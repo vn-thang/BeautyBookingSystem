@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/service_api.dart';
-import '../models/service_group_model.dart';
+import '../../../shared/models/service_group_model.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -74,6 +74,9 @@ class _ServiceGroupBottomSheetState extends State<ServiceGroupBottomSheet> {
         widget.onSuccess();
       }
     } catch (e) {
+      // debugPrint("❌ LỖI TẠI BOTTOM SHEET: $e"); 
+      // // 2. TẠM TẮT BÀN PHÍM ĐỂ SNACKBAR KHÔNG BỊ CHE KHI CÓ LỖI
+      // FocusManager.instance.primaryFocus?.unfocus();
       if (mounted) SnackBarHelper.showError(context, e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);

@@ -53,6 +53,28 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     );
   }
 
+  Future<void> _confirmBookingDirectly(int bookingId) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+    );
+
+    try {
+      await StoreBookingApi.assignStaff(bookingId, []);
+      
+      if (!mounted) return;
+      Navigator.pop(context); 
+      
+      SnackBarHelper.showSuccess(context, 'Xác nhận đơn thành công!');
+      _loadData();
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); 
+      SnackBarHelper.showError(context, e.toString());
+    }
+  }
+
   Future<void> _handleCheckoutAndComplete(int paymentId) async {
     setState(() => _isLoading = true); 
     try {
@@ -101,6 +123,47 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       context: context,
       builder: (context) => CancelBookingDialog(
         onConfirmCancel: (reason) => _updateStatus('Cancelled', cancelReason: reason),
+      ),
+    );
+  }
+  void _showNoShowDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text(
+          'Xác nhận vắng mặt', 
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textMain)
+        ),
+        content: const Text(
+          'Bạn có chắc chắn khách hàng này không đến? Đơn này sẽ bị hủy và hệ thống sẽ ghi nhận lịch sử vi phạm của khách.',
+          style: TextStyle(color: AppColors.textSub, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('BỎ QUA', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade700),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              setState(() => _isLoading = true);
+              try {
+                await StoreBookingApi.markNoShow(bookingId: widget.bookingId);
+                
+                if (mounted) {
+                  SnackBarHelper.showSuccess(context, 'Đã ghi nhận khách vắng mặt thành công!');
+                  _loadData(); 
+                }
+              } catch (e) {
+                if (mounted) SnackBarHelper.showError(context, e.toString());
+              } finally {
+                if (mounted) setState(() => _isLoading = false);
+              }
+            },
+            child: const Text('XÁC NHẬN', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }
@@ -221,13 +284,15 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                     detail: detail,
                     onCancelPressed: _showCancelDialog,
                     onAssignStaffPressed: () => _openAssignStaffSheet(detail),
+                    onConfirmPressed: () => _confirmBookingDirectly(detail.id), 
                     onCompletePressed: () => _showCompleteAndPayDialog(detail),
+                    onNoShowPressed: _showNoShowDialog, 
                   ),
                 ],
               ),
               if (_isLoading)
                 Container(
-                  color: AppColors.textMain.withValues(alpha: 0.2), // Màu mờ chuẩn
+                  color: AppColors.textMain.withValues(alpha: 0.2), 
                   child: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
                 ),
             ],

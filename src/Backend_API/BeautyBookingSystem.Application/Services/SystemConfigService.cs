@@ -71,7 +71,8 @@ namespace BeautyBookingSystem.Application.Services
             switch (config.Type.ToLower())
             {
                 case "number":
-                    if (!decimal.TryParse(request.Value, out var numericValue) || numericValue < 0)
+                  if (!decimal.TryParse(request.Value, System.Globalization.NumberStyles.Any, 
+                  System.Globalization.CultureInfo.InvariantCulture, out var numericValue) || numericValue < 0)
                     {
                         throw new ArgumentException($"Giá trị của cấu hình '{config.Key}' phải là một số lớn hơn hoặc bằng 0.");
                     }

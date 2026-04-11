@@ -8,6 +8,6 @@ namespace BeautyBookingSystem.Application.Interfaces
 {
     public interface ICloudinaryService
     {
-        Task<string> UploadImageAsync(Stream fileStream, string fileName);
+    Task<string> UploadImageAsync(Stream fileStream, string fileName, string folderName = "general");
     }
 }

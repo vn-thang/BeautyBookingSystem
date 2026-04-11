@@ -1,5 +1,5 @@
 using BeautyBookingSystem.Application.Common;
-using BeautyBookingSystem.Application.DTOs.StoreCustomer;
+using BeautyBookingSystem.Application.DTOs.CustomerStore;
 using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -180,6 +180,8 @@ namespace BeautyBookingSystem.Application.Services
                 Address = store.Address,
                 Phone = store.Phone,
                 Description = store.Description,
+                ZaloPhone = store.ZaloPhone,
+                FacebookUrl = store.FacebookUrl,
                 LogoUrl = store.LogoUrl,
                 CoverImageUrl = store.CoverImageUrl,
                 Latitude = store.Latitude,
@@ -188,6 +190,8 @@ namespace BeautyBookingSystem.Application.Services
                 AverageRating = store.AverageRating,
                 TotalReviews = store.TotalReviews,
                 IsFavorite = isFavorite,
+                DepositPercent = store.DepositPercent,
+                DepositThreshold = store.DepositThreshold,
 
                 Banners = store.Banners
                     .Where(b => b.IsActive)

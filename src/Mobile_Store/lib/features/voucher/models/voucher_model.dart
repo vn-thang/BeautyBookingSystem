@@ -3,7 +3,8 @@ class VoucherModel {
   final String code;
   final int? serviceId;
   final String? serviceName;
-  final int discountType; // 0: Tiền mặt, 1: Phần trăm (%)
+    final String? imageUrl;
+  final int discountType; // 1: Tiền mặt, 0: Phần trăm (%)
   final double discountValue;
   final double minOrderValue;
   final double maxDiscount;
@@ -18,6 +19,7 @@ class VoucherModel {
     required this.code,
     this.serviceId,
     this.serviceName,
+      this.imageUrl,
     required this.discountType,
     required this.discountValue,
     required this.minOrderValue,
@@ -35,6 +37,7 @@ class VoucherModel {
       code: json['code'] ?? '',
       serviceId: json['serviceId'],
       serviceName: json['serviceName'],
+      imageUrl: json['imageUrl'],
       discountType: json['discountType'] ?? 0,
       discountValue: (json['discountValue'] ?? 0).toDouble(),
       minOrderValue: (json['minOrderValue'] ?? 0).toDouble(),

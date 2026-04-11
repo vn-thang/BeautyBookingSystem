@@ -64,7 +64,11 @@ static Future<List<int>> downloadFile(String endpoint) async {
         _refreshCompleter?.complete(isRefreshSuccess); 
 
         if (isRefreshSuccess) {
-          return await _makeHttpCall(method, endpoint, body);
+          var retryResponse = await _makeHttpCall(method, endpoint, body);
+          if (retryResponse.statusCode == 401) {
+            await _handleSessionExpired();
+          }
+          return retryResponse;
         } else {
           await _handleSessionExpired();
           return response;
@@ -73,7 +77,11 @@ static Future<List<int>> downloadFile(String endpoint) async {
       else {
         bool isRefreshSuccess = await _refreshCompleter!.future;
         if (isRefreshSuccess) {
-          return await _makeHttpCall(method, endpoint, body);
+          var retryResponse = await _makeHttpCall(method, endpoint, body);
+          if (retryResponse.statusCode == 401) {
+            await _handleSessionExpired();
+          }
+          return retryResponse;
         } else {
           return response; 
         }
@@ -84,6 +92,7 @@ static Future<List<int>> downloadFile(String endpoint) async {
 
   static Future<http.Response> _makeHttpCall(String method, String endpoint, Map<String, dynamic>? body) async {
     final token = await TokenStorage.getAccessToken();
+    debugPrint("🔑 Token đang gửi đi: $token");
     final headers = {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
@@ -127,13 +136,15 @@ static Future<List<int>> downloadFile(String endpoint) async {
         final newRefresh = data['refreshToken'];
         
         await TokenStorage.saveTokens(newAccess, newRefresh);
-       debugPrint("❌ C# Backend từ chối Refresh Token. Mã lỗi: ${response.statusCode}, Nội dung: ${response.body}");
+        
+        debugPrint("✅ Làm mới Token thành công!");
         return true;
       }
+      debugPrint("❌ C# Backend từ chối Refresh Token. Mã lỗi: ${response.statusCode}, Nội dung: ${response.body}");
       return false; 
     } catch (e) {
      debugPrint ("❌ Lỗi mạng khi Refresh Token: $e");
-      return false;
+     return false;
     }
   }
 
@@ -157,7 +168,15 @@ static Future<List<int>> downloadFile(String endpoint) async {
   final json = response.body.isNotEmpty ? jsonDecode(response.body) : {};
   switch (response.statusCode) {
     case 200: case 201: case 204: return json;
-    case 400: throw Exception(json['message'] ?? 'Dữ liệu không hợp lệ');
+    case 400: 
+    debugPrint("LỖI 400 RAW: ${response.body}");
+        if (json.containsKey('errors')) {
+          final errors = json['errors'] as Map<String, dynamic>;
+          final firstError = errors.values.first[0];
+          throw Exception(firstError);
+        }
+    throw Exception(json['message'] ?? 'Dữ liệu không hợp lệ');
+    case 401: throw Exception('Phiên đăng nhập đã hết hạn (401)'); 
     case 403: throw Exception('Không có quyền thực hiện');
     case 404: throw Exception(json['message'] ?? 'Không tìm thấy dữ liệu');
     case 500: throw Exception('Lỗi máy chủ. Vui lòng thử lại sau');

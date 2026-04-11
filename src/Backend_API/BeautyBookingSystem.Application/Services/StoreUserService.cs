@@ -23,13 +23,13 @@ namespace BeautyBookingSystem.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<UserProfileResponse> GetProfileAsync(string userId)
+        public async Task<StoreUserProfileResponse> GetProfileAsync(string userId)
         {
             var user = await GetUserOrThrowAsync(userId);
-            return _mapper.Map<UserProfileResponse>(user);
+            return _mapper.Map<StoreUserProfileResponse>(user);
         }
 
-        public async Task<bool> UpdateProfileAsync(string userId, UpdateProfileRequest request)
+        public async Task<bool> UpdateProfileAsync(string userId, StoreUpdateProfileRequest request)
         {
             var user = await GetUserOrThrowAsync(userId);
 
