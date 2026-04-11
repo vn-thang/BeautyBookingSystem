@@ -14,6 +14,7 @@ namespace BeautyBookingSystem.Application.DTOs.StoreVoucher
         [StringLength(50, ErrorMessage = "Mã khuyến mãi không vượt quá 50 ký tự")]
         public string Code { get; set; } = string.Empty;
         public int? ServiceId { get; set; }
+        public string? ImageUrl { get; set; }
         public DiscountType DiscountType { get; set; }
 
         [Range(1, double.MaxValue, ErrorMessage = "Giá trị giảm phải lớn hơn 0")]

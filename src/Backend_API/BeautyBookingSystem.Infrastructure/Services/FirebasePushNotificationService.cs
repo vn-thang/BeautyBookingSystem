@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FirebaseAdmin.Messaging;
 
 namespace BeautyBookingSystem.Infrastructure.Services
 {
@@ -17,11 +18,33 @@ namespace BeautyBookingSystem.Infrastructure.Services
             _logger = logger;
         }
 
-        public Task SendPushNotificationAsync(string fcmToken, string title, string body)
+        public async Task SendPushNotificationAsync(string fcmToken, string title, string body)
         {
-            _logger.LogInformation($"[MOCK FIREBASE PUSH] Gửi tới Token: {fcmToken} | Title: {title} | Body: {body}");
+            if (string.IsNullOrWhiteSpace(fcmToken))
+            {
+                _logger.LogWarning("Không thể gửi thông báo vì FcmToken bị rỗng.");
+                return;
+            }
 
-            return Task.CompletedTask;
+            try
+            {
+                var message = new Message()
+                {
+                    Token = fcmToken,
+                    Notification = new Notification()
+                    {
+                        Title = title,
+                        Body = body
+                    }
+                };
+                string response = await FirebaseMessaging.DefaultInstance.SendAsync(message);
+
+                _logger.LogInformation($"[THÀNH CÔNG] Đã gửi thông báo tới {fcmToken}. Firebase Response: {response}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"[THẤT BẠI] Lỗi khi gửi Firebase Push Notification: {ex.Message}");
+            }
         }
     }
 }

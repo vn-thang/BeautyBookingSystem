@@ -1,35 +1,40 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter } from 'react-router-dom';
+import { ConfigProvider } from 'antd'; 
+import viVN from 'antd/locale/vi_VN'; 
+import AppRoutes from '@/routes/AppRoutes';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <ConfigProvider
+      locale={viVN} 
+      theme={{
+        token: {
+          colorPrimary: '#4318FF', 
+          colorInfo: '#4318FF',
+          colorSuccess: '#10B981', 
+          colorError: '#EF4444',  
+          colorWarning: '#F59E0B',
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          borderRadius: 8, 
+          colorTextBase: '#1E293B', 
+        },
+        components: {
+          Table: {
+            headerBg: '#F8FAFC', 
+            headerColor: '#475569', 
+            rowHoverBg: '#F1F5F9',
+          },
+          Card: {
+            paddingLG: 24, 
+          }
+        }
+      }}
+    >
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </ConfigProvider>
+  );
 }
 
-export default App
+export default App;

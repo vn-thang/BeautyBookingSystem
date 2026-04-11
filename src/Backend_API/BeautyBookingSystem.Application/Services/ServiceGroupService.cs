@@ -1,98 +1,58 @@
-﻿using AutoMapper;
-using BeautyBookingSystem.Application.Common.Exceptions;
+﻿// Application/Services/ServiceGroupService.cs
 using BeautyBookingSystem.Application.DTOs.ServiceGroup;
 using BeautyBookingSystem.Application.Interfaces;
-using BeautyBookingSystem.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace BeautyBookingSystem.Application.Services
 {
     public class ServiceGroupService : IServiceGroupService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly ICurrentUserService _currentUserService;
-        private readonly IMapper _mapper;
 
-        public ServiceGroupService(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IMapper mapper)
+        public ServiceGroupService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
-            _currentUserService = currentUserService; 
-            _mapper = mapper;
+        }
+        public async Task<List<ServiceGroupDto>> GetAllAsync()
+        {
+            var list = await _unitOfWork.ServiceGroupRepository.GetAllOrderedAsync();
+
+            return list.Select(x => new ServiceGroupDto
+            {
+                Id = x.Id,
+                StoreId = x.StoreId,
+                Name = x.Name,
+                SortOrder = x.SortOrder
+            }).ToList();
+        }
+        public async Task<List<ServiceGroupDto>> GetByStoreAsync(int storeId)
+        {
+            var list = await _unitOfWork.ServiceGroupRepository.GetByStoreAsync(storeId);
+
+            return list.Select(x => new ServiceGroupDto
+            {
+                Id = x.Id,
+                StoreId = x.StoreId,
+                Name = x.Name,
+                SortOrder = x.SortOrder
+            }).ToList();
         }
 
-        private async Task<ServiceGroup> GetAndValidateOwnershipAsync(int id, int currentStoreId)
+        public async Task<ServiceGroupDto?> GetByIdAsync(int id)
         {
-            var group = await _unitOfWork.ServiceGroupRepository.GetByIdAsync(id);
-            if (group == null || group.StoreId != currentStoreId)
-                throw new NotFoundException("Nhóm dịch vụ không tồn tại hoặc bạn không có quyền thao tác!");
+            var entity = await _unitOfWork.ServiceGroupRepository.GetByIdAsync(id);
 
-            return group;
-        }
+            if (entity == null) return null;
 
-        public async Task<List<ServiceGroupDto>> GetAllByCurrentStoreAsync()
-        {
-            int currentStoreId = await _currentUserService.GetCurrentStoreIdAsync();
-
-            var groups = await _unitOfWork.ServiceGroupRepository.GetQueryable()
-                .Where(g => g.StoreId == currentStoreId)
-                .OrderBy(g => g.SortOrder)
-                .ToListAsync();
-
-            return _mapper.Map<List<ServiceGroupDto>>(groups);
-        }
-
-        public async Task<ServiceGroupDto> GetByIdAsync(int id)
-        {
-            int currentStoreId = await _currentUserService.GetCurrentStoreIdAsync();
-            var group = await GetAndValidateOwnershipAsync(id, currentStoreId);
-
-            return _mapper.Map<ServiceGroupDto>(group);
-        }
-
-        public async Task<ServiceGroupDto> CreateAsync(CreateServiceGroupRequest request)
-        {
-            int currentStoreId = await _currentUserService.GetCurrentStoreIdAsync();
-
-            var newGroup = _mapper.Map<ServiceGroup>(request);
-            newGroup.StoreId = currentStoreId;
-
-            await _unitOfWork.ServiceGroupRepository.AddAsync(newGroup);
-            await _unitOfWork.SaveChangesAsync();
-
-            return _mapper.Map<ServiceGroupDto>(newGroup);
-        }
-
-        public async Task<bool> UpdateAsync(int id, UpdateServiceGroupRequest request)
-        {
-            int currentStoreId = await _currentUserService.GetCurrentStoreIdAsync();
-            var group = await GetAndValidateOwnershipAsync(id, currentStoreId);
-
-            _mapper.Map(request, group);
-
-            _unitOfWork.ServiceGroupRepository.Update(group);
-            await _unitOfWork.SaveChangesAsync();
-
-            return true;
-        }
-
-        public async Task<bool> DeleteAsync(int id)
-        {
-            int currentStoreId = await _currentUserService.GetCurrentStoreIdAsync();
-            var group = await GetAndValidateOwnershipAsync(id, currentStoreId);
-
-            bool hasServices = await _unitOfWork.ServiceRepository.GetQueryable()
-                .AnyAsync(s => s.GroupId == id);
-
-            if (hasServices)
-                throw new BadRequestException("Không thể xóa vì nhóm này đang chứa dịch vụ.");
-
-            _unitOfWork.ServiceGroupRepository.Delete(group);
-            await _unitOfWork.SaveChangesAsync();
-
-            return true;
+            return new ServiceGroupDto
+            {
+                Id = entity.Id,
+                StoreId = entity.StoreId,
+                Name = entity.Name,
+                SortOrder = entity.SortOrder
+            };
         }
     }
 }

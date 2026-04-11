@@ -1,59 +1,34 @@
-﻿using BeautyBookingSystem.Application.DTOs.Category;
-using BeautyBookingSystem.Application.Interfaces;
-using Microsoft.AspNetCore.Http;
+﻿// API/Controllers/GlobalCategoriesController.cs
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+using BeautyBookingSystem.Application.Interfaces;
 
-namespace BeautyBookingSystem.API.Controllers
+[Route("api/[controller]")]
+[ApiController]
+public class GlobalCategoriesController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class GlobalCategoriesController : ControllerBase
+    private readonly IGlobalCategoryService _service;
+
+    public GlobalCategoriesController(IGlobalCategoryService service)
     {
-        private readonly IGlobalCategoryService _categoryService;
+        _service = service;
+    }
 
-        public GlobalCategoriesController(IGlobalCategoryService categoryService)
-        {
-            _categoryService = categoryService;
-        }
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        return Ok(await _service.GetAllAsync());
+    }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var result = await _categoryService.GetAllAsync(onlyActive: true);
-            return Ok(result);
-        }
+    [HttpGet("active")]
+    public async Task<IActionResult> GetActive()
+    {
+        return Ok(await _service.GetActiveAsync());
+    }
 
-        [HttpGet("admin")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllForAdmin()
-        {
-            var result = await _categoryService.GetAllAsync(onlyActive: false);
-            return Ok(result);
-        }
-
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request)
-        {
-            var result = await _categoryService.CreateAsync(request);
-            return Ok(result);
-        }
-
-        [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryRequest request)
-        {
-            await _categoryService.UpdateAsync(id, request);
-            return Ok(new { Message = "Cập nhật thành công" });
-        }
-
-        [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            await _categoryService.DeleteAsync(id);
-            return Ok(new { Message = "Đã ẩn danh mục" });
-        }
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var result = await _service.GetByIdAsync(id);
+        return result == null ? NotFound() : Ok(result);
     }
 }

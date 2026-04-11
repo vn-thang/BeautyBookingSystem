@@ -25,20 +25,49 @@ namespace BeautyBookingSystem.Application.Services
         {
             int storeId = await _currentUserService.GetCurrentStoreIdAsync();
             var response = new StoreDashboardDto();
-
-            //1. Lấy thông tin Header 
             var store = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
             if (store != null)
             {
+                response.Status = store.ApprovalStatus.ToString().ToLower();
+                response.MinimumBalance = store.MinimumBalance;
+                response.IsWalletLowBalance = store.WalletBalance < store.MinimumBalance;
                 response.Header = new StoreHeaderDto
                 {
                     Name = store.Name,
                     Address = store.Address,
-                    Avatar = store.LogoUrl 
+                    LogoUrl = store.LogoUrl 
                 };
             }
 
-            // 2. Tạo Query cơ bản lọc theo Store và Ngày tháng
+
+            if (!string.IsNullOrEmpty(request.TimeFilter))
+            {
+                DateTime now = DateTime.Now; 
+                switch (request.TimeFilter.ToLower())
+                {
+                    case "today": // Hôm nay
+                        request.StartDate = now.Date; 
+                        request.EndDate = now.Date.AddDays(1).AddTicks(-1); 
+                        break;
+                    case "week": 
+                        int diff = (7 + (now.DayOfWeek - DayOfWeek.Monday)) % 7;
+                        request.StartDate = now.Date.AddDays(-1 * diff);
+                        request.EndDate = request.StartDate.Value.AddDays(7).AddTicks(-1);
+                        break;
+                    case "month": 
+                        request.StartDate = new DateTime(now.Year, now.Month, 1);
+                        request.EndDate = request.StartDate.Value.AddMonths(1).AddTicks(-1);
+                        break;
+                    case "year": 
+                        request.StartDate = new DateTime(now.Year, 1, 1);
+                        request.EndDate = request.StartDate.Value.AddYears(1).AddTicks(-1);
+                        break;
+                    case "all": 
+                        request.StartDate = null;
+                        request.EndDate = null;
+                        break;
+                }
+            }
             var bookingQuery = _unitOfWork.BookingRepository.GetQueryable()
                 .Where(b => b.StoreId == storeId);
 
@@ -48,7 +77,6 @@ namespace BeautyBookingSystem.Application.Services
             if (request.EndDate.HasValue)
                 bookingQuery = bookingQuery.Where(b => b.CreatedAt <= request.EndDate.Value);
 
-            // 3. Thống kê chi tiết
             response.Statistics.TotalBookings = await bookingQuery.CountAsync();
 
             response.Statistics.TotalCustomers = await bookingQuery
@@ -56,18 +84,31 @@ namespace BeautyBookingSystem.Application.Services
                 .Distinct()
                 .CountAsync();
 
-            // Chỉ tính doanh thu các đơn đã hoàn thành
             response.Statistics.TotalRevenue = await bookingQuery
                 .Where(b => b.Status == BookingStatus.Completed) 
                 .SumAsync(b => b.TotalPrice);
+            response.Commission.TotalCommission = await bookingQuery
+                .Where(b => b.Status == BookingStatus.Completed)
+                .SumAsync(b => b.SystemFee); 
 
-            // 4. Thống kê tiền hoa hồng (Tạm thời gán = 0)
-            
-            response.Commission.TotalCommission = 0;
-            response.Commission.AppUsageFee = 0;
-            response.Commission.BalanceToPay = 0;
+            var transactionQuery = _unitOfWork.WalletTransactionRepository.GetQueryable()
+                .Where(t => t.StoreId == storeId);
 
-            // 5. Đơn đặt lịch 
+            if (request.StartDate.HasValue)
+                transactionQuery = transactionQuery.Where(t => t.CreatedAt >= request.StartDate.Value);
+            if (request.EndDate.HasValue)
+                transactionQuery = transactionQuery.Where(t => t.CreatedAt <= request.EndDate.Value);
+
+            response.Commission.AppUsageFee = await transactionQuery
+                .Where(t => t.Type == TransactionType.MonthlyFee 
+                         && t.Status == TransactionStatus.Completed)
+                .SumAsync(t => Math.Abs(t.Amount)); 
+
+            response.Commission.TotalWithdrawn = await transactionQuery
+                .Where(t => t.Type == TransactionType.Withdrawal 
+                         && t.Status == TransactionStatus.Completed)
+                .SumAsync(t => Math.Abs(t.Amount));
+
             var counts = await bookingQuery
                 .GroupBy(b => b.Status)
                 .Select(g => new { Status = g.Key, Count = g.Count() })

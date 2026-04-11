@@ -82,6 +82,7 @@ namespace BeautyBookingSystem.Application.Services
             {
                 StoreId = storeId,
                 ServiceId = request.ServiceId,
+                ImageUrl = request.ImageUrl,
                 Code = request.Code.ToUpper(), 
                 DiscountType = request.DiscountType,
                 DiscountValue = request.DiscountValue,
@@ -105,19 +106,21 @@ namespace BeautyBookingSystem.Application.Services
                     .ToListAsync();
 
                 var store = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
-
-                if (customerIds.Any())
-                {
-                    var notificationTasks = customerIds.Select(customerId =>
-                        _notificationService.CreateAndSendNotificationAsync(
-                            customerId,
-                            $"🎁 Ưu đãi mới từ {store?.Name}",
-                            $"Nhập mã {voucher.Code} để được giảm giá ngay cho lần đặt lịch tiếp theo!",
-                            NotificationType.Promotion
-                        )
-                    );
-                    await Task.WhenAll(notificationTasks);
-                }
+               if (customerIds != null && customerIds.Any())
+    {
+        foreach (var customerId in customerIds)
+        {
+            if (customerId.HasValue) 
+            {
+                await _notificationService.CreateAndSendNotificationAsync(
+                    customerId.Value,
+                    $"🎁 Ưu đãi mới từ {store?.Name}",
+                    $"Nhập mã {voucher.Code} để được giảm giá ngay cho lần đặt lịch tiếp theo!",
+                    NotificationType.Promotion
+                );
+            }
+        }
+    }
             }
 
             return _mapper.Map<VoucherDto>(voucher);
@@ -130,7 +133,16 @@ namespace BeautyBookingSystem.Application.Services
 
             if (request.EndDate <= voucher.StartDate)
                 throw new BadRequestException("Ngày kết thúc mới không được nhỏ hơn ngày bắt đầu.");
+             if (request.ServiceId.HasValue)
+                {
+                    var isValidService = await _unitOfWork.ServiceRepository.GetQueryable()
+                        .AnyAsync(s => s.Id == request.ServiceId.Value && s.StoreId == storeId);
 
+                    if (!isValidService)
+                        throw new BadRequestException("Dịch vụ mới không hợp lệ hoặc không thuộc cửa hàng này.");
+                }
+            voucher.ServiceId = request.ServiceId; 
+            voucher.ImageUrl = request.ImageUrl;
             voucher.EndDate = request.EndDate;
             voucher.UsageLimit = request.UsageLimit;
 

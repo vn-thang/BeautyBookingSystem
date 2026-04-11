@@ -1,14 +1,11 @@
-﻿using BeautyBookingSystem.Application.DTOs.Service;
-using BeautyBookingSystem.Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using BeautyBookingSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace BeautyBookingSystem.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "StoreOwner")]
     public class ServicesController : ControllerBase
     {
         private readonly IServiceService _serviceService;
@@ -18,39 +15,57 @@ namespace BeautyBookingSystem.API.Controllers
             _serviceService = serviceService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] bool onlyActive = true) 
-        {
-            var result = await _serviceService.GetAllByCurrentStoreAsync(onlyActive);
-            return Ok(new { Message = "Lấy danh sách thành công", Data = result });
-        }
-
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var result = await _serviceService.GetByIdAsync(id);
-            return Ok(new { Message = "Lấy thông tin thành công", Data = result });
+            var customerId = GetCurrentCustomerId();
+            var service = await _serviceService.GetByIdAsync(id, customerId);
+
+            if (service == null)
+                return NotFound();
+
+            return Ok(service);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateServiceRequest request)
+        [HttpGet("store/{storeId:int}")]
+        public async Task<IActionResult> GetByStore(int storeId)
         {
-            var result = await _serviceService.CreateAsync(request);
-            return Ok(new { Message = "Tạo dịch vụ thành công", Data = result });
+            var result = await _serviceService.GetByStoreAsync(storeId);
+            return Ok(result);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateServiceRequest request)
+        [HttpGet("category/{categoryId:int}")]
+        public async Task<IActionResult> GetByCategory(int categoryId)
         {
-            await _serviceService.UpdateAsync(id, request);
-            return Ok(new { Message = "Cập nhật dịch vụ thành công" });
+            var result = await _serviceService.GetByCategoryAsync(categoryId);
+            return Ok(result);
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpGet("group/{groupId:int}")]
+        public async Task<IActionResult> GetByGroup(int groupId)
         {
-            await _serviceService.DeleteAsync(id);
-            return Ok(new { Message = "Đã ẩn dịch vụ thành công" });
+            var result = await _serviceService.GetByGroupAsync(groupId);
+            return Ok(result);
+        }
+
+        [HttpGet("featured")]
+        public async Task<IActionResult> GetFeatured()
+        {
+            var result = await _serviceService.GetFeaturedAsync();
+            return Ok(result);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var result = await _serviceService.GetAllAsync();
+            return Ok(result);
+        }
+
+        private int? GetCurrentCustomerId()
+        {
+            var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(claim, out var customerId) ? customerId : null;
         }
     }
 }

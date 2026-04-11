@@ -14,5 +14,6 @@ namespace BeautyBookingSystem.Application.DTOs.AdminStore
         public int PageSize { get; set; } = 10;
         public string? SearchTerm { get; set; } 
         public ApprovalStatus? Status { get; set; } 
+        public bool? IsDebt { get; set; }
     }
 }

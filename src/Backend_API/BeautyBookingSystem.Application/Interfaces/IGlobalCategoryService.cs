@@ -1,4 +1,4 @@
-﻿using BeautyBookingSystem.Application.DTOs.Category;
+﻿using BeautyBookingSystem.Application.DTOs.GlobalCategory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace BeautyBookingSystem.Application.Interfaces
 {
-    public interface IGlobalCategoryService
-    {
-        Task<List<GlobalCategoryDto>> GetAllAsync(bool onlyActive = false);
-        Task<GlobalCategoryDto> GetByIdAsync(int id);
-        Task<GlobalCategoryDto> CreateAsync(CreateCategoryRequest request);
-        Task<bool> UpdateAsync(int id, UpdateCategoryRequest request);
-        Task<bool> DeleteAsync(int id); 
-    }
+        public interface IGlobalCategoryService
+        {
+            Task<List<GlobalCategoryDto>> GetAllAsync();
+            Task<List<GlobalCategoryDto>> GetActiveAsync();
+            Task<GlobalCategoryDto?> GetByIdAsync(int id);
+
+        }
+    
 }

@@ -9,10 +9,8 @@ namespace BeautyBookingSystem.Application.Interfaces
 {
     public interface IServiceGroupService
     {
-        Task<List<ServiceGroupDto>> GetAllByCurrentStoreAsync();
-        Task<ServiceGroupDto> GetByIdAsync(int id);
-        Task<ServiceGroupDto> CreateAsync(CreateServiceGroupRequest request);
-        Task<bool> UpdateAsync(int id, UpdateServiceGroupRequest request);
-        Task<bool> DeleteAsync(int id);
+        Task<List<ServiceGroupDto>> GetAllAsync();
+        Task<List<ServiceGroupDto>> GetByStoreAsync(int storeId);
+        Task<ServiceGroupDto?> GetByIdAsync(int id);
     }
 }

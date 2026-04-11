@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BeautyBookingSystem.API.Controllers
+namespace BeautyBookingSystem.API.Controllers.Admin
 {
     [Authorize(Roles = "Admin")]
     [ApiController]

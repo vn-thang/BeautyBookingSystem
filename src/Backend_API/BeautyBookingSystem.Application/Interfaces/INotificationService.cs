@@ -16,5 +16,6 @@ namespace BeautyBookingSystem.Application.Interfaces
         Task<bool> MarkAsReadAsync(int id);
         Task<bool> MarkAllAsReadAsync();
         Task CreateAndSendNotificationAsync(int userId, string title, string message, NotificationType type);
+        Task SendBookingReminderAsync(int bookingId);
     }
 }

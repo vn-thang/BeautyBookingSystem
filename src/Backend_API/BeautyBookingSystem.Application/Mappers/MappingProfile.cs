@@ -1,25 +1,30 @@
 ﻿using AutoMapper;
+using BeautyBookingSystem.Application.DTOs.AdminBooking;
+using BeautyBookingSystem.Application.DTOs.SystemConfig;
 using BeautyBookingSystem.Application.DTOs.AdminReview;
 using BeautyBookingSystem.Application.DTOs.AdminStore;
 using BeautyBookingSystem.Application.DTOs.AdminUser;
 using BeautyBookingSystem.Application.DTOs.Auth;
-using BeautyBookingSystem.Application.DTOs.Category;
 using BeautyBookingSystem.Application.DTOs.Notification;
-using BeautyBookingSystem.Application.DTOs.Service;
-using BeautyBookingSystem.Application.DTOs.ServiceGroup;
-using BeautyBookingSystem.Application.DTOs.Staff;
-using BeautyBookingSystem.Application.DTOs.Store;
 using BeautyBookingSystem.Application.DTOs.StoreBooking;
 using BeautyBookingSystem.Application.DTOs.StorePayment;
 using BeautyBookingSystem.Application.DTOs.StoreReview;
 using BeautyBookingSystem.Application.DTOs.StoreVoucher;
-using BeautyBookingSystem.Application.DTOs.User;
+using BeautyBookingSystem.Application.DTOs.StoreWallet;
 using BeautyBookingSystem.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BeautyBookingSystem.Application.DTOs.AdminWallet;
+using BeautyBookingSystem.Application.DTOs.SystemContent;
+using BeautyBookingSystem.Application.DTOs.StoreUser;
+using BeautyBookingSystem.Application.DTOs.AdminCategory;
+using BeautyBookingSystem.Application.DTOs.MyStore;
+using BeautyBookingSystem.Application.DTOs.StoreService;
+using BeautyBookingSystem.Application.DTOs.StoreServiceGroup;
+using BeautyBookingSystem.Application.DTOs.StoreStaff;
 
 namespace BeautyBookingSystem.Application.Mappers
 {
@@ -29,19 +34,11 @@ namespace BeautyBookingSystem.Application.Mappers
         {
             CreateMap<RegisterRequest, User>();
 
-            CreateMap<RegisterPartnerRequest, User>()
-                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.OwnerName));
-
-            CreateMap<RegisterPartnerRequest, Store>()
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.StoreName))
-                .ForMember(dest => dest.Address, opt => opt.MapFrom(src => src.StoreAddress))
-                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.StoreDescription));
-
-            CreateMap<User, UserProfileResponse>()
+            CreateMap<User, StoreUserProfileResponse>()
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
-            CreateMap<UpdateProfileRequest, User>()
+            CreateMap<StoreUpdateProfileRequest, User>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
            
             CreateMap<Store, StoreProfileDto>();
@@ -59,6 +56,8 @@ namespace BeautyBookingSystem.Application.Mappers
             CreateMap<Staff, StaffDtos>();
             CreateMap<CreateStaffRequest, Staff>();
             CreateMap<UpdateStaffRequest, Staff>();
+            CreateMap<StaffSchedule, StaffScheduleDto>();
+            CreateMap<StaffLeave, StaffLeaveDto>();
             
             CreateMap<ServiceGroup, ServiceGroupDto>();
             CreateMap<CreateServiceGroupRequest, ServiceGroup>();
@@ -71,28 +70,47 @@ namespace BeautyBookingSystem.Application.Mappers
             CreateMap<UpdateServiceRequest, Service>();
 
             CreateMap<Booking, StoreBookingListDto>()
-            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.FullName))
-            .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => src.Customer.Phone));
+            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => 
+        src.CustomerId.HasValue && src.Customer != null
+            ? src.Customer.FullName 
+            : src.WalkInCustomerName ?? "Khách vãng lai"))
+            
+    .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => 
+        src.CustomerId.HasValue && src.Customer != null
+            ? src.Customer.Phone 
+            : src.WalkInCustomerPhone ?? string.Empty));
 
             CreateMap<Booking, StoreBookingDetailDto>()
                 .IncludeBase<Booking, StoreBookingListDto>()
-                .ForMember(dest => dest.Services, opt => opt.MapFrom(src => src.BookingDetails));
-
-            // Map từ BookingDetails -> BookingServiceItemDto
-            CreateMap<BookingDetail, BookingServiceItemDto>()
+                .ForMember(dest => dest.Services, opt => opt.MapFrom(src => src.BookingDetails))
+                .ForMember(dest => dest.PaymentId, opt => opt.MapFrom(src =>
+                (src.Payments != null && src.Payments.Any())
+                ? src.Payments.First().Id
+                : (int?)null
+                ))
+                .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.FinalPrice - src.DepositAmount));
+                CreateMap<BookingDetail, BookingServiceItemDto>()
                 .ForMember(dest => dest.BookingDetailId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.ServiceName, opt => opt.MapFrom(src => src.Service.Name))
                 .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : string.Empty))
                 .ForMember(dest => dest.DetailStatus, opt => opt.MapFrom(src => src.Status));
 
-            // Map từ Staffs -> AvailableStaffDto
             CreateMap<Staff, AvailableStaffDto>();
 
             CreateMap<Payment, StorePaymentListDto>()
-                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Booking.Customer.FullName))
                 .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod.ToString()))
                 .ForMember(dest => dest.PaymentType, opt => opt.MapFrom(src => src.PaymentType.ToString()))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.BookingStatus, opt => opt.MapFrom(src => src.Booking.Status.ToString()))
+                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => 
+                src.Booking.CustomerId.HasValue 
+                ? src.Booking.Customer.FullName 
+                : src.Booking.WalkInCustomerName ?? "Khách vãng lai"))
+            
+                .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => 
+                src.Booking.CustomerId.HasValue 
+                ? src.Booking.Customer.Phone 
+                : src.Booking.WalkInCustomerPhone));
 
             CreateMap<Review, StoreReviewDto>()
                 .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.FullName))
@@ -123,6 +141,37 @@ namespace BeautyBookingSystem.Application.Mappers
             CreateMap<Review, ReviewDto>()
             .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.FullName))
             .ForMember(dest => dest.StoreName, opt => opt.MapFrom(src => src.Store.Name));
+
+            CreateMap<Booking, AdminBookingListDto>()
+            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.FullName))
+            .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => src.Customer.Phone))
+            .ForMember(dest => dest.StoreName, opt => opt.MapFrom(src => src.Store.Name))
+            .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => 
+        src.Payments.OrderByDescending(p => p.Id).Select(p => p.Status).FirstOrDefault()
+    ));
+
+            CreateMap<Booking, AdminBookingDetailDto>()
+    .IncludeBase<Booking, AdminBookingListDto>()
+    .ForMember(dest => dest.Services, opt => opt.MapFrom(src => src.BookingDetails))
+    .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.FinalPrice - src.DepositAmount));
+
+            CreateMap<BookingDetail, AdminBookingDetailItemDto>()
+    .ForMember(dest => dest.BookingDetailId, opt => opt.MapFrom(src => src.Id))
+    .ForMember(dest => dest.ServiceName, opt => opt.MapFrom(src => src.Service.Name))
+    .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : null))
+    .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status));
+
+    CreateMap<WalletTransaction, WalletTransactionDto>();
+    CreateMap<SystemConfig, SystemConfigDto>();
+    CreateMap<WalletTransaction, AdminWalletTransactionDto>()
+    .ForMember(dest => dest.StoreName, opt => opt.MapFrom(src => src.Store.Name));
+    CreateMap<AdjustWalletRequest, WalletTransaction>()
+    .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Reason));
+    CreateMap<SystemContent, SystemContentListDto>();
+    CreateMap<SystemContent, SystemContentDetailDto>();
+    CreateMap<WithdrawalRequest, WithdrawalRequestDto>()
+        .ForMember(dest => dest.StoreName, opt => opt.MapFrom(src => src.Store.Name))
+        .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status));
         }
     }
 }

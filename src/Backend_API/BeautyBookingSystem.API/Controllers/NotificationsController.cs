@@ -39,14 +39,14 @@ namespace BeautyBookingSystem.API.Controllers
             return Ok(new { count });
         }
 
-        [HttpPatch("{id}/read")]
+        [HttpPut("{id}/read")]
         public async Task<IActionResult> MarkAsRead(int id)
         {
             await _notificationService.MarkAsReadAsync(id);
             return Ok(new { message = "Đã đánh dấu đọc." });
         }
 
-        [HttpPatch("read-all")]
+        [HttpPut("read-all")]
         public async Task<IActionResult> MarkAllAsRead()
         {
             await _notificationService.MarkAllAsReadAsync();

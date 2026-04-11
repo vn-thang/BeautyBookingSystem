@@ -1,56 +1,34 @@
-﻿using BeautyBookingSystem.Application.DTOs.ServiceGroup;
-using BeautyBookingSystem.Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿// API/Controllers/ServiceGroupsController.cs
 using Microsoft.AspNetCore.Mvc;
+using BeautyBookingSystem.Application.Interfaces;
 
-namespace BeautyBookingSystem.API.Controllers
+[Route("api/[controller]")]
+[ApiController]
+public class ServiceGroupsController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    [Authorize(Roles = "StoreOwner")]
-    public class ServiceGroupsController : ControllerBase
+    private readonly IServiceGroupService _service;
+
+    public ServiceGroupsController(IServiceGroupService service)
     {
-        private readonly IServiceGroupService _serviceGroupService;
+        _service = service;
+    }
 
-        public ServiceGroupsController(IServiceGroupService serviceGroupService)
-        {
-            _serviceGroupService = serviceGroupService;
-        }
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        return Ok(await _service.GetAllAsync());
+    }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var result = await _serviceGroupService.GetAllByCurrentStoreAsync();
-            return Ok(result);
-        }
+    [HttpGet("store/{storeId}")]
+    public async Task<IActionResult> GetByStore(int storeId)
+    {
+        return Ok(await _service.GetByStoreAsync(storeId));
+    }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var result = await _serviceGroupService.GetByIdAsync(id);
-            return Ok(result);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateServiceGroupRequest request)
-        {
-            var result = await _serviceGroupService.CreateAsync(request);
-            return Ok(result);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateServiceGroupRequest request)
-        {
-            await _serviceGroupService.UpdateAsync(id, request);
-            return Ok(new { Message = "Cập nhật nhóm dịch vụ thành công" });
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            await _serviceGroupService.DeleteAsync(id);
-            return Ok(new { Message = "Xóa nhóm dịch vụ thành công" });
-        }
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var result = await _service.GetByIdAsync(id);
+        return result == null ? NotFound() : Ok(result);
     }
 }

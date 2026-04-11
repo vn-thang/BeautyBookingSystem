@@ -115,5 +115,28 @@ namespace BeautyBookingSystem.Application.Services
                 _ = _firebaseService.SendPushNotificationAsync(user.FcmToken, title, message);
             }
         }
+
+        public async Task SendBookingReminderAsync(int bookingId)
+        {
+            var booking = await _unitOfWork.BookingRepository.GetQueryable()
+                .Include(b => b.BookingDetails)
+                .Include(b => b.Store)
+                .FirstOrDefaultAsync(b => b.Id == bookingId);
+
+            if (booking == null || booking.Status == BookingStatus.Cancelled || booking.Status == BookingStatus.Completed)
+            {
+                return;
+            }
+
+            var firstDetail = booking.BookingDetails.OrderBy(d => d.StartTime).FirstOrDefault();
+            if (firstDetail == null) return;
+
+            string title = "⏰ Nhắc nhở lịch làm đẹp";
+            string message = $"Bạn có lịch hẹn tại cửa hàng {booking.Store.Name} vào lúc {firstDetail.StartTime:hh\\:mm} hôm nay. Vui lòng đến đúng giờ nhé!";
+            if (booking.CustomerId.HasValue)
+    {
+            await CreateAndSendNotificationAsync(booking.CustomerId.Value, title, message, NotificationType.BookingUpdate); 
+        }
+        }
     }
 }
