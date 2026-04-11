@@ -79,10 +79,10 @@ namespace BeautyBookingSystem.Application.Services
             _unitOfWork.PaymentRepository.Update(payment);
             var result = await _unitOfWork.SaveChangesAsync() > 0;
 
-            if (result)
+            if (result && payment.Booking.CustomerId.HasValue)
             {
                 _ = _notificationService.CreateAndSendNotificationAsync(
-                    payment.Booking.CustomerId,
+                    payment.Booking.CustomerId.Value,
                     "Xác nhận thanh toán",
                     $"Giao dịch cho đơn hàng #{payment.BookingId} đã được xác nhận thành công. Cảm ơn bạn đã sử dụng dịch vụ!",
                     NotificationType.SystemAlert
@@ -110,10 +110,10 @@ namespace BeautyBookingSystem.Application.Services
             _unitOfWork.PaymentRepository.Update(payment);
             var result = await _unitOfWork.SaveChangesAsync() > 0;
 
-            if (result)
+            if (result && payment.Booking.CustomerId.HasValue)
             {
                 _ = _notificationService.CreateAndSendNotificationAsync(
-                    payment.Booking.CustomerId,
+                    payment.Booking.CustomerId.Value,
                     "🔄Thông báo hoàn tiền",
                     $"Số tiền của giao dịch #{payment.Id} đã được hoàn lại. Vui lòng kiểm tra tài khoản của bạn.",
                     NotificationType.SystemAlert

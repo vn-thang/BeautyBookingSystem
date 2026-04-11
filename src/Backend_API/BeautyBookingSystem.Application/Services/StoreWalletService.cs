@@ -4,6 +4,7 @@ using BeautyBookingSystem.Application.Common.Exceptions;
 using BeautyBookingSystem.Application.DTOs.Common;
 using BeautyBookingSystem.Application.DTOs.StoreWallet;
 using BeautyBookingSystem.Application.Interfaces;
+using BeautyBookingSystem.Domain.Constants;
 using BeautyBookingSystem.Domain.Entities;
 using BeautyBookingSystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -94,7 +95,7 @@ namespace BeautyBookingSystem.Application.Services
             int? month = null, 
             int? year = null, 
             TransactionType? type = null)
-        {
+            {
             int storeId = await _currentUserService.GetCurrentStoreIdAsync();
 
             var query = _unitOfWork.WalletTransactionRepository.GetQueryable()
@@ -131,13 +132,20 @@ namespace BeautyBookingSystem.Application.Services
             if (booking.SystemFee > 0) throw new BadRequestException("Đơn hàng này đã được tính phí hoa hồng.");
 
             var store = booking.Store;
-            decimal rate = store.CommissionRate ?? 0;
-            if (rate == 0) 
+            decimal rate = 0;
+
+            if (store.CommissionRate.HasValue && store.CommissionRate.Value > 0)
+            {
+                rate = store.CommissionRate.Value;
+            }
+            else
             {
                 var systemRateConfig = await _unitOfWork.SystemConfigRepository.GetQueryable()
-                    .FirstOrDefaultAsync(c => c.Key == "DefaultCommissionRate");
+                    .FirstOrDefaultAsync(c => c.Key == SystemConfigKeys.DefaultCommissionRate);
+                    
                 rate = systemRateConfig != null && decimal.TryParse(systemRateConfig.Value, out var parsedRate) 
-                       ? parsedRate : 10m; 
+                       ? parsedRate 
+                       : 10m; 
             }
 
             decimal feeAmount = booking.FinalPrice * (rate / 100m);
@@ -167,6 +175,7 @@ namespace BeautyBookingSystem.Application.Services
                 store.IsOpen = false;
                 isStoreLocked = true;
             }
+            
             _unitOfWork.StoreRepository.Update(store);
             _unitOfWork.BookingRepository.Update(booking);
 
@@ -183,7 +192,7 @@ namespace BeautyBookingSystem.Application.Services
             return feeAmount;
         }
 
-        public async Task<int> ProcessMonthlyAppFeeAsync()
+       public async Task<int> ProcessMonthlyAppFeeAsync()
         {
             int processedCount = 0;
             var dueStores = await _unitOfWork.StoreRepository.GetQueryable()
@@ -191,14 +200,19 @@ namespace BeautyBookingSystem.Application.Services
                 .ToListAsync();
 
             if (!dueStores.Any()) return 0;
+            
             var monthlyFeeConfig = await _unitOfWork.SystemConfigRepository.GetQueryable()
-                .FirstOrDefaultAsync(c => c.Key == "DefaultMonthlyAppFee");
+                .FirstOrDefaultAsync(c => c.Key == SystemConfigKeys.DefaultMonthlyAppFee);
+                
             decimal defaultMonthlyFee = monthlyFeeConfig != null && decimal.TryParse(monthlyFeeConfig.Value, out var parsedFee) 
-                                        ? parsedFee : 200000m; 
+                                        ? parsedFee 
+                                        : 200000m; 
 
             foreach (var store in dueStores)
             {
-                decimal monthlyFee = store.MonthlyAppFee > 0 ? store.MonthlyAppFee : defaultMonthlyFee; 
+                decimal monthlyFee = store.MonthlyAppFee > 0 
+                                     ? store.MonthlyAppFee 
+                                     : defaultMonthlyFee; 
                 
                 decimal balanceBefore = store.WalletBalance;
                 decimal balanceAfter = balanceBefore - monthlyFee;
@@ -232,7 +246,7 @@ namespace BeautyBookingSystem.Application.Services
                 {
                      _ = _notificationService.CreateAndSendNotificationAsync(store.OwnerId, 
                          "⚠️ Cửa hàng bị tạm khóa", 
-                         $"Hệ thống vừa thu {monthlyFee:N0}đ phí duy trì tháng. Số dư ví hiện tại là {store.WalletBalance:N0}đ (Vượt mức nợ cho phép). Vui lòng nạp thêm tiền để mở lại cửa hàng.", 
+                         $"Hệ thống vừa thu {monthlyFee:N0}đ phí duy trì. Số dư ví hiện tại là {store.WalletBalance:N0}đ (Vượt mức nợ cho phép). Vui lòng nạp thêm tiền để mở lại.", 
                          NotificationType.SystemAlert);
                 }
                 else
@@ -309,21 +323,32 @@ namespace BeautyBookingSystem.Application.Services
             return _vnPayService.CreatePaymentUrl(request);
         }
 
-        public async Task<string> ProcessVnPayCallbackAsync()
-        {
-            var response = _vnPayService.PaymentExecute();
+       public async Task<string> ProcessVnPayCallbackAsync()
+{
+    var response = _vnPayService.PaymentExecute();
 
-            if (!response.Success)
-            {
-                throw new BadRequestException("Giao dịch nạp tiền qua VNPay thất bại hoặc chữ ký không hợp lệ.");
-            }
+    if (!response.Success)
+    {
+        throw new BadRequestException("Giao dịch nạp tiền qua VNPay thất bại hoặc chữ ký không hợp lệ.");
+    }
 
-            int storeId = int.Parse(response.OrderId.Split('_')[0]);
-            
-            decimal amount = response.Amount; 
-            await TopUpWalletAsync(storeId, amount, $"Nạp tiền qua VNPay. Mã GD: {response.TransactionId}");
-            return $"beautybooking://payment-result?success=true&amount={amount}";
-        }
+    string expectedNote = $"Nạp tiền qua VNPay. Mã GD: {response.TransactionId}";
+
+    bool isAlreadyProcessed = await _unitOfWork.WalletTransactionRepository
+        .GetQueryable()
+        .AnyAsync(t => t.Description == expectedNote && t.Type == TransactionType.TopUp);
+
+    if (isAlreadyProcessed)
+    {
+        return $"beautybooking://payment-result?success=true&amount={response.Amount}";
+    }
+    int storeId = int.Parse(response.OrderId.Split('_')[0]);
+    decimal amount = response.Amount; 
+
+    await TopUpWalletAsync(storeId, amount, expectedNote);
+    
+    return $"beautybooking://payment-result?success=true&amount={amount}";
+}
 
         public async Task<decimal> ProcessBookingPenaltyAsync(int bookingId)
         {

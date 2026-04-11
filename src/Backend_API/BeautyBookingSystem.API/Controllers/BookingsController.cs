@@ -169,6 +169,56 @@ public class BookingsController : ControllerBase
             });
         }
     }
+           [HttpPut("{id:int}/reschedule")]
+    public async Task<IActionResult> RescheduleBooking(int id, [FromBody] RescheduleBookingRequest request)
+    {
+        try
+        {
+            var userId = GetUserId(); 
+
+            var result = await _bookingService.RescheduleBookingAsync(userId, id, request);
+            
+            if (result)
+            {
+                return Ok(new 
+                { 
+                    success = true, 
+                    message = "Dời lịch thành công!" 
+                });
+            }
+                
+            return BadRequest(new 
+            { 
+                success = false, 
+                message = "Dời lịch thất bại." 
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "Lỗi hệ thống khi dời lịch",
+                detail = ex.Message
+            });
+        }
+    }
 }
 
 public class CancelBookingRequest

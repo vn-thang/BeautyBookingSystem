@@ -40,6 +40,8 @@ namespace BeautyBookingSystem.Domain.Entities
         public string? BankName { get; set; } 
         public string? BankAccountNumber { get; set; }
         public string? BankAccountName { get; set; }
+        public string? ZaloPhone { get; set; } 
+        public string? FacebookUrl { get; set; }
 
         public virtual ICollection<WalletTransaction> WalletTransactions { get; set; } = new List<WalletTransaction>();
 

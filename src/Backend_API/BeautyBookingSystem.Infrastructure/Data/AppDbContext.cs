@@ -39,15 +39,13 @@ namespace BeautyBookingSystem.Infrastructure.Data
         public DbSet<Review> Reviews { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<SystemContent> SystemContents { get; set; }
-
-        // ====== Bảng của Quan (App Khách) ======
         public DbSet<ChatSession> ChatSessions { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
-
-        // ====== Bảng của bạn (Admin / Store) ======
         public DbSet<WalletTransaction> WalletTransactions { get; set; }
         public DbSet<SystemConfig> SystemConfigs { get; set; }
         public DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
+        public DbSet<StaffSchedule> StaffSchedules { get; set; }
+        public DbSet<StaffLeave> StaffLeaves { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -56,8 +54,6 @@ namespace BeautyBookingSystem.Infrastructure.Data
             {
                 relationship.DeleteBehavior = DeleteBehavior.Restrict;
             }
-
-            // ====== Cấu hình Database của Quan ======
             modelBuilder.Entity<ChatSession>(entity =>
             {
                 entity.HasIndex(x => new { x.UserId, x.SessionKey }).IsUnique();
@@ -79,8 +75,6 @@ namespace BeautyBookingSystem.Infrastructure.Data
                 entity.Property(x => x.MetadataJson).HasColumnType("nvarchar(max)");
                 entity.Property(x => x.ToolName).HasMaxLength(100);
             });
-
-            // ====== Cấu hình Database của Bạn ======
             modelBuilder.Entity<Store>()
                 .HasMany(s => s.OperatingHours)
                 .WithOne(h => h.Store)
@@ -104,8 +98,9 @@ namespace BeautyBookingSystem.Infrastructure.Data
                     new SystemConfig { Id = 10, Key = SystemConfigKeys.GracePeriodMinutes, Value = "15", Type = "number", Group = "Booking", Description = "Thời gian giữ chỗ (phút) cho phép khách hàng đến trễ" },
                     new SystemConfig { Id = 11, Key = SystemConfigKeys.MaxCancelPerDay, Value = "5", Type = "number", Group = "Behavior", Description = "Số lần tối đa khách hàng được phép hủy lịch trong 1 ngày" },
                     new SystemConfig { Id = 12, Key = SystemConfigKeys.NoShowLimit, Value = "5", Type = "number", Group = "Behavior", Description = "Số lần 'Boom hàng' (No-show) tối đa trước khi bị khóa" },
-                    new SystemConfig { Id = 13, Key = SystemConfigKeys.BlockUserIfNoShow, Value = "true", Type = "boolean", Group = "Behavior", Description = "Tự động khóa tài khoản khách hàng nếu vượt giới hạn Boom hàng" }
-                );
+                    new SystemConfig { Id = 13, Key = SystemConfigKeys.BlockUserIfNoShow, Value = "true", Type = "boolean", Group = "Behavior", Description = "Tự động khóa tài khoản khách hàng nếu vượt giới hạn Boom hàng" },
+                    new SystemConfig { Id = 14, Key = SystemConfigKeys.RescheduleBeforeHours, Value = "2", Type = "number", Group = "Booking", Description = "Số giờ tối thiểu để khách hàng được phép dời lịch (Reschedule)" }
+);
             });
 
             var decimalProperties = modelBuilder.Model.GetEntityTypes()

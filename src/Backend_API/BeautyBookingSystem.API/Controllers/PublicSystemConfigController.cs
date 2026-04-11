@@ -12,6 +12,7 @@ namespace BeautyBookingSystem.API.Controllers.Public
     {
         private readonly ISystemConfigService _configService;
 
+
         public PublicSystemConfigController(ISystemConfigService configService)
         {
             _configService = configService;

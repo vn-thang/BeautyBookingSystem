@@ -34,11 +34,11 @@ namespace BeautyBookingSystem.Application.Mappers
         {
             CreateMap<RegisterRequest, User>();
 
-            CreateMap<User, UserProfileResponse>()
+            CreateMap<User, StoreUserProfileResponse>()
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToString()))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
-            CreateMap<UpdateProfileRequest, User>()
+            CreateMap<StoreUpdateProfileRequest, User>()
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
            
             CreateMap<Store, StoreProfileDto>();
@@ -56,6 +56,8 @@ namespace BeautyBookingSystem.Application.Mappers
             CreateMap<Staff, StaffDtos>();
             CreateMap<CreateStaffRequest, Staff>();
             CreateMap<UpdateStaffRequest, Staff>();
+            CreateMap<StaffSchedule, StaffScheduleDto>();
+            CreateMap<StaffLeave, StaffLeaveDto>();
             
             CreateMap<ServiceGroup, ServiceGroupDto>();
             CreateMap<CreateServiceGroupRequest, ServiceGroup>();
@@ -68,8 +70,15 @@ namespace BeautyBookingSystem.Application.Mappers
             CreateMap<UpdateServiceRequest, Service>();
 
             CreateMap<Booking, StoreBookingListDto>()
-            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.FullName))
-            .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => src.Customer.Phone));
+            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => 
+        src.CustomerId.HasValue && src.Customer != null
+            ? src.Customer.FullName 
+            : src.WalkInCustomerName ?? "Khách vãng lai"))
+            
+    .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => 
+        src.CustomerId.HasValue && src.Customer != null
+            ? src.Customer.Phone 
+            : src.WalkInCustomerPhone ?? string.Empty));
 
             CreateMap<Booking, StoreBookingDetailDto>()
                 .IncludeBase<Booking, StoreBookingListDto>()
@@ -80,21 +89,28 @@ namespace BeautyBookingSystem.Application.Mappers
                 : (int?)null
                 ))
                 .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.FinalPrice - src.DepositAmount));
-            CreateMap<BookingDetail, BookingServiceItemDto>()
+                CreateMap<BookingDetail, BookingServiceItemDto>()
                 .ForMember(dest => dest.BookingDetailId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.ServiceName, opt => opt.MapFrom(src => src.Service.Name))
                 .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : string.Empty))
                 .ForMember(dest => dest.DetailStatus, opt => opt.MapFrom(src => src.Status));
 
-            // Map từ Staffs -> AvailableStaffDto
             CreateMap<Staff, AvailableStaffDto>();
 
             CreateMap<Payment, StorePaymentListDto>()
-                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Booking.Customer.FullName))
                 .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod.ToString()))
                 .ForMember(dest => dest.PaymentType, opt => opt.MapFrom(src => src.PaymentType.ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
-                .ForMember(dest => dest.BookingStatus, opt => opt.MapFrom(src => src.Booking.Status.ToString()));
+                .ForMember(dest => dest.BookingStatus, opt => opt.MapFrom(src => src.Booking.Status.ToString()))
+                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => 
+                src.Booking.CustomerId.HasValue 
+                ? src.Booking.Customer.FullName 
+                : src.Booking.WalkInCustomerName ?? "Khách vãng lai"))
+            
+                .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => 
+                src.Booking.CustomerId.HasValue 
+                ? src.Booking.Customer.Phone 
+                : src.Booking.WalkInCustomerPhone));
 
             CreateMap<Review, StoreReviewDto>()
                 .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.FullName))

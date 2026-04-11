@@ -7,6 +7,8 @@ class StoreBasicInfoSection extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController addressController;
   final TextEditingController phoneController;
+  final TextEditingController zaloController;
+  final TextEditingController facebookController;
   final bool isGettingLocation;
   final double? latitude;
   final double? longitude;
@@ -19,6 +21,8 @@ class StoreBasicInfoSection extends StatelessWidget {
     required this.nameController,
     required this.addressController,
     required this.phoneController,
+    required this.zaloController,
+    required this.facebookController,
     required this.isGettingLocation,
     this.latitude,
     this.longitude,
@@ -60,6 +64,20 @@ class StoreBasicInfoSection extends StatelessWidget {
           icon: Icons.phone_outlined,
           hint: "Số điện thoại",
           keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 12),
+        AppTextField(
+          controller: zaloController,
+          icon: Icons.chat_bubble_outline, 
+          hint: "Số Zalo (VD: 0912345678)",
+          keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 12),
+        AppTextField(
+          controller: facebookController,
+          icon: Icons.link_outlined, 
+          hint: "Link Facebook (m.me/...)",
+          keyboardType: TextInputType.url,
         ),
       ],
     );

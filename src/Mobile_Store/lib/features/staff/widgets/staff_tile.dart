@@ -9,12 +9,16 @@ class StaffTile extends StatelessWidget {
   final StaffModel staff;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onManageSchedule; 
+  final VoidCallback onManageLeave;
 
   const StaffTile({
     super.key,
     required this.staff,
     required this.onEdit,
     required this.onDelete,
+    required this.onManageSchedule, 
+    required this.onManageLeave,
   });
 
   @override
@@ -82,6 +86,8 @@ class StaffTile extends StatelessWidget {
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
             if (value == 'edit') onEdit();
+            if (value == 'schedule') onManageSchedule(); 
+            if (value == 'leave') onManageLeave();
             if (value == 'delete') onDelete();
           },
           itemBuilder: (context) => [
@@ -94,6 +100,14 @@ class StaffTile extends StatelessWidget {
                   Text('Sửa thông tin', style: AppTextStyles.bodyText)
                 ]
               )
+            ),
+            PopupMenuItem(
+              value: 'schedule', 
+              child: Row(children: [const Icon(Icons.calendar_month, size: 20, color: Colors.blue), const SizedBox(width: AppSpacing.sm), Text('Lịch làm việc', style: AppTextStyles.bodyText)])
+            ),
+            PopupMenuItem(
+              value: 'leave', 
+              child: Row(children: [const Icon(Icons.event_busy, size: 20, color: Colors.orange), const SizedBox(width: AppSpacing.sm), Text('Nghỉ phép', style: AppTextStyles.bodyText)])
             ),
             PopupMenuItem(
               value: 'delete', 

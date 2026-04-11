@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/features/dashboard/widgets/pending_banner.dart';
 import 'package:mobile_store/features/support/screens/contact_support_screen.dart';
 import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
 import '../../../core/theme/app_colors.dart';
@@ -9,7 +10,6 @@ import '../services/dashboard_service.dart';
 import '../../store/screens/update_profile_screen.dart';
 import '../../booking/screens/booking_management_screen.dart';
 import '../models/store_dashboard_model.dart';
-import '../widgets/pending_banner.dart';
 import '../widgets/dashboard_header.dart';
 import '../widgets/detailed_stats_card.dart';
 import '../widgets/commission_card.dart';
@@ -130,6 +130,8 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
     }
 
     final isPending = status == 'pending';
+    final isLowBalance = data.isWalletLowBalance;
+    final isAccountRestricted = isPending || isLowBalance; 
 
     return RefreshIndicator(
       onRefresh: _onRefresh,
@@ -139,7 +141,16 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
         child: Column(
           children: [
             DashboardHeader(header: data.header),
-            if (isPending) const PendingBanner(),
+            
+            // Xử lý hiển thị Banner
+            if (isLowBalance)
+              DashboardWarningBanner(
+                type: WarningType.lowBalance, 
+                minimumBalance: data.minimumBalance,
+              )
+            else if (isPending) 
+              const DashboardWarningBanner(type: WarningType.pending),
+              
             const SizedBox(height: AppSpacing.lg),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingMedium),
@@ -147,10 +158,11 @@ class _StoreDashboardScreenState extends State<StoreDashboardScreen> {
                 opacity: _isLoading ? 0.6 : 1.0,
                 child: Column(
                   children: [
+                    // Làm mờ và khóa touch
                     Opacity(
-                      opacity: isPending ? 0.4 : 1.0,
+                      opacity: isAccountRestricted ? 0.4 : 1.0,
                       child: AbsorbPointer(
-                        absorbing: isPending, 
+                        absorbing: isAccountRestricted, 
                         child: Column(
                           children: [
                             DetailedStatsCard(

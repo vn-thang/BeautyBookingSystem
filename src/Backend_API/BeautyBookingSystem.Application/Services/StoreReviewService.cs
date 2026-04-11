@@ -89,14 +89,13 @@ namespace BeautyBookingSystem.Application.Services
 
             if (result)
             {
-                _ = _notificationService.CreateAndSendNotificationAsync(
+                await _notificationService.CreateAndSendNotificationAsync(
                     review.CustomerId,
                     "💬Phản hồi mới từ cửa hàng",
                     $"{review.Store!.Name} đã phản hồi đánh giá của bạn: \"{request.Reply}\"",
                     NotificationType.SystemAlert
                 );
             }
-
             return result;
         }
     }

@@ -22,5 +22,13 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
                 .Where(s => s.StoreId == storeId)
                 .ToListAsync();
         }
+        public async Task<List<Staff>> GetStaffsWithSchedulesAndLeavesAsync(int storeId)
+        {
+            return await _context.Staffs
+                .Include(s => s.Schedules)
+                .Include(s => s.Leaves)
+                .Where(s => s.StoreId == storeId && s.IsActive)
+                .ToListAsync();
+        }
     }
 }

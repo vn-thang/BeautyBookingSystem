@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:mobile_store/features/booking/models/store_createbooking_model.dart';
 
 import '../../../core/network/api_client.dart'; 
 import '../models/store_booking_model.dart';
@@ -74,4 +75,44 @@ class StoreBookingApi {
     
     return BookingBillModel.fromJson(data);
   }
+  static Future<void> markNoShow({required int bookingId}) async {
+    await ApiClient.put('/api/StoreBookings/$bookingId/no-show'); 
+  }
+static Future<List<TimeSlotModel>> getAvailableTimeSlots({
+  required DateTime date,
+  required int totalDurationMinutes,
+}) async {
+  try {
+    final dateStr = DateFormat('yyyy-MM-dd').format(date);
+    final json = await ApiClient.get(
+      '/api/StoreBookings/available-time-slots?date=$dateStr&totalDurationMinutes=$totalDurationMinutes'
+    );
+    
+    final List<dynamic> data = (json is List) 
+        ? json 
+        : (json is Map<String, dynamic> && json['data'] != null ? json['data'] : []);
+        
+    return data.map((e) => TimeSlotModel.fromJson(e)).toList();
+  } catch (e) {
+    print("Lỗi getAvailableTimeSlots: $e");
+    throw Exception('Không thể tải khung giờ. Vui lòng thử lại.');
+  }
+}
+static Future<BookingResponseDto> createStoreBooking(CreateStoreBookingRequest request) async {
+  try {
+    final json = await ApiClient.post(
+      '/api/StoreBookings/store-booking',
+      body: request.toJson(),
+    );
+    
+    final Map<String, dynamic> responseData = (json is Map<String, dynamic> && json.containsKey('data')) 
+        ? json['data'] 
+        : json as Map<String, dynamic>; 
+        
+    return BookingResponseDto.fromJson(responseData);
+  } catch (e) {
+    print("Lỗi createStoreBooking: $e");
+    rethrow; 
+  }
+}
 }

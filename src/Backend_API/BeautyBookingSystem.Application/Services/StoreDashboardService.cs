@@ -29,6 +29,8 @@ namespace BeautyBookingSystem.Application.Services
             if (store != null)
             {
                 response.Status = store.ApprovalStatus.ToString().ToLower();
+                response.MinimumBalance = store.MinimumBalance;
+                response.IsWalletLowBalance = store.WalletBalance < store.MinimumBalance;
                 response.Header = new StoreHeaderDto
                 {
                     Name = store.Name,

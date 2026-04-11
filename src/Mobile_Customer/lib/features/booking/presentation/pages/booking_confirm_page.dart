@@ -115,48 +115,39 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
 
   double _voucherBaseAmount(Map<String, dynamic> voucher) {
     final serviceId = (voucher['serviceId'] as num?)?.toInt();
-    if (serviceId == null) return 0;
+    
+    // Nếu serviceId null -> Voucher toàn shop -> Lấy tổng tiền giỏ hàng
+    if (serviceId == null) return subtotal; 
 
+    // Nếu có serviceId -> Voucher dịch vụ -> Lấy giá của dịch vụ đó
     final service = _serviceById(serviceId);
     if (service == null) return 0;
 
     return (service['price'] as num).toDouble();
   }
-
+  // 2. Kiểm tra điều kiện áp dụng
   bool _voucherAppliesToCurrentBooking(Map<String, dynamic> voucher) {
-    final storeId = (voucher['storeId'] as num?)?.toInt();
-    if (storeId != widget.storeId) return false;
+    final baseAmount = _voucherBaseAmount(voucher);
+    if (baseAmount <= 0) return false;
 
-    final serviceId = (voucher['serviceId'] as num?)?.toInt();
-    if (serviceId == null) return false;
-
-    final service = _serviceById(serviceId);
-    if (service == null) return false;
-
-    final baseAmount = (service['price'] as num).toDouble();
     final minOrder = (voucher['minOrderValue'] as num?)?.toDouble() ?? 0;
     return baseAmount >= minOrder;
   }
 
-  double computeDiscount() {
-    if (appliedVoucher == null) return 0;
+  // 3. Tính toán nháp số tiền giảm (dùng để sắp xếp)
+  double _calculatePotentialDiscount(Map<String, dynamic> voucher) {
+    if (!_voucherAppliesToCurrentBooking(voucher)) return 0;
 
-    final voucher = appliedVoucher!;
     final baseAmount = _voucherBaseAmount(voucher);
-    if (baseAmount <= 0) return 0;
-
     final discountType = voucher['discountType'];
     final discountValue = (voucher['discountValue'] as num).toDouble();
-    final minOrder = (voucher['minOrderValue'] as num?)?.toDouble() ?? 0;
     final maxDiscount =
         (voucher['maxDiscount'] as num?)?.toDouble() ?? double.infinity;
 
-    if (baseAmount < minOrder) return 0;
-
     double raw = 0;
-    if (discountType == 0) {
+    if (discountType == 0) { // Giảm %
       raw = baseAmount * (discountValue / 100);
-    } else {
+    } else { // Giảm tiền mặt
       raw = discountValue;
     }
 
@@ -164,21 +155,39 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
     return raw;
   }
 
+ // 4. Tính số tiền giảm thực tế của giỏ hàng
+  double computeDiscount() {
+    if (appliedVoucher == null) return 0;
+    // Dùng luôn hàm tính nháp ở trên cho gọn code
+    return _calculatePotentialDiscount(appliedVoucher!); 
+  }
   double get finalTotal {
     final value = subtotal - computeDiscount();
     return value < 0 ? 0 : value;
   }
+  int get storeDepositPercent {
+    final val = storeData?['depositPercent'];
+    if (val is num) return val.toInt();
+    if (val is String) return int.tryParse(val) ?? 0;
+    return 0; // Mặc định 0% nếu API không có
+  }
 
-  bool get allowCashOnDelivery => finalTotal <= 200000;
-  bool get allowDeposit => finalTotal > 200000;
+  double get storeDepositThreshold {
+    final val = storeData?['depositThreshold'];
+    if (val is num) return val.toDouble();
+    if (val is String) return double.tryParse(val) ?? 0.0;
+    return 0.0; // Mặc định 0đ nếu API không có
+  }
+  bool get allowCashOnDelivery => finalTotal < storeDepositThreshold;
+  bool get allowDeposit => finalTotal >= storeDepositThreshold && storeDepositPercent > 0;
 
-  // IMPORTANT: Giá trị này phải khớp enum backend.
   // 0 = COD, 1 = VNPay.
   int get paymentMethod => paymentPlan == _payLater ? 2 : 1;
 
-  double get depositAmount {
+ double get depositAmount {
     if (paymentPlan == _deposit30) {
-      return finalTotal * 0.3;
+      // Công thức tính cọc = Tổng sau giảm * (% cọc / 100)
+      return finalTotal * (storeDepositPercent / 100); 
     }
     return 0;
   }
@@ -188,9 +197,10 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
       return 0;
     }
     if (paymentPlan == _deposit30) {
-      return finalTotal * 0.3;
+       // Số tiền trả ngay lúc này chính là tiền cọc
+      return finalTotal * (storeDepositPercent / 100);
     }
-    return finalTotal;
+    return finalTotal; // Thanh toán toàn bộ
   }
 
   void _normalizePaymentPlan() {
@@ -248,6 +258,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
     return bookingId;
   }
 
+  
   Future<void> _loadData() async {
     try {
       final dio = di.sl<Dio>();
@@ -279,10 +290,34 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
         };
       }).toList();
 
-      final vresp = await dio.get('voucher/active');
+      // final vresp = await dio.get('voucher/active');
+      // final vdata = (vresp.data as List).cast<Map<String, dynamic>>();
+
+      // Lấy voucher theo storeId để khớp với backend API của bạn
+      final vresp = await dio.get('voucher/store/${widget.storeId}/active');
       final vdata = (vresp.data as List).cast<Map<String, dynamic>>();
 
-      vouchers = vdata.where(_voucherAppliesToCurrentBooking).toList();
+      // Lấy toàn bộ danh sách để hiện ra UI
+      vouchers = vdata;
+
+      // Logic sắp xếp danh sách voucher
+      vouchers.sort((a, b) {
+        bool canUseA = _voucherAppliesToCurrentBooking(a);
+        bool canUseB = _voucherAppliesToCurrentBooking(b);
+
+        if (canUseA && !canUseB) return -1;
+        if (!canUseA && canUseB) return 1;
+
+        if (canUseA && canUseB) {
+          double discountA = _calculatePotentialDiscount(a);
+          double discountB = _calculatePotentialDiscount(b);
+          return discountB.compareTo(discountA); // Cái nào giảm nhiều xếp trước
+        }
+
+        return 0;
+      });
+
+      // vouchers = vdata.where(_voucherAppliesToCurrentBooking).toList();
 
       if (mounted) {
         setState(() {
@@ -350,7 +385,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
 
     if (paymentPlan == _deposit30 && !allowDeposit) {
       ScaffoldMessenger.of(context).showSnackBar(
-        _snackBar('Đặt cọc 30% chỉ áp dụng cho đơn trên 200.000đ'),
+        _snackBar('Đặt cọc $storeDepositPercent% chỉ áp dụng cho đơn từ ${_formatMoney(storeDepositThreshold)}'),
       );
       return;
     }
@@ -563,6 +598,224 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
 
     context.go('/booking');
   }
+  
+  void _showVoucherBottomSheet() {
+    Map<String, dynamic>? tempSelectedVoucher = appliedVoucher;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, 
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.85, 
+              decoration: const BoxDecoration(
+                color: Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const SizedBox(width: 24), 
+                        const Text('Chọn Mã Giảm Giá', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 40,
+                            child: TextField(
+                              controller: voucherCodeController,
+                              decoration: InputDecoration(
+                                hintText: 'Nhập mã giảm giá...',
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          height: 40,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              _applyVoucherByCode(); 
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                            ),
+                            child: const Text('Áp dụng', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 8),
+
+                  Expanded(
+                    child: vouchers.isEmpty 
+                      ? const Center(child: Text('Hiện chưa có mã giảm giá nào.', style: TextStyle(color: Colors.grey)))
+                      : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      itemCount: vouchers.length,
+                      itemBuilder: (context, index) {
+                        final v = vouchers[index];
+                        final canApply = _voucherAppliesToCurrentBooking(v);
+                        final isSelected = tempSelectedVoucher != null && tempSelectedVoucher!['code'] == v['code'];
+                        
+                        final code = v['code'] ?? '';
+                        final val = (v['discountValue'] as num).toDouble();
+                        final isPercent = v['discountType'] == 0;
+                        final maxDiscount = v['maxDiscount'] != null ? (v['maxDiscount'] as num).toDouble() : null;
+                        final minOrder = v['minOrderValue'] != null ? (v['minOrderValue'] as num).toDouble() : 0;
+                      String expiryDate = 'Đang cập nhật';
+                      if (v['endDate'] != null) {
+                        try {
+                          DateTime parsedDate = DateTime.parse(v['endDate'].toString());
+                          expiryDate =DateFormat('HH:mm dd/MM/yyyy').format(parsedDate);
+                        } catch (e) {
+                          expiryDate = 'Lỗi ngày tháng';
+                        }
+                      }
+                        
+                        String titleStr = isPercent ? 'Giảm ${val.toInt()}%' : 'Giảm ${val.toInt()}đ';
+                        if (isPercent && maxDiscount != null && maxDiscount > 0) {
+                          titleStr += ' Giảm tối đa ${maxDiscount.toInt()}đ';
+                        }
+
+                        final potentialDiscount = _calculatePotentialDiscount(v);
+
+                        return GestureDetector(
+                          onTap: canApply ? () {
+                            setModalState(() {
+                              if (isSelected) {
+                                tempSelectedVoucher = null; 
+                                voucherCodeController.clear();
+                              } else {
+                                tempSelectedVoucher = v;
+                                voucherCodeController.text = code;
+                              }
+                            });
+                          } : null,
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: isSelected ? AppColors.primary : Colors.transparent, width: isSelected ? 1.5 : 0),
+                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                            ),
+                            child: IntrinsicHeight(
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 100,
+                                    decoration: BoxDecoration(
+                                      color: canApply ? AppColors.primary : Colors.grey.shade400,
+                                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(7), bottomLeft: Radius.circular(7)),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Text('VOUCHER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                                        const SizedBox(height: 4),
+                                        Text(code, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Opacity(
+                                        opacity: canApply ? 1.0 : 0.5,
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(titleStr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                            const SizedBox(height: 4),
+                                            Text('Đơn tối thiểu ${minOrder.toInt()}đ', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                            const SizedBox(height: 4),
+                                            Text('HSD: $expiryDate', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                                            if (canApply && potentialDiscount > 0) ...[
+                                              const SizedBox(height: 6),
+                                              Text('Tiết kiệm ${potentialDiscount.toInt()}đ', style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w600)),
+                                            ]
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 12),
+                                    child: Icon(
+                                      isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                                      color: isSelected ? AppColors.primary : Colors.grey.shade300,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // --- 4. NÚT ĐỒNG Ý ---
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, -4), blurRadius: 8)],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectVoucher(tempSelectedVoucher); 
+                          _normalizePaymentPlan();
+                        });
+                        Navigator.pop(context); 
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text('ĐỒNG Ý', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -709,93 +962,50 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                                 const SizedBox(height: 8),
                                 _sectionHeader('Voucher'),
                                 const SizedBox(height: 10),
-                                _sectionCard(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (vouchers.isNotEmpty) ...[
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 8,
-                                          children: vouchers.map((v) {
-                                            final selected =
-                                                appliedVoucher != null &&
-                                                    appliedVoucher!['id'] ==
-                                                        v['id'];
-
-                                            return ChoiceChip(
-                                              label: Text(
-                                                '${v['code']}',
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              selected: selected,
-                                              onSelected: (_) => _selectVoucher(
-                                                selected ? null : v,
-                                              ),
-                                              selectedColor: AppColors.primary,
-                                              labelStyle: TextStyle(
-                                                color: selected
-                                                    ? Colors.white
-                                                    : AppColors.textMuted,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                              backgroundColor:
-                                                  AppColors.surfaceSoft,
-                                              side: BorderSide(
-                                                color: selected
-                                                    ? AppColors.primary
-                                                    : AppColors.border,
-                                              ),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(999),
-                                              ),
-                                            );
-                                          }).toList(),
-                                        ),
-                                        const SizedBox(height: 12),
-                                      ],
-                                      Row(
+                                 
+                                  _sectionCard(
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: _showVoucherBottomSheet, 
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 8.0), 
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Expanded(
-                                            child: TextField(
-                                              controller: voucherCodeController,
-                                              style: AppTextStyles.body,
-                                              decoration: _inputDecoration(
-                                                label: 'Nhập mã voucher',
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.local_offer_outlined, color: AppColors.primary),
+                                              const SizedBox(width: 8),
+                                              const Text(
+                                                'Mã giảm giá', 
+                                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                               ),
-                                            ),
+                                            ],
                                           ),
-                                          const SizedBox(width: 10),
-                                          SizedBox(
-                                            height: 48,
-                                            child: ElevatedButton(
-                                              onPressed: _applyVoucherByCode,
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    AppColors.primary,
-                                                foregroundColor: Colors.white,
-                                                shadowColor: Colors.transparent,
-                                                elevation: 0,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(14),
-                                                ),
-                                              ),
-                                              child: const Text(
-                                                'Áp dụng',
+                                          Row(
+                                            children: [
+                                              Text(
+                                                appliedVoucher != null 
+                                                    ? 'Đã chọn 1 mã' 
+                                                    : 'Chọn hoặc nhập mã',
                                                 style: TextStyle(
-                                                  fontWeight: FontWeight.w700,
+                                                  color: appliedVoucher != null ? AppColors.primary : Colors.grey.shade600,
+                                                  fontWeight: appliedVoucher != null ? FontWeight.w600 : FontWeight.normal,
                                                 ),
                                               ),
-                                            ),
-                                          ),
+                                              const SizedBox(width: 4),
+                                              const Icon(Icons.chevron_right, color: Colors.grey),
+                                            ],
+                                          )
                                         ],
                                       ),
-                                    ],
+                                    ),
                                   ),
                                 ),
+                              ),
+
                                 const SizedBox(height: 16),
                                 _sectionHeader('Thanh toán'),
                                 const SizedBox(height: 10),
@@ -839,11 +1049,11 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                                                 });
                                               }
                                             : null,
-                                        title: 'Đặt cọc 30%',
-                                        subtitle: allowDeposit
-                                            ? 'VNPay • ${_formatMoney(finalTotal * 0.3)}'
-                                            : 'Chỉ áp dụng cho đơn trên 200.000đ',
-                                      ),
+                                      title: 'Đặt cọc $storeDepositPercent%',
+                                    subtitle: allowDeposit
+                                        ? 'VNPay • ${_formatMoney(finalTotal * (storeDepositPercent / 100))}'
+                                        : 'Chỉ áp dụng cho đơn từ ${_formatMoney(storeDepositThreshold)}',
+                                  ),
                                     ],
                                   ),
                                 ),

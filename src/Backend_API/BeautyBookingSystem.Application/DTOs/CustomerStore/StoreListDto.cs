@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-    namespace BeautyBookingSystem.Application.DTOs.StoreCustomer
+    namespace BeautyBookingSystem.Application.DTOs.CustomerStore
     {
         public class StoreListDto
         {

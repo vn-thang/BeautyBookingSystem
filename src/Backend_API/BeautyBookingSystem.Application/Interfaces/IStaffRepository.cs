@@ -10,5 +10,6 @@ namespace BeautyBookingSystem.Application.Interfaces
     public interface IStaffRepository : IGenericRepository<Staff>
     {
         Task<List<Staff>> GetByStoreIdAsync(int storeId);
+        Task<List<Staff>> GetStaffsWithSchedulesAndLeavesAsync(int storeId);
     }
 }

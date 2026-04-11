@@ -16,7 +16,8 @@ namespace BeautyBookingSystem.Domain.Entities
         public string? AvatarUrl { get; set; }
         public string? Position { get; set; }
         public bool IsActive { get; set; }
-
         public virtual ICollection<BookingDetail> BookingDetails { get; set; } = new List<BookingDetail>();
+        public virtual ICollection<StaffSchedule> Schedules { get; set; } = new List<StaffSchedule>();
+        public virtual ICollection<StaffLeave> Leaves { get; set; } = new List<StaffLeave>();
     }
 }

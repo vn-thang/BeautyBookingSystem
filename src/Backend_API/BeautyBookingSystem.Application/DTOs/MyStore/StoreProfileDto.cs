@@ -37,6 +37,11 @@ namespace BeautyBookingSystem.Application.DTOs.MyStore
         public string? BankName { get; set; } 
         public string? BankAccountNumber { get; set; }
         public string? BankAccountName { get; set; }
+        [RegularExpression(@"^(0[3|5|7|8|9])+([0-9]{8})$", ErrorMessage = "Số điện thoại Zalo không hợp lệ")]
+        public string? ZaloPhone { get; set; } 
+
+        [Url(ErrorMessage = "Đường dẫn Facebook/Messenger không hợp lệ")]
+        public string? FacebookUrl { get; set; }
 
         public List<OperatingHourDto> OperatingHours { get; set; } = new();
     }

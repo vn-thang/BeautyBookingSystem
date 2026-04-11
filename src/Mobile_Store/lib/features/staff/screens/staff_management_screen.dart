@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/features/staff/widgets/staff_leave_bottom_sheet.dart';
+import 'package:mobile_store/features/staff/widgets/staff_schedule_bottom_sheet.dart';
 import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
 import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
 import '../models/staff_model.dart';
@@ -46,6 +48,30 @@ void _openFormBottomSheet({StaffModel? staff}) {
           staff: staff,
           onSuccess: _loadData,
         ),
+      ),
+    );
+  }
+
+  void _openScheduleBottomSheet(StaffModel staff) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 20),
+        child: StaffScheduleBottomSheet(staff: staff),
+      ),
+    );
+  }
+
+  void _openLeaveBottomSheet(StaffModel staff) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 20),
+        child: StaffLeaveBottomSheet(staff: staff),
       ),
     );
   }
@@ -163,6 +189,8 @@ void _openFormBottomSheet({StaffModel? staff}) {
                         staff: staff,
                         onEdit: () => _openFormBottomSheet(staff: staff),
                         onDelete: () => _confirmDelete(staff),
+                        onManageSchedule: () => _openScheduleBottomSheet(staff), 
+                        onManageLeave: () => _openLeaveBottomSheet(staff),
                       );
                     },
                   ),

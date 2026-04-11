@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/shared/api/master_data_api.dart';
+import 'package:mobile_store/shared/models/simple_service_model.dart';
 import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
 import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
 import '../../../core/theme/app_colors.dart';
@@ -7,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/widgets/inputs/app_text_field.dart'; 
+import '../../../shared/widgets/inputs/app_image_picker.dart'; 
 import '../models/voucher_model.dart';
 import '../services/voucher_api.dart';
 
@@ -30,13 +33,21 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
   int _discountType = 0; 
   DateTime? _startDate;
   DateTime? _endDate;
-  bool _isSubmitting = false; 
+  String _imageUrl = ''; 
+  bool _isSubmitting = false;  
+  
+  List<SimpleServiceModel> _services = []; 
+  bool _isLoadingServices = true;
+  int? _selectedServiceId; 
 
   bool get isEdit => widget.voucher != null;
 
   @override
   void initState() {
     super.initState();
+    
+    _fetchServices();
+
     if (isEdit) {
       final v = widget.voucher!;
       _codeCtrl.text = v.code;
@@ -45,11 +56,29 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
       _minOrderCtrl.text = v.minOrderValue.toStringAsFixed(0);
       _maxDiscountCtrl.text = v.maxDiscount.toStringAsFixed(0);
       _usageLimitCtrl.text = v.usageLimit.toString();
+      
+      _selectedServiceId = v.serviceId; 
+      _imageUrl = v.imageUrl ?? '';
+      
       _startDate = v.startDate;
       _endDate = v.endDate;
     } else {
       _startDate = DateTime.now();
       _endDate = DateTime.now().add(const Duration(days: 7));
+    }
+  }
+
+  Future<void> _fetchServices() async {
+    try {
+      final result = await MasterDataApi.getServicesForDropdown();
+      if (mounted) {
+        setState(() {
+          _services = result;
+          _isLoadingServices = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingServices = false);
     }
   }
 
@@ -122,7 +151,7 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
       }
     });
   }
-
+ 
   Future<void> _submit() async {
     if (_codeCtrl.text.trim().isEmpty || _usageLimitCtrl.text.trim().isEmpty) {
       return _showMessage('Vui lòng điền mã khuyến mãi và số lượng!', isError: true);
@@ -142,11 +171,14 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
           id: widget.voucher!.id,
           endDate: _endDate!,
           usageLimit: _parseInt(_usageLimitCtrl.text),
+          serviceId: _selectedServiceId, 
+          imageUrl: _imageUrl.isNotEmpty ? _imageUrl : null,
         );
       } else {
         await VoucherApi.createVoucher(
           code: _codeCtrl.text.trim(),
-          serviceId: null, 
+          serviceId: _selectedServiceId, 
+          imageUrl: _imageUrl.isNotEmpty ? _imageUrl : null, 
           discountType: _discountType,
           discountValue: _parseDouble(_discountValueCtrl.text),
           minOrderValue: _parseDouble(_minOrderCtrl.text),
@@ -218,16 +250,71 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
                 ),
                 Text(isEdit ? 'Sửa Khuyến Mãi' : 'Tạo Khuyến Mãi', style: AppTextStyles.heading1.copyWith(fontSize: 20)),
                 const SizedBox(height: AppSpacing.lg),
+
+                Center(
+                  child: AppImagePicker(
+                    folderName: 'vouchers', 
+                    isCircle: false,      
+                    width: double.infinity,          
+                    height: 120,
+                    initialImageUrl: _imageUrl.isNotEmpty ? _imageUrl : null,
+                    onImageUploaded: (url) {
+                      setState(() {
+                        _imageUrl = url; 
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
                 
                 AbsorbPointer(
                   absorbing: isEdit, 
                   child: AppTextField(
                     controller: _codeCtrl, 
-                    label: 'Mã Voucher', 
+                    label: 'Mã Voucher (*)', 
                     hint: 'VD: TET2026', 
                     icon: Icons.local_offer_outlined,
                   ),
                 ),
+                const SizedBox(height: AppSpacing.md),
+                
+                Text('Dịch vụ áp dụng (Tùy chọn)', style: AppTextStyles.labelSmall),
+                const SizedBox(height: AppSpacing.xs),
+                _isLoadingServices
+                    ? const Center(child: Padding(padding: EdgeInsets.all(8.0), child: LinearProgressIndicator()))
+                    : Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          border: Border.all(color: AppColors.surface, width: 1.5),
+                          borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<int?>(
+                            value: _selectedServiceId,
+                            isExpanded: true,
+                            hint: Text('Bỏ trống để áp dụng toàn cửa hàng', style: AppTextStyles.bodyText),
+                            icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSub),
+                            items: [
+                              DropdownMenuItem<int?>(
+                                value: null, 
+                                child: Text('Áp dụng toàn bộ cửa hàng', style: AppTextStyles.bodyText.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                              ),
+                              ..._services.map((service) {
+                                return DropdownMenuItem<int?>(
+                                  value: service.id,
+                                  child: Text(service.name, style: AppTextStyles.bodyText, overflow: TextOverflow.ellipsis),
+                                );
+                              }),
+                            ],
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedServiceId = val;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
                 const SizedBox(height: AppSpacing.md),
                 
                 if (!isEdit) ...[
@@ -245,8 +332,8 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
                         isExpanded: true,
                         icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSub),
                         items: [
-                          DropdownMenuItem(value: 0, child: Text('Giảm theo số tiền (VNĐ)', style: AppTextStyles.bodyText)),
-                          DropdownMenuItem(value: 1, child: Text('Giảm theo Phần trăm (%)', style: AppTextStyles.bodyText)),
+                          DropdownMenuItem(value: 1, child: Text('Giảm theo số tiền (VNĐ)', style: AppTextStyles.bodyText)),
+                          DropdownMenuItem(value: 0, child: Text('Giảm theo Phần trăm (%)', style: AppTextStyles.bodyText)),
                         ],
                         onChanged: (val) => setState(() => _discountType = val!),
                       ),
@@ -259,7 +346,7 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
                       Expanded(
                         child: AppTextField(
                           controller: _discountValueCtrl, 
-                          label: 'Mức giảm', 
+                          label: 'Mức giảm (*)', 
                           hint: 'Nhập số...', 
                           icon: Icons.money_off_csred_outlined, 
                           keyboardType: TextInputType.number
@@ -291,7 +378,7 @@ class _VoucherFormBottomSheetState extends State<VoucherFormBottomSheet> {
 
                 AppTextField(
                   controller: _usageLimitCtrl, 
-                  label: 'Số lượng phát hành', 
+                  label: 'Số lượng phát hành (*)', 
                   hint: 'Nhập số lượng...', 
                   icon: Icons.numbers_outlined, 
                   keyboardType: TextInputType.number

@@ -18,6 +18,8 @@ class StoreProfile {
   String? bankName;
   String? bankAccountNumber;
   String? bankAccountName;
+  String? zaloPhone;
+  String? facebookUrl;
 
   StoreProfile({
     required this.name,
@@ -37,6 +39,8 @@ class StoreProfile {
     this.bankName,
     this.bankAccountNumber,
     this.bankAccountName,
+    this.zaloPhone,
+    this.facebookUrl,
   }) : operatingHours = operatingHours ?? [];
 
   factory StoreProfile.fromJson(Map<String, dynamic> json) {
@@ -86,6 +90,8 @@ class StoreProfile {
       bankName: json['bankName'],
       bankAccountNumber: json['bankAccountNumber'],
       bankAccountName: json['bankAccountName'],
+      zaloPhone: json['zaloPhone'],
+      facebookUrl: json['facebookUrl'],
     );
   }
 
@@ -111,6 +117,9 @@ class StoreProfile {
       'bankName': bankName,
       'bankAccountNumber': bankAccountNumber,
       'bankAccountName': bankAccountName,
+      'zaloPhone': zaloPhone,
+      'facebookUrl': facebookUrl,
+      
     };
   }
 }

@@ -111,7 +111,7 @@ class WalletBalanceCard extends StatelessWidget {
         Text(
           '${isTopUp ? '+' : '-'}${Formatters.formatCurrency(amount)}',
           style: AppTextStyles.bodyText.copyWith(
-            color: isTopUp ? const Color(0xFF69F0AE) : const Color(0xFFFF8A80), 
+            color: isTopUp ? const Color(0xFF69F0AE) : const Color.fromARGB(255, 60, 57, 46), 
             fontSize: 14, 
             fontWeight: FontWeight.bold
           ),

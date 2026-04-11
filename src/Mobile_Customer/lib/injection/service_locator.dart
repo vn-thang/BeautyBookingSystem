@@ -2,6 +2,14 @@
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile_customer/features/notification/data/datasources/notification_remote_datasource.dart';
+import 'package:mobile_customer/features/notification/data/repositories/notification_repository_impl.dart';
+import 'package:mobile_customer/features/notification/domain/repositories/notification_repository.dart';
+import 'package:mobile_customer/features/notification/domain/usecases/get_notifications.dart';
+import 'package:mobile_customer/features/notification/domain/usecases/get_unread_count.dart';
+import 'package:mobile_customer/features/notification/domain/usecases/mark_all_as_read.dart';
+import 'package:mobile_customer/features/notification/domain/usecases/mark_as_read.dart';
+import 'package:mobile_customer/features/notification/presentation/bloc/notification_bloc.dart';
 
 import '../core/network/dio_client.dart';
 import '../core/location/location_service.dart';
@@ -291,4 +299,28 @@ Future<void> init() async {
 
   sl.registerLazySingleton(() => GetStoreReviewsUseCase(sl()));
   sl.registerLazySingleton(() => GetTopStoreReviewsUseCase(sl()));
+
+  // 1. Bloc
+ // Đổi registerFactory thành registerLazySingleton
+sl.registerLazySingleton(() => NotificationBloc(
+      getNotifications: sl(),
+      getUnreadCount: sl(),
+      markAsRead: sl(),
+      markAllAsRead: sl(),
+    ));
+
+  // 2. Use Cases
+  sl.registerLazySingleton(() => GetNotifications(sl()));
+  sl.registerLazySingleton(() => GetUnreadCount(sl()));
+  sl.registerLazySingleton(() => MarkAsRead(sl()));
+  sl.registerLazySingleton(() => MarkAllAsRead(sl()));
+
+  // 3. Repository
+  sl.registerLazySingleton<NotificationRepository>(
+      () => NotificationRepositoryImpl(sl()));
+
+  // 4. Data Source
+  // (Giả sử bạn đã đăng ký Dio ở đâu đó rồi: sl.registerLazySingleton(() => Dio());)
+  sl.registerLazySingleton<NotificationRemoteDataSource>(
+      () => NotificationRemoteDataSource(sl()));
 }

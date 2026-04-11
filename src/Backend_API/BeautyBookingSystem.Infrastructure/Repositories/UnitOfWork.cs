@@ -13,13 +13,9 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
     public class UnitOfWork : IUnitOfWork
     {
         private readonly AppDbContext _context;
-
-        // 1. CÁC REPOSITORY DÙNG CHUNG
         public IGenericRepository<User> UserRepository { get; private set; }
         public IGenericRepository<Store> StoreRepository { get; private set; }
         public IGenericRepository<StoreOperatingHour> StoreOperatingHourRepository { get; private set; }
-
-        // 2. CÁC REPOSITORY CHUYÊN BIỆT (Của Quan)
         public IGlobalCategoryRepository GlobalCategoryRepository { get; private set; }
         public IServiceGroupRepository ServiceGroupRepository { get; private set; }
         public IServiceRepository ServiceRepository { get; private set; }
@@ -31,24 +27,19 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         public IVoucherRepository VoucherRepository { get; private set; }
         public ICustomerFavoriteRepository CustomerFavoriteRepository { get; private set; }
         public ISearchHistoryRepository SearchHistories { get; private set; }
-
-        // 3. CÁC REPOSITORY GENERIC MỚI (Của develop)
         public IGenericRepository<Notification> NotificationRepository { get; private set; }
         public IGenericRepository<WalletTransaction> WalletTransactionRepository { get; private set; }
         public IGenericRepository<SystemConfig> SystemConfigRepository { get; private set; }
         public IGenericRepository<SystemContent> SystemContentRepository { get; private set; }
         public IGenericRepository<WithdrawalRequest> WithdrawalRequestRepository { get; private set; }
-
+        public IGenericRepository<StaffSchedule> StaffScheduleRepository { get; private set; }
+        public IGenericRepository<StaffLeave> StaffLeaveRepository { get; private set; }
         public UnitOfWork(AppDbContext context)
         {
             _context = context;
-
-            // Khởi tạo Dùng chung
             UserRepository = new GenericRepository<User>(_context);
             StoreRepository = new GenericRepository<Store>(_context);
             StoreOperatingHourRepository = new GenericRepository<StoreOperatingHour>(_context);
-
-            // Khởi tạo Chuyên biệt
             GlobalCategoryRepository = new GlobalCategoryRepository(_context);
             ServiceGroupRepository = new ServiceGroupRepository(_context);
             ServiceRepository = new ServiceRepository(_context);
@@ -61,12 +52,13 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
             CustomerFavoriteRepository = new CustomerFavoriteRepository(_context);
             SearchHistories = new SearchHistoryRepository(_context);
 
-            // Khởi tạo Generic mới
             NotificationRepository = new GenericRepository<Notification>(_context);
             WalletTransactionRepository = new GenericRepository<WalletTransaction>(_context);
             SystemConfigRepository = new GenericRepository<SystemConfig>(_context);
             SystemContentRepository = new GenericRepository<SystemContent>(_context);
             WithdrawalRequestRepository = new GenericRepository<WithdrawalRequest>(_context);
+            StaffScheduleRepository = new GenericRepository<StaffSchedule>(_context);
+            StaffLeaveRepository = new GenericRepository<StaffLeave>(_context);
         }
 
         public async Task<int> SaveChangesAsync()

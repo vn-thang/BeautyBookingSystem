@@ -366,7 +366,7 @@ class _HomeViewState extends State<HomeView> {
 
   Widget _buildCategories(BuildContext context, List categories) {
     return SizedBox(
-      height: 98,
+      height: 120,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         scrollDirection: Axis.horizontal,
@@ -896,6 +896,7 @@ class _HomeViewState extends State<HomeView> {
     BuildContext context,
     List vouchers,
   ) {
+    print('👉 CHIỀU DÀI LIST VOUCHER: ${vouchers.length}');
     if (vouchers.isEmpty) return const SizedBox.shrink();
 
     return Container(

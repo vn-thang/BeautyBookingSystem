@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/service_model.dart';
+import '../../../shared/models/service_model.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_text_styles.dart';

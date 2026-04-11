@@ -93,5 +93,123 @@ namespace BeautyBookingSystem.Application.Services
             await _unitOfWork.SaveChangesAsync();
             return true;
         }
+
+      public async Task<List<StaffScheduleDto>> GetSchedulesAsync(int staffId)
+        {
+            await ValidateStaffBelongsToStoreAsync(staffId);
+
+            var schedules = await _unitOfWork.StaffScheduleRepository.GetQueryable()
+                .Where(s => s.StaffId == staffId)
+                .OrderBy(s => s.DayOfWeek)
+                .ToListAsync();
+
+            return _mapper.Map<List<StaffScheduleDto>>(schedules);
+        }
+
+        public async Task<bool> UpdateSchedulesAsync(int staffId, List<UpdateStaffScheduleRequest> requests)
+        {
+            await ValidateStaffBelongsToStoreAsync(staffId);
+            var existingSchedules = await _unitOfWork.StaffScheduleRepository.GetQueryable()
+                .Where(s => s.StaffId == staffId)
+                .ToListAsync();
+            
+            if (existingSchedules.Any())
+            {
+                foreach (var schedule in existingSchedules)
+                {
+                    _unitOfWork.StaffScheduleRepository.Delete(schedule);
+                }
+            }
+
+            var newSchedules = requests.Select(req => new StaffSchedule
+            {
+                StaffId = staffId,
+                DayOfWeek = req.DayOfWeek,
+                StartTime = req.StartTime,
+                EndTime = req.EndTime,
+                IsWorking = req.IsWorking
+            }).ToList();
+
+            foreach (var newSchedule in newSchedules)
+            {
+                await _unitOfWork.StaffScheduleRepository.AddAsync(newSchedule);
+            }
+            
+            await _unitOfWork.SaveChangesAsync();
+
+            return true;
+        }
+        public async Task<List<StaffLeaveDto>> GetLeavesAsync(int staffId)
+        {
+            await ValidateStaffBelongsToStoreAsync(staffId);
+
+            var leaves = await _unitOfWork.StaffLeaveRepository.GetQueryable()
+                .Where(l => l.StaffId == staffId)
+                .OrderByDescending(l => l.FromDate)
+                .ToListAsync();
+
+            return _mapper.Map<List<StaffLeaveDto>>(leaves);
+        }
+
+        public async Task<bool> CreateLeaveAsync(int staffId, CreateStaffLeaveRequest request)
+        {
+            if (request.FromDate >= request.ToDate)
+                throw new BadRequestException("Thời gian kết thúc phải lớn hơn thời gian bắt đầu.");
+
+            await ValidateStaffBelongsToStoreAsync(staffId);
+            var activeBookings = await _unitOfWork.BookingDetailRepository.GetQueryable()
+                .Where(b => b.StaffId == staffId && 
+                            b.Status != Domain.Enums.BookingDetailStatus.Cancelled)
+                .ToListAsync();
+
+            var overlappingBookings = activeBookings.Where(b => 
+            {
+                DateTime appointmentDate = DateTime.Today; 
+                DateTime bookingStartDateTime = appointmentDate.Date.Add(b.StartTime);
+                DateTime bookingEndDateTime = appointmentDate.Date.Add(b.EndTime);
+                return bookingStartDateTime < request.ToDate && bookingEndDateTime > request.FromDate;
+            }).ToList();
+
+            if (overlappingBookings.Any())
+            {
+                var bookingIds = string.Join(", ", overlappingBookings.Select(b => $"#{b.Id}"));
+                throw new BadRequestException(
+                    $"Không thể duyệt nghỉ phép! Nhân viên đang có lịch hẹn với khách (Mã đơn: {bookingIds}) trong khung giờ này. " +
+                    $"Vui lòng dời lịch hoặc chuyển nhân viên khác trước.");
+            }
+
+            var newLeave = new StaffLeave
+            {
+                StaffId = staffId,
+                FromDate = request.FromDate,
+                ToDate = request.ToDate,
+                Reason = request.Reason
+            };
+
+            await _unitOfWork.StaffLeaveRepository.AddAsync(newLeave);
+            await _unitOfWork.SaveChangesAsync();
+
+            return true;
+        }
+        public async Task<bool> DeleteLeaveAsync(int staffId, int leaveId)
+        {
+            await ValidateStaffBelongsToStoreAsync(staffId);
+
+            var leave = await _unitOfWork.StaffLeaveRepository.GetByIdAsync(leaveId);
+            if (leave == null || leave.StaffId != staffId)
+                throw new NotFoundException("Không tìm thấy đơn xin nghỉ này.");
+            _unitOfWork.StaffLeaveRepository.Delete(leave);
+            await _unitOfWork.SaveChangesAsync();
+
+            return true;
+        }
+        private async Task ValidateStaffBelongsToStoreAsync(int staffId)
+        {
+            int storeId = await _currentUserService.GetCurrentStoreIdAsync();
+            var staff = await _unitOfWork.StaffRepository.GetByIdAsync(staffId);
+
+            if (staff == null || staff.StoreId != storeId)
+                throw new NotFoundException("Không tìm thấy nhân viên hoặc nhân viên không thuộc cửa hàng này!");
+        }
     }
 }
