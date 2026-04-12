@@ -896,9 +896,7 @@ class _HomeViewState extends State<HomeView> {
     BuildContext context,
     List vouchers,
   ) {
-    print('👉 CHIỀU DÀI LIST VOUCHER: ${vouchers.length}');
     if (vouchers.isEmpty) return const SizedBox.shrink();
-
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       padding: const EdgeInsets.only(top: 8),

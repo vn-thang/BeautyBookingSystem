@@ -2,8 +2,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/auth/presentation/pages/change_password_page.dart';
+import '../../features/auth/presentation/pages/favorites_page.dart';
+import '../../features/auth/presentation/pages/privacy_policy_page.dart';
+import '../../features/auth/presentation/pages/profile_info_page.dart';
+import '../../features/auth/presentation/pages/settings_page.dart';
 import '../../features/booking/data/models/booking_models.dart';
 import '../../features/booking/presentation/pages/booking_detail_page.dart';
+import '../../features/contact_support/presentation/bloc/contact_support_bloc.dart';
+import '../../features/contact_support/presentation/pages/contact_support_page.dart';
 import '../../features/home/data/datasources/home_remote_datasource.dart';
 import '../../features/store_reviews/presentation/bloc/store_reviews_bloc.dart';
 import '../../features/store_reviews/presentation/pages/store_reviews_page.dart';
@@ -54,6 +61,7 @@ class AppRouter {
         "/booking",
         "/history",
         "/profile",
+        "/settings",
       ];
 
       final needAuth = protectedRoutes.any(
@@ -104,6 +112,47 @@ class AppRouter {
             builder: (context, state) => ProfilePage(
               homeRemoteDataSource: di.sl<HomeRemoteDataSource>(),
             ),
+            routes: [
+              GoRoute(
+                path: "info",
+                name: "profile_info",
+                builder: (context, state) => const ProfileInfoPage(),
+              ),
+              GoRoute(
+                path: "favorites",
+                name: "profile_favorites",
+                builder: (context, state) => FavoritesPage(
+                  homeRemoteDataSource: di.sl<HomeRemoteDataSource>(),
+                ),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: "/settings",
+            name: "settings",
+            builder: (context, state) => const SettingsPage(),
+            routes: [
+              GoRoute(
+                path: "change-password",
+                name: "change_password",
+                builder: (context, state) => const ChangePasswordPage(),
+              ),
+              GoRoute(
+                path: "privacy-policy",
+                name: "privacy_policy",
+                builder: (context, state) => const PrivacyPolicyPage(),
+              ),
+              GoRoute(
+                path: "contact-support",
+                name: "contact_support",
+                builder: (context, state) {
+                  return BlocProvider(
+                    create: (_) => di.sl<ContactSupportBloc>(),
+                    child: const ContactSupportPage(),
+                  );
+                },
+              ),
+            ],
           ),
 
           /// SEARCH
@@ -129,10 +178,7 @@ class AppRouter {
             builder: (context, state) => const NotificationPage(),
           ),
 
-          /// ============================
           /// CATEGORY STORE
-          /// ============================
-
           GoRoute(
             path: "/category/:id",
             name: "category",
@@ -152,10 +198,7 @@ class AppRouter {
             },
           ),
 
-          /// ============================
           /// SERVICE GROUP STORE
-          /// ============================
-
           GoRoute(
             path: "/service-group/:id",
             name: "service_group",
@@ -175,10 +218,7 @@ class AppRouter {
             },
           ),
 
-          /// ============================
           /// STORE DETAIL
-          /// ============================
-
           GoRoute(
             path: "/store/:id",
             name: "store",
@@ -208,10 +248,7 @@ class AppRouter {
             },
           ),
 
-          /// ============================
           /// SERVICE DETAIL
-          /// ============================
-
           GoRoute(
             path: "/service-detail/:id",
             name: "service_detail",
@@ -229,10 +266,7 @@ class AppRouter {
         ],
       ),
 
-      /// ============================
       /// LOGIN (NO BOTTOM NAV)
-      /// ============================
-
       GoRoute(
         path: "/login",
         builder: (context, state) {

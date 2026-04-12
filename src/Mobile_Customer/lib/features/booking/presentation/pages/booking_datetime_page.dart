@@ -1,9 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'package:mobile_customer/core/theme/app_colors.dart';
 import 'package:mobile_customer/core/theme/app_decorations.dart';
 import 'package:mobile_customer/core/theme/app_text_styles.dart';
+import 'package:mobile_customer/injection/service_locator.dart' as di;
 
 import '../../data/models/operating_hour_model.dart';
 import 'booking_staff_page.dart';
@@ -34,6 +36,9 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
   DateTime? selectedDate;
   String? selectedSlot;
 
+  final Map<String, bool> _slotStaffAvailability = {};
+  bool _checkingAvailability = false;
+
   DateTime _normalizeDate(DateTime d) => DateTime(d.year, d.month, d.day);
 
   bool _isSameDate(DateTime a, DateTime b) {
@@ -41,7 +46,7 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
   }
 
   int _toDbDayOfWeek(DateTime date) {
-    return date.weekday == DateTime.sunday ? 0 : date.weekday;
+    return date.weekday;
   }
 
   OperatingHourViewDto? _getOperatingHourForDate(DateTime date) {
@@ -121,6 +126,81 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
     return '$weekday, ${DateFormat('dd/MM/yyyy').format(date)}';
   }
 
+  String _slotKey(DateTime date, String slot) {
+    final d = _normalizeDate(date);
+    return '${d.year}-${d.month}-${d.day}_$slot';
+  }
+
+  Future<void> _loadAvailabilityForDate(DateTime date) async {
+    final slots = _getAvailableSlots(date);
+    if (slots.isEmpty) return;
+
+    final dio = di.sl<Dio>();
+
+    setState(() {
+      _checkingAvailability = true;
+    });
+
+    try {
+      final resp = await dio.post(
+        'bookings/available-time-slots',
+        data: {
+          'storeId': widget.storeId,
+          'date': DateFormat('yyyy-MM-dd').format(date),
+          'serviceIds': widget.services,
+          'excludeBookingId': null,
+        },
+      );
+
+      List<dynamic> dataList = [];
+
+      final raw = resp.data;
+      if (raw is Map<String, dynamic>) {
+        final payload = raw['data'];
+        if (payload is List) {
+          dataList = payload;
+        }
+      } else if (raw is List) {
+        dataList = raw;
+      }
+
+      final Map<String, bool> results = {};
+
+      for (final item in dataList) {
+        if (item is Map<String, dynamic>) {
+          final time = item['time']?.toString();
+          final isAvailable = item['isAvailable'] == true;
+          if (time != null) {
+            results[_slotKey(date, time)] = isAvailable;
+          }
+        }
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        for (final slot in slots) {
+          final key = _slotKey(date, slot);
+          _slotStaffAvailability[key] = results[key] ?? false;
+        }
+        _checkingAvailability = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        for (final slot in slots) {
+          _slotStaffAvailability[_slotKey(date, slot)] = false;
+        }
+        _checkingAvailability = false;
+      });
+    }
+  }
+
+  bool _isSlotEnabled(DateTime date, String slot) {
+    final key = _slotKey(date, slot);
+    return _slotStaffAvailability[key] ?? true;
+  }
+
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final firstSelectable = _firstSelectableDate(now);
@@ -174,7 +254,7 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
               todayForegroundColor: const WidgetStatePropertyAll(
                 AppColors.primary,
               ),
-              todayBorder: const BorderSide(color: AppColors.primary),
+              todayBorder: BorderSide(color: AppColors.primary),
             ),
           ),
           child: child!,
@@ -183,10 +263,14 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
     );
 
     if (picked != null) {
+      final normalized = _normalizeDate(picked);
+
       setState(() {
-        selectedDate = _normalizeDate(picked);
+        selectedDate = normalized;
         selectedSlot = null;
       });
+
+      await _loadAvailabilityForDate(normalized);
     }
   }
 
@@ -383,6 +467,16 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
                   ],
                 ),
               ),
+              if (_checkingAvailability)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    'Đang kiểm tra nhân viên khả dụng...',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ),
               const SizedBox(height: 10),
               Expanded(
                 child: Padding(
@@ -408,28 +502,40 @@ class _BookingDateTimePageState extends State<BookingDateTimePage> {
                               itemBuilder: (context, index) {
                                 final slot = availableSlots[index];
                                 final selected = selectedSlot == slot;
+                                final enabled =
+                                    _isSlotEnabled(selectedDate!, slot);
 
                                 return ChoiceChip(
                                   label: Text(slot),
                                   selected: selected,
-                                  onSelected: (v) {
-                                    setState(() {
-                                      selectedSlot = v ? slot : null;
-                                    });
-                                  },
+                                  onSelected: enabled
+                                      ? (v) {
+                                          setState(() {
+                                            selectedSlot = v ? slot : null;
+                                          });
+                                        }
+                                      : null,
                                   labelStyle: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
                                     color: selected
                                         ? AppColors.surface
-                                        : AppColors.textMuted,
+                                        : enabled
+                                            ? AppColors.textMuted
+                                            : AppColors.textMuted
+                                                .withValues(alpha: 0.4),
                                   ),
                                   selectedColor: AppColors.primary,
-                                  backgroundColor: AppColors.surface,
+                                  backgroundColor: enabled
+                                      ? AppColors.surface
+                                      : AppColors.surfaceSoft,
+                                  disabledColor: AppColors.surfaceSoft,
                                   side: BorderSide(
                                     color: selected
                                         ? AppColors.primary
-                                        : AppColors.border,
+                                        : enabled
+                                            ? AppColors.border
+                                            : AppColors.borderSoft,
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(999),

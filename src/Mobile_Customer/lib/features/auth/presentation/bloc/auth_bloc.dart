@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,6 +26,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final UpdateProfile updateProfile;
   final UploadAvatar uploadAvatar;
 
+  Future<void> _profileMutationQueue = Future.value();
+
   AuthBloc(
     this.login,
     this.getProfile,
@@ -44,8 +49,50 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<UploadAvatarEvent>(_onUploadAvatar);
   }
 
+  Future<void> _runSerialized(Future<void> Function() action) async {
+    final previous = _profileMutationQueue;
+    final completer = Completer<void>();
+    _profileMutationQueue = completer.future;
+
+    try {
+      await previous.catchError((_) {});
+      await action();
+    } finally {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    }
+  }
+
+  String _extractMessage(Object e) {
+    if (e is DioException) {
+      final data = e.response?.data;
+
+      if (data is Map<String, dynamic>) {
+        final message = data['message'] ?? data['error'] ?? data['title'];
+        if (message != null && message.toString().trim().isNotEmpty) {
+          return message.toString();
+        }
+      }
+
+      if (data is String && data.trim().isNotEmpty) {
+        return data;
+      }
+
+      return e.message ?? 'Đã xảy ra lỗi';
+    }
+
+    if (e is Exception) {
+      return e.toString().replaceFirst('Exception: ', '');
+    }
+
+    return 'Đã xảy ra lỗi';
+  }
+
   Future<void> _onCheckAuth(
-      CheckAuthEvent event, Emitter<AuthState> emit) async {
+    CheckAuthEvent event,
+    Emitter<AuthState> emit,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("token");
 
@@ -57,7 +104,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final user = await getProfile();
 
-      // k emit lại nếu giống nhau
       if (state is AuthAuthenticated) {
         final current = (state as AuthAuthenticated).user;
         if (current.id == user.id) return;
@@ -70,17 +116,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onLogin(LoginEvent event, Emitter<AuthState> emit) async {
+  Future<void> _onLogin(
+    LoginEvent event,
+    Emitter<AuthState> emit,
+  ) async {
     emit(AuthLoading());
     try {
       final user = await login(event.email, event.password);
       emit(AuthAuthenticated(user));
     } catch (e) {
-      emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
+      emit(AuthError(_extractMessage(e)));
     }
   }
 
-  Future<void> _onRegister(RegisterEvent event, Emitter<AuthState> emit) async {
+  Future<void> _onRegister(
+    RegisterEvent event,
+    Emitter<AuthState> emit,
+  ) async {
     emit(AuthLoading());
     try {
       final user = await register(
@@ -91,7 +143,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
       emit(AuthAuthenticated(user));
     } catch (e) {
-      emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
+      emit(AuthError(_extractMessage(e)));
     }
   }
 
@@ -107,10 +159,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthSuccess("Đổi mật khẩu thành công"));
 
       if (currentState is AuthAuthenticated) {
-        emit(currentState); // giữ login
+        emit(currentState);
       }
     } catch (e) {
-      emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
+      emit(AuthError(_extractMessage(e)));
       if (currentState is AuthAuthenticated) {
         emit(currentState);
       }
@@ -118,28 +170,35 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onForgotPassword(
-      ForgotPasswordEvent event, Emitter<AuthState> emit) async {
+    ForgotPasswordEvent event,
+    Emitter<AuthState> emit,
+  ) async {
     emit(AuthLoading());
     try {
       await forgotPassword(event.email);
       emit(AuthSuccess("Đã gửi OTP tới email"));
     } catch (e) {
-      emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
+      emit(AuthError(_extractMessage(e)));
     }
   }
 
   Future<void> _onResetPassword(
-      ResetPasswordEvent event, Emitter<AuthState> emit) async {
+    ResetPasswordEvent event,
+    Emitter<AuthState> emit,
+  ) async {
     emit(AuthLoading());
     try {
       await resetPassword(event.email, event.otp, event.newPassword);
       emit(AuthSuccess("Đổi mật khẩu thành công"));
     } catch (e) {
-      emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
+      emit(AuthError(_extractMessage(e)));
     }
   }
 
-  Future<void> _onLogout(LogoutEvent event, Emitter<AuthState> emit) async {
+  Future<void> _onLogout(
+    LogoutEvent event,
+    Emitter<AuthState> emit,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("token");
     await prefs.remove("refreshToken");
@@ -157,17 +216,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (currentState is! AuthAuthenticated) return;
 
     try {
-      await updateProfile(
-        event.fullName,
-        event.email,
-        event.avatarUrl,
-      );
+      await _runSerialized(() async {
+        await updateProfile(
+          event.fullName,
+          event.email,
+          event.avatarUrl,
+        );
 
-      final user = await getProfile();
-      emit(AuthAuthenticated(user));
-      emit(AuthSuccess("Cập nhật thành công"));
+        final user = await getProfile();
+        emit(AuthAuthenticated(user));
+        emit(AuthSuccess("Cập nhật thông tin thành công"));
+      });
     } catch (e) {
-      emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
+      emit(AuthError(_extractMessage(e)));
       emit(currentState);
     }
   }
@@ -181,13 +242,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (currentState is! AuthAuthenticated) return;
 
     try {
-      await uploadAvatar(event.file);
+      await _runSerialized(() async {
+        await uploadAvatar(event.file);
 
-      final user = await getProfile();
-      emit(AuthAuthenticated(user));
-      emit(AuthSuccess("Cập nhật avatar thành công"));
+        final user = await getProfile();
+        emit(AuthAuthenticated(user));
+        emit(AuthSuccess("Cập nhật avatar thành công"));
+      });
     } catch (e) {
-      emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
+      emit(AuthError(_extractMessage(e)));
       emit(currentState);
     }
   }

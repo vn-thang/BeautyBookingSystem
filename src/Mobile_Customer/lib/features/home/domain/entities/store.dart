@@ -18,6 +18,8 @@ class Store {
   final String name;
   final String address;
   final String? phone;
+  final String? zaloPhone;
+  final String? facebookUrl;
   final String? description;
   final String? logoUrl;
   final String? coverImageUrl;
@@ -40,6 +42,8 @@ class Store {
     required this.name,
     required this.address,
     this.phone,
+    this.zaloPhone,
+    this.facebookUrl,
     this.description,
     this.logoUrl,
     this.coverImageUrl,
@@ -65,6 +69,8 @@ class Store {
       name: name,
       address: address,
       phone: phone,
+      zaloPhone: zaloPhone,
+      facebookUrl: facebookUrl,
       description: description,
       logoUrl: logoUrl,
       coverImageUrl: coverImageUrl,

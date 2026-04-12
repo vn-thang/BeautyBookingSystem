@@ -148,7 +148,7 @@ class ProfilePage extends StatelessWidget {
             icon: Icons.person_outline_rounded,
             title: "Thông tin cá nhân",
             subtitle: "Xem và chỉnh sửa hồ sơ của bạn",
-            onTap: () => _showProfileBottomSheet(context, user),
+            onTap: () => context.push('/profile/info'),
           ),
           const SizedBox(height: 18),
           _sectionTitle("Yêu thích"),
@@ -156,47 +156,15 @@ class ProfilePage extends StatelessWidget {
             icon: Icons.favorite_border_rounded,
             title: "Danh sách yêu thích",
             subtitle: "Xem cửa hàng và dịch vụ đã lưu",
-            onTap: () => _showFavoritesBottomSheet(context),
+            onTap: () => context.push('/profile/favorites'),
           ),
           const SizedBox(height: 18),
           _sectionTitle("Cài đặt"),
           _menuTile(
-            icon: Icons.lock_outline_rounded,
-            title: "Đổi mật khẩu",
-            onTap: () => _showChangePasswordDialog(context),
-          ),
-          const SizedBox(height: 10),
-          _menuTile(
-            icon: Icons.privacy_tip_outlined,
-            title: "Chính sách về quyền riêng tư",
-            onTap: () => _showInfoSheet(
-              context,
-              title: "Chính sách về quyền riêng tư",
-              content:
-                  "Đây là nơi bạn đặt nội dung chính sách quyền riêng tư của ứng dụng.",
-            ),
-          ),
-          const SizedBox(height: 10),
-          _menuTile(
-            icon: Icons.description_outlined,
-            title: "Điều khoản dịch vụ",
-            onTap: () => _showInfoSheet(
-              context,
-              title: "Điều khoản dịch vụ",
-              content:
-                  "Đây là nơi bạn đặt nội dung điều khoản dịch vụ của ứng dụng.",
-            ),
-          ),
-          const SizedBox(height: 10),
-          _menuTile(
-            icon: Icons.rule_outlined,
-            title: "Điều khoản sử dụng",
-            onTap: () => _showInfoSheet(
-              context,
-              title: "Điều khoản sử dụng",
-              content:
-                  "Đây là nơi bạn đặt nội dung điều khoản sử dụng của ứng dụng.",
-            ),
+            icon: Icons.settings_outlined,
+            title: "Cài đặt",
+            subtitle: "Đổi mật khẩu, chính sách, điều khoản, liên hệ",
+            onTap: () => context.push('/settings'),
           ),
           const SizedBox(height: 18),
           _actionButton(

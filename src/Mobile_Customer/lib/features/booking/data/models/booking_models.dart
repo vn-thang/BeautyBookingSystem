@@ -12,6 +12,7 @@ class BookingItem {
   final double remainingAmountFromApi;
   final int status;
   final String? customerNote;
+  final int storeId;
   final String? storeName;
   final String? storeAvatarUrl;
   final String? staffName;
@@ -34,6 +35,7 @@ class BookingItem {
     this.remainingAmountFromApi = 0,
     required this.status,
     this.customerNote,
+    required this.storeId,
     this.storeName,
     this.storeAvatarUrl,
     this.staffName,
@@ -92,6 +94,7 @@ class BookingItem {
       remainingAmountFromApi: parseDouble(json['remainingAmount']),
       status: parseInt(json['status']),
       customerNote: json['customerNote'] as String?,
+      storeId: parseInt(json['storeId']),
       storeName: json['storeName'] as String?,
       storeAvatarUrl:
           json['storeAvatarUrl'] as String? ?? json['storeImageUrl'] as String?,
@@ -133,13 +136,15 @@ class BookingItem {
   String get statusText {
     switch (status) {
       case 0:
-        return 'Chờ xác nhận';
+        return 'Chờ xác nhận'; // Pending
       case 1:
-        return 'Đã xác nhận';
+        return 'Đã đặt cọc'; // DepositPaid
       case 2:
-        return 'Hoàn thành';
+        return 'Đã xác nhận'; // Confirmed
       case 3:
-        return 'Đã hủy';
+        return 'Hoàn thành'; // Completed
+      case 4:
+        return 'Đã hủy'; // Cancelled
       default:
         return 'Không xác định';
     }

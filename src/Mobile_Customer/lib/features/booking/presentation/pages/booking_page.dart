@@ -557,10 +557,12 @@ class _BookingCard extends StatelessWidget {
       case 0:
         return (label: 'Chờ xác nhận', color: AppColors.warning);
       case 1:
-        return (label: 'Đã xác nhận', color: AppColors.success);
+        return (label: 'Đã thanh toán cọc', color: AppColors.success);
       case 2:
-        return (label: 'Hoàn thành', color: AppColors.secondary);
+        return (label: 'Đã xác nhận', color: AppColors.success);
       case 3:
+        return (label: 'Hoàn thành', color: AppColors.secondary);
+      case 4:
         return (label: 'Đã hủy', color: AppColors.danger);
       default:
         return (label: 'Không rõ', color: AppColors.textSecondary);

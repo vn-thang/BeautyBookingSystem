@@ -15,6 +15,9 @@ import '../../../review/presentation/bloc/review_bloc.dart';
 import '../../../review/presentation/bloc/review_event.dart';
 import '../../../review/presentation/bloc/review_state.dart';
 import '../../data/models/booking_models.dart';
+import '../../data/models/booking_policy_model.dart';
+import 'booking_cancel_page.dart';
+import 'booking_reschedule_page.dart';
 
 class BookingDetailPage extends StatefulWidget {
   final int bookingId;
@@ -38,6 +41,8 @@ class _BookingDetailPageState extends State<BookingDetailPage>
   late final ReviewBloc _reviewBloc;
   bool _processingPay = false;
   bool _processingCancel = false;
+  int _rescheduleBeforeHours = 3;
+  bool _loadingPolicies = true;
 
   @override
   void initState() {
@@ -46,6 +51,7 @@ class _BookingDetailPageState extends State<BookingDetailPage>
     _item = widget.initialBooking;
     _reviewBloc = di.sl<ReviewBloc>()..add(LoadMyReviews());
     _loadDetail();
+    _loadBookingPolicies();
   }
 
   @override
@@ -70,25 +76,6 @@ class _BookingDetailPageState extends State<BookingDetailPage>
     ).format(value.abs()).replaceAll('\u00A0', ' ');
 
     return value < 0 ? '-$formatted' : formatted;
-  }
-
-  DateTime? _bookingDateTime(BookingItem item) {
-    if (item.services.isNotEmpty) {
-      final s = item.services.first;
-      final parts = s.startTime.split(':');
-      if (parts.length >= 2) {
-        return DateTime(
-          s.appointmentDate.year,
-          s.appointmentDate.month,
-          s.appointmentDate.day,
-          int.tryParse(parts[0]) ?? 0,
-          int.tryParse(parts[1]) ?? 0,
-        );
-      }
-      return s.appointmentDate;
-    }
-
-    return item.createdAt;
   }
 
   String _appointmentRangeText(BookingItem item) {
@@ -116,12 +103,33 @@ class _BookingDetailPageState extends State<BookingDetailPage>
     return '$firstDate • $startText';
   }
 
-  bool _canCancel(BookingItem item) {
+  DateTime? _bookingDateTime(BookingItem item) {
+    if (item.services.isNotEmpty) {
+      final s = item.services.first;
+      final parts = s.startTime.split(':');
+      if (parts.length >= 2) {
+        return DateTime(
+          s.appointmentDate.year,
+          s.appointmentDate.month,
+          s.appointmentDate.day,
+          int.tryParse(parts[0]) ?? 0,
+          int.tryParse(parts[1]) ?? 0,
+        );
+      }
+      return s.appointmentDate;
+    }
+
+    return item.createdAt;
+  }
+
+  bool _canReschedule(BookingItem item) {
+    if (item.status != 0 && item.status != 1 && item.status != 2) return false;
+
     final dt = _bookingDateTime(item);
     if (dt == null) return false;
 
     final now = DateTime.now();
-    return dt.difference(now).inHours >= 24;
+    return dt.difference(now).inHours >= _rescheduleBeforeHours;
   }
 
   Future<void> _loadDetail() async {
@@ -165,6 +173,66 @@ class _BookingDetailPageState extends State<BookingDetailPage>
         _loading = false;
         _error = widget.initialBooking == null ? e.toString() : null;
       });
+    }
+  }
+
+  Future<void> _loadBookingPolicies() async {
+    try {
+      final dio = di.sl<Dio>();
+      final resp = await dio.get('public/system-configs/booking-policies');
+
+      final data = resp.data;
+      Map<String, dynamic>? json;
+
+      if (data is Map<String, dynamic>) {
+        if (data['data'] is Map<String, dynamic>) {
+          json = Map<String, dynamic>.from(data['data']);
+        } else {
+          json = data;
+        }
+      }
+
+      if (json != null) {
+        final policy = BookingPolicy.fromJson(json);
+        if (mounted) {
+          setState(() {
+            _rescheduleBeforeHours = policy.rescheduleBeforeHours > 0
+                ? policy.rescheduleBeforeHours
+                : 3;
+            _loadingPolicies = false;
+          });
+        }
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _loadingPolicies = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _rescheduleBeforeHours = 3;
+          _loadingPolicies = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openReschedulePage(BookingItem item) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BookingReschedulePage(
+          booking: item,
+          rescheduleBeforeHours: _rescheduleBeforeHours,
+        ),
+      ),
+    );
+
+    if (result == true) {
+      _loadDetail();
     }
   }
 
@@ -260,115 +328,29 @@ class _BookingDetailPageState extends State<BookingDetailPage>
     );
   }
 
-  // Future<void> _requestCancel(BookingItem item) async {
-  //   if (_processingCancel) return;
-
-  //   final canCancel = _canCancel(item);
-  //   if (!canCancel) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('Chỉ được hủy trước 24 giờ của lịch hẹn'),
-  //         behavior: SnackBarBehavior.floating,
-  //       ),
-  //     );
-  //     return;
-  //   }
-
-  //   final confirmed = await showDialog<bool>(
-  //     context: context,
-  //     builder: (context) {
-  //       return AlertDialog(
-  //         title: const Text('Yêu cầu hủy booking'),
-  //         content: const Text('Bạn có chắc muốn hủy booking này không?'),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () => Navigator.pop(context, false),
-  //             child: const Text('Không'),
-  //           ),
-  //           ElevatedButton(
-  //             onPressed: () => Navigator.pop(context, true),
-  //             child: const Text('Có, hủy booking'),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-
-  //   if (confirmed != true) return;
-
-  //   setState(() => _processingCancel = true);
-
-  //   try {
-  //     final dio = di.sl<Dio>();
-  //     await dio.post(
-  //       'bookings/${item.id}/cancel',
-  //       data: {
-  //         'reason': 'Khách yêu cầu hủy',
-  //       },
-  //     );
-
-  //     await _loadDetail();
-
-  //     if (!mounted) return;
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(
-  //         content: Text('Đã gửi yêu cầu hủy booking'),
-  //         behavior: SnackBarBehavior.floating,
-  //         backgroundColor: AppColors.success,
-  //       ),
-  //     );
-  //   } catch (e) {
-  //     if (!mounted) return;
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text('Hủy booking thất bại: $e'),
-  //         behavior: SnackBarBehavior.floating,
-  //         backgroundColor: AppColors.danger,
-  //       ),
-  //     );
-  //   } finally {
-  //     if (mounted) {
-  //       setState(() => _processingCancel = false);
-  //     }
-  //   }
-  // }
-
   Future<void> _requestCancel(BookingItem item) async {
     if (_processingCancel) return;
 
-    // 1. Bỏ check 24h đi. Chỉ cần check cơ bản tránh user bấm nhầm khi đơn đã hủy/hoàn thành
-    if (item.status == 'Cancelled' || item.status == 'Completed') {
+    if (item.status == 3 || item.status == 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Lịch hẹn này đã kết thúc hoặc bị hủy, không thể thao tác thêm.'),
+          content: Text(
+            'Lịch hẹn này đã hoàn thành hoặc đã hủy, không thể thao tác thêm.',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
       return;
     }
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Yêu cầu hủy booking'),
-          content: const Text('Bạn có chắc muốn hủy booking này không?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Không'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red), // Nút hủy nên cho màu đỏ
-              child: const Text('Có, hủy booking', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        );
-      },
+    final selectedReason = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BookingCancelPage(booking: item),
+      ),
     );
 
-    if (confirmed != true) return;
+    if (selectedReason == null) return;
 
     setState(() => _processingCancel = true);
 
@@ -377,7 +359,7 @@ class _BookingDetailPageState extends State<BookingDetailPage>
       await dio.post(
         'bookings/${item.id}/cancel',
         data: {
-          'reason': 'Khách yêu cầu hủy',
+          'reason': selectedReason,
         },
       );
 
@@ -391,31 +373,29 @@ class _BookingDetailPageState extends State<BookingDetailPage>
           backgroundColor: AppColors.success,
         ),
       );
-      
-    // 2. BẮT LỖI TỪ BACKEND BẰNG DioException
     } on DioException catch (e) {
       if (!mounted) return;
-      
-      // Trích xuất câu thông báo lỗi động từ Backend C# gửi về
-      // (Ví dụ: "Quy định cửa hàng: Chỉ được hủy trước 3 giờ...")
+
       String errorMessage = 'Hủy booking thất bại';
-      
+
       if (e.response != null && e.response?.data != null) {
         final data = e.response?.data;
         if (data is Map<String, dynamic>) {
-           // Đọc field 'message' hoặc 'title' tùy thuộc vào cách Middleware C# của bạn cấu hình trả về
-           errorMessage = data['message'] ?? data['title'] ?? data['detail'] ?? errorMessage;
+          errorMessage = data['message'] ??
+              data['title'] ??
+              data['detail'] ??
+              errorMessage;
         } else {
-           errorMessage = data.toString();
+          errorMessage = data.toString();
         }
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(errorMessage), // Hiển thị nguyên văn lời cảnh báo của Backend
+          content: Text(errorMessage),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.danger,
-          duration: const Duration(seconds: 4), // Cho hiển thị lâu hơn chút để khách kịp đọc
+          duration: const Duration(seconds: 4),
         ),
       );
     } catch (e) {
@@ -586,9 +566,40 @@ class _BookingDetailPageState extends State<BookingDetailPage>
                                             ),
                                           ),
                                         ],
-                                        if ((item.status == 0 ||
-                                                item.status == 1) &&
-                                            _canCancel(item)) ...[
+                                        if (_canReschedule(item)) ...[
+                                          const SizedBox(height: 12),
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: OutlinedButton(
+                                              onPressed: _loadingPolicies
+                                                  ? null
+                                                  : () =>
+                                                      _openReschedulePage(item),
+                                              style: OutlinedButton.styleFrom(
+                                                foregroundColor:
+                                                    AppColors.primary,
+                                                side: const BorderSide(
+                                                    color: AppColors.primary),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 14),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                ),
+                                              ),
+                                              child: const Text(
+                                                'Đổi lịch',
+                                                style: TextStyle(
+                                                    fontWeight:
+                                                        FontWeight.w700),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                        if (item.status == 0 ||
+                                            item.status == 1 ||
+                                            item.status == 2) ...[
                                           const SizedBox(height: 12),
                                           SizedBox(
                                             width: double.infinity,
@@ -847,7 +858,7 @@ class _BookingDetailPageState extends State<BookingDetailPage>
   }
 
   bool _shouldShowPayButton(BookingItem item) {
-    if (item.status == 3) return false;
+    if (item.status == 3 || item.status == 4) return false;
     return item.remainingAmount > 0;
   }
 
@@ -1013,10 +1024,12 @@ class _BookingDetailPageState extends State<BookingDetailPage>
       case 0:
         return (label: 'Chờ xác nhận', color: AppColors.warning);
       case 1:
-        return (label: 'Đã xác nhận', color: AppColors.success);
+        return (label: 'Đã đặt cọc', color: AppColors.success);
       case 2:
-        return (label: 'Hoàn thành', color: AppColors.secondary);
+        return (label: 'Đã xác nhận', color: AppColors.primary);
       case 3:
+        return (label: 'Hoàn thành', color: AppColors.secondary);
+      case 4:
         return (label: 'Đã hủy', color: AppColors.danger);
       default:
         return (label: 'Không rõ', color: AppColors.textSecondary);

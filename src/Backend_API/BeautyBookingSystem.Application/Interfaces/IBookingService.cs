@@ -20,6 +20,8 @@ namespace BeautyBookingSystem.Application.Interfaces
 
         Task<BookingDetailDto> CancelBookingAsync(int customerId, int bookingId, string? reason);
         Task<List<AvailableStaffDto>> GetAvailableStaffAsync(GetAvailableStaffRequest request);
+        Task<List<BookingTimeSlotDto>> GetAvailableTimeSlotsAsync(GetAvailableTimeSlotsRequest request);
+        Task<BookingPolicyDto> GetBookingPoliciesAsync(int customerId);
         Task<bool> MarkAsNoShowAsync(int storeId, int bookingId);
         Task<bool> RescheduleBookingAsync(int customerId, int bookingId, RescheduleBookingRequest request);
     }
