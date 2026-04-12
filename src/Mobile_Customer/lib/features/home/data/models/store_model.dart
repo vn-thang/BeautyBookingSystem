@@ -42,6 +42,8 @@ class StoreModel {
   final String name;
   final String address;
   final String? phone;
+  final String? zaloPhone;
+  final String? facebookUrl;
   final String? description;
   final String? logoUrl;
   final String? coverImageUrl;
@@ -62,6 +64,8 @@ class StoreModel {
     required this.name,
     required this.address,
     this.phone,
+    this.zaloPhone,
+    this.facebookUrl,
     this.description,
     this.logoUrl,
     this.coverImageUrl,
@@ -97,6 +101,8 @@ class StoreModel {
       name: json['name'] ?? '',
       address: json['address'] ?? '',
       phone: json['phone'],
+      zaloPhone: json['zaloPhone'],
+      facebookUrl: json['facebookUrl'],
       description: json['description'],
       logoUrl: json['logoUrl'],
       coverImageUrl: json['coverImageUrl'],
@@ -126,6 +132,8 @@ class StoreModel {
       name: name,
       address: address,
       phone: phone,
+      zaloPhone: zaloPhone,
+      facebookUrl: facebookUrl,
       description: description,
       logoUrl: logoUrl,
       coverImageUrl: coverImageUrl,

@@ -2,14 +2,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:mobile_customer/features/notification/data/datasources/notification_remote_datasource.dart';
-import 'package:mobile_customer/features/notification/data/repositories/notification_repository_impl.dart';
-import 'package:mobile_customer/features/notification/domain/repositories/notification_repository.dart';
-import 'package:mobile_customer/features/notification/domain/usecases/get_notifications.dart';
-import 'package:mobile_customer/features/notification/domain/usecases/get_unread_count.dart';
-import 'package:mobile_customer/features/notification/domain/usecases/mark_all_as_read.dart';
-import 'package:mobile_customer/features/notification/domain/usecases/mark_as_read.dart';
-import 'package:mobile_customer/features/notification/presentation/bloc/notification_bloc.dart';
 
 import '../core/network/dio_client.dart';
 import '../core/location/location_service.dart';
@@ -101,6 +93,24 @@ import '../features/store_reviews/domain/repositories/store_reviews_repository.d
 import '../features/store_reviews/domain/usecases/get_store_reviews_usecase.dart';
 import '../features/store_reviews/domain/usecases/get_top_store_reviews_usecase.dart';
 import '../features/store_reviews/presentation/bloc/store_reviews_bloc.dart';
+
+//Notification feature
+import 'package:mobile_customer/features/notification/data/datasources/notification_remote_datasource.dart';
+import 'package:mobile_customer/features/notification/data/repositories/notification_repository_impl.dart';
+import 'package:mobile_customer/features/notification/domain/repositories/notification_repository.dart';
+import 'package:mobile_customer/features/notification/domain/usecases/get_notifications.dart';
+import 'package:mobile_customer/features/notification/domain/usecases/get_unread_count.dart';
+import 'package:mobile_customer/features/notification/domain/usecases/mark_all_as_read.dart';
+import 'package:mobile_customer/features/notification/domain/usecases/mark_as_read.dart';
+import 'package:mobile_customer/features/notification/presentation/bloc/notification_bloc.dart';
+
+//Contact Support feature
+import '../features/contact_support/data/datasources/contact_support_remote_data_source.dart';
+import '../features/contact_support/data/datasources/contact_support_remote_data_source_impl.dart';
+import '../features/contact_support/data/repositories/contact_support_repository_impl.dart';
+import '../features/contact_support/domain/repositories/contact_support_repository.dart';
+import '../features/contact_support/domain/usecases/get_contact_info_usecase.dart';
+import '../features/contact_support/presentation/bloc/contact_support_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -301,13 +311,12 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetTopStoreReviewsUseCase(sl()));
 
   // 1. Bloc
- // Đổi registerFactory thành registerLazySingleton
-sl.registerLazySingleton(() => NotificationBloc(
-      getNotifications: sl(),
-      getUnreadCount: sl(),
-      markAsRead: sl(),
-      markAllAsRead: sl(),
-    ));
+  sl.registerLazySingleton(() => NotificationBloc(
+        getNotifications: sl(),
+        getUnreadCount: sl(),
+        markAsRead: sl(),
+        markAllAsRead: sl(),
+      ));
 
   // 2. Use Cases
   sl.registerLazySingleton(() => GetNotifications(sl()));
@@ -320,7 +329,22 @@ sl.registerLazySingleton(() => NotificationBloc(
       () => NotificationRepositoryImpl(sl()));
 
   // 4. Data Source
-  // (Giả sử bạn đã đăng ký Dio ở đâu đó rồi: sl.registerLazySingleton(() => Dio());)
   sl.registerLazySingleton<NotificationRemoteDataSource>(
       () => NotificationRemoteDataSource(sl()));
+
+  sl.registerLazySingleton<ContactSupportRemoteDataSource>(
+    () => ContactSupportRemoteDataSourceImpl(sl<Dio>()),
+  );
+
+  sl.registerLazySingleton<ContactSupportRepository>(
+    () => ContactSupportRepositoryImpl(sl()),
+  );
+
+  sl.registerLazySingleton(
+    () => GetContactInfoUseCase(sl()),
+  );
+
+  sl.registerFactory(
+    () => ContactSupportBloc(sl()),
+  );
 }

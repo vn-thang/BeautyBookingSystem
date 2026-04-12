@@ -21,6 +21,7 @@ namespace BeautyBookingSystem.Application.DTOs.Booking
         public decimal RemainingAmount { get; set; }
         public BookingStatus Status { get; set; }
         public string? CustomerNote { get; set; }
+        public int StoreId { get; set; }
         public string StoreName { get; set; } = string.Empty;
 
         public List<BookingServiceDetailDto> Services { get; set; } = new();

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +17,7 @@ import '../bloc/service_detail_state.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_decorations.dart';
+import '../../../../injection/service_locator.dart' as di;
 
 class ServiceDetailPage extends StatefulWidget {
   final int serviceId;
@@ -35,10 +37,55 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
 
   bool _favoriteChanged = false;
 
+  bool _loadingBookingPolicy = false;
+  bool _isBookingBlocked = false;
+  int _currentNoShowCount = 0;
+  int _noShowLimit = 0;
+  String? _blockReason;
+
   @override
   void initState() {
     super.initState();
     context.read<ServiceDetailBloc>().add(FetchServiceDetail(widget.serviceId));
+    _loadBookingPolicy();
+  }
+
+  Future<void> _loadBookingPolicy() async {
+    setState(() {
+      _loadingBookingPolicy = true;
+    });
+
+    try {
+      final dio = di.sl<Dio>();
+      final resp = await dio.get('public/system-configs/booking-policies');
+
+      final data = resp.data;
+      if (data is Map<String, dynamic>) {
+        final policy = data['data'];
+        if (policy is Map<String, dynamic>) {
+          if (!mounted) return;
+
+          setState(() {
+            _isBookingBlocked = policy['isBookingBlocked'] == true;
+            _currentNoShowCount = policy['currentNoShowCount'] ?? 0;
+            _noShowLimit = policy['noShowLimit'] ?? 0;
+            _blockReason = policy['blockReason']?.toString();
+            _loadingBookingPolicy = false;
+          });
+          return;
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _loadingBookingPolicy = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadingBookingPolicy = false;
+      });
+    }
   }
 
   String _formatPrice(num? value) {
@@ -86,6 +133,10 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                   final s = state.service;
                   final hasImage =
                       s.imageUrl != null && s.imageUrl!.trim().isNotEmpty;
+
+                  final canBook = s.isActive &&
+                      !_isBookingBlocked &&
+                      !_loadingBookingPolicy;
 
                   return CustomScrollView(
                     slivers: [
@@ -255,105 +306,168 @@ class _ServiceDetailPageState extends State<ServiceDetailPage> {
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                     ),
-                                    child: const Text(
-                                      'Thêm vào lịch hẹn',
-                                      style: TextStyle(
-                                        fontSize: 14.5,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      final storeId =
-                                          (s.storeId is int) ? s.storeId : null;
+                                    onPressed: canBook
+                                        ? () {
+                                            final storeId = (s.storeId is int)
+                                                ? s.storeId
+                                                : null;
 
-                                      if (storeId == null) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Không xác định cửa hàng cho dịch vụ này',
-                                            ),
-                                          ),
-                                        );
-                                        return;
-                                      }
+                                            if (storeId == null) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                    'Không xác định cửa hàng cho dịch vụ này',
+                                                  ),
+                                                ),
+                                              );
+                                              return;
+                                            }
 
-                                      final isLoggedIn = context
-                                          .read<AuthBloc>()
-                                          .state is AuthAuthenticated;
+                                            final isLoggedIn = context
+                                                .read<AuthBloc>()
+                                                .state is AuthAuthenticated;
 
-                                      if (!isLoggedIn) {
-                                        showDialog(
-                                          context: context,
-                                          builder: (dialogContext) =>
-                                              AlertDialog(
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(22),
-                                            ),
-                                            backgroundColor:
-                                                AppColors.surfaceSoft,
-                                            title: const Text(
-                                              'Bạn cần đăng nhập',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w700,
-                                                color: AppColors.textPrimary,
-                                              ),
-                                            ),
-                                            content: const Text(
-                                              'Vui lòng đăng nhập để đặt lịch.',
-                                              style: TextStyle(
-                                                color: AppColors.textSecondary,
-                                              ),
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () => Navigator.pop(
-                                                    dialogContext),
-                                                child: const Text('Hủy'),
-                                              ),
-                                              ElevatedButton(
-                                                onPressed: () {
-                                                  Navigator.pop(dialogContext);
-                                                  context.push(
-                                                    '/login',
-                                                    extra: GoRouterState.of(
-                                                            context)
-                                                        .uri
-                                                        .toString(),
-                                                  );
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                      AppColors.primary,
-                                                  foregroundColor:
-                                                      AppColors.surface,
+                                            if (!isLoggedIn) {
+                                              showDialog(
+                                                context: context,
+                                                builder: (dialogContext) =>
+                                                    AlertDialog(
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                            14),
+                                                            22),
                                                   ),
+                                                  backgroundColor:
+                                                      AppColors.surfaceSoft,
+                                                  title: const Text(
+                                                    'Bạn cần đăng nhập',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color:
+                                                          AppColors.textPrimary,
+                                                    ),
+                                                  ),
+                                                  content: const Text(
+                                                    'Vui lòng đăng nhập để đặt lịch.',
+                                                    style: TextStyle(
+                                                      color: AppColors
+                                                          .textSecondary,
+                                                    ),
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.pop(
+                                                              dialogContext),
+                                                      child: const Text('Hủy'),
+                                                    ),
+                                                    ElevatedButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(
+                                                            dialogContext);
+                                                        context.push(
+                                                          '/login',
+                                                          extra:
+                                                              GoRouterState.of(
+                                                                      context)
+                                                                  .uri
+                                                                  .toString(),
+                                                        );
+                                                      },
+                                                      style: ElevatedButton
+                                                          .styleFrom(
+                                                        backgroundColor:
+                                                            AppColors.primary,
+                                                        foregroundColor:
+                                                            AppColors.surface,
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                            14,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      child: const Text(
+                                                        'Đăng nhập',
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                                child: const Text('Đăng nhập'),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                        return;
-                                      }
+                                              );
+                                              return;
+                                            }
 
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => BookingServicesPage(
-                                            storeId: storeId,
-                                            selectedServiceId: s.id,
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    BookingServicesPage(
+                                                  storeId: storeId,
+                                                  selectedServiceId: s.id,
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        : null,
+                                    child: _loadingBookingPolicy
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: AppColors.surface,
+                                            ),
+                                          )
+                                        : Text(
+                                            !s.isActive
+                                                ? 'Dịch vụ tạm ngưng'
+                                                : _isBookingBlocked
+                                                    ? 'Tài khoản bị hạn chế'
+                                                    : 'Thêm vào lịch hẹn',
+                                            style: const TextStyle(
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.w700,
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    },
                                   ),
                                 ),
+                                if (_isBookingBlocked) ...[
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.danger
+                                          .withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(
+                                        color: AppColors.danger
+                                            .withValues(alpha: 0.2),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      _blockReason ??
+                                          'Tài khoản của bạn đang bị hạn chế đặt lịch do vượt quá số lần no-show ${_currentNoShowCount}/$_noShowLimit.',
+                                      style: AppTextStyles.body.copyWith(
+                                        color: AppColors.danger,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                                if (_loadingBookingPolicy) ...[
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    'Đang kiểm tra chính sách đặt lịch...',
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

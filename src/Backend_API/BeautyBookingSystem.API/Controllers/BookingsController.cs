@@ -169,7 +169,24 @@ public class BookingsController : ControllerBase
             });
         }
     }
-           [HttpPut("{id:int}/reschedule")]
+    [HttpPost("available-time-slots")]
+    public async Task<IActionResult> GetAvailableTimeSlots([FromBody] GetAvailableTimeSlotsRequest request)
+    {
+        try
+        {
+            var result = await _bookingService.GetAvailableTimeSlotsAsync(request);
+            return Ok(new { success = true, data = result });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
+    }
+    [HttpPut("{id:int}/reschedule")]
     public async Task<IActionResult> RescheduleBooking(int id, [FromBody] RescheduleBookingRequest request)
     {
         try

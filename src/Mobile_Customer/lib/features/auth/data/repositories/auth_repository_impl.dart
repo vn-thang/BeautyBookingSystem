@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,22 +12,54 @@ class AuthRepositoryImpl implements AuthRepository {
 
   AuthRepositoryImpl(this.remoteDataSource);
 
+  String _mapErrorMessage(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+
+      if (data is Map<String, dynamic>) {
+        final message = data['message'] ?? data['error'] ?? data['title'];
+        if (message != null && message.toString().trim().isNotEmpty) {
+          return message.toString().trim();
+        }
+      }
+
+      if (data is String && data.trim().isNotEmpty) {
+        return data.trim();
+      }
+
+      return error.message ?? 'Đã xảy ra lỗi';
+    }
+
+    // FIX QUAN TRỌNG
+    if (error is Exception) {
+      return error.toString().replaceFirst('Exception: ', '');
+    }
+
+    return 'Đã xảy ra lỗi';
+  }
+
   @override
   Future<User> login(String email, String password) async {
-    final loginResult = await remoteDataSource.login(email, password);
+    try {
+      final loginResult = await remoteDataSource.login(email, password);
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("token", loginResult.accessToken);
-    await prefs.setString("refreshToken", loginResult.refreshToken);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString("token", loginResult.accessToken);
+      await prefs.setString("refreshToken", loginResult.refreshToken);
 
-    final profile = await remoteDataSource.getProfile();
-    return profile;
+      return await remoteDataSource.getProfile();
+    } catch (e) {
+      throw Exception(_mapErrorMessage(e));
+    }
   }
 
   @override
   Future<User> getProfile() async {
-    final user = await remoteDataSource.getProfile();
-    return user;
+    try {
+      return await remoteDataSource.getProfile();
+    } catch (e) {
+      throw Exception(_mapErrorMessage(e));
+    }
   }
 
   @override
@@ -36,34 +69,53 @@ class AuthRepositoryImpl implements AuthRepository {
     String email,
     String password,
   ) async {
-    final result = await remoteDataSource.register(
-      fullName,
-      phone,
-      email,
-      password,
-    );
+    try {
+      final result = await remoteDataSource.register(
+        fullName,
+        phone,
+        email,
+        password,
+      );
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("token", result.accessToken);
-    await prefs.setString("refreshToken", result.refreshToken);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString("token", result.accessToken);
+      await prefs.setString("refreshToken", result.refreshToken);
 
-    final profile = await remoteDataSource.getProfile();
-    return profile;
+      return await remoteDataSource.getProfile();
+    } catch (e) {
+      throw Exception(_mapErrorMessage(e));
+    }
   }
 
   @override
-  Future<void> changePassword(String oldPassword, String newPassword) {
-    return remoteDataSource.changePassword(oldPassword, newPassword);
+  Future<void> changePassword(String oldPassword, String newPassword) async {
+    try {
+      await remoteDataSource.changePassword(oldPassword, newPassword);
+    } catch (e) {
+      throw Exception(_mapErrorMessage(e));
+    }
   }
 
   @override
-  Future<void> forgotPassword(String email) {
-    return remoteDataSource.forgotPassword(email);
+  Future<void> forgotPassword(String email) async {
+    try {
+      await remoteDataSource.forgotPassword(email);
+    } catch (e) {
+      throw Exception(_mapErrorMessage(e));
+    }
   }
 
   @override
-  Future<void> resetPassword(String email, String otp, String newPassword) {
-    return remoteDataSource.resetPassword(email, otp, newPassword);
+  Future<void> resetPassword(
+    String email,
+    String otp,
+    String newPassword,
+  ) async {
+    try {
+      await remoteDataSource.resetPassword(email, otp, newPassword);
+    } catch (e) {
+      throw Exception(_mapErrorMessage(e));
+    }
   }
 
   @override
@@ -72,17 +124,25 @@ class AuthRepositoryImpl implements AuthRepository {
     String? email,
     String? avatarUrl,
   ) async {
-    final request = UpdateProfileRequestModel(
-      fullName: fullName,
-      email: email,
-      avatarUrl: avatarUrl,
-    );
+    try {
+      final request = UpdateProfileRequestModel(
+        fullName: fullName,
+        email: email,
+        avatarUrl: avatarUrl,
+      );
 
-    await remoteDataSource.updateProfile(request);
+      await remoteDataSource.updateProfile(request);
+    } catch (e) {
+      throw Exception(_mapErrorMessage(e));
+    }
   }
 
   @override
   Future<void> uploadAvatar(XFile file) async {
-    await remoteDataSource.uploadAvatar(file);
+    try {
+      await remoteDataSource.uploadAvatar(file);
+    } catch (e) {
+      throw Exception(_mapErrorMessage(e));
+    }
   }
 }

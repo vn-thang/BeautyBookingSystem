@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/gestures.dart';
 
+import '../../../../core/screens/custom_webview_screen.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -25,6 +27,17 @@ class _RegisterPageState extends State<RegisterPage> {
   final passwordController = TextEditingController();
 
   bool obscure = true;
+  bool _isAgreed = false;
+  late TapGestureRecognizer _termsRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsRecognizer = TapGestureRecognizer()
+      ..onTap = () {
+        _openTermsWebPage(context);
+      };
+  }
 
   @override
   void dispose() {
@@ -32,20 +45,43 @@ class _RegisterPageState extends State<RegisterPage> {
     phoneController.dispose();
     emailController.dispose();
     passwordController.dispose();
+    _termsRecognizer.dispose();
     super.dispose();
   }
 
+  void _openTermsWebPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CustomWebViewScreen(
+          title: 'Điều khoản và Chính sách',
+          url: 'http://localhost:5173/chinh-sach-chung',
+        ),
+      ),
+    );
+  }
+
   void _register() {
-    if (_formKey.currentState?.validate() ?? false) {
-      context.read<AuthBloc>().add(
-            RegisterEvent(
-              fullName: fullNameController.text.trim(),
-              phone: phoneController.text.trim(),
-              email: emailController.text.trim(),
-              password: passwordController.text,
-            ),
-          );
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    if (!_isAgreed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Vui lòng đồng ý với Chính sách & điều khoản!"),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
     }
+
+    context.read<AuthBloc>().add(
+          RegisterEvent(
+            fullName: fullNameController.text.trim(),
+            phone: phoneController.text.trim(),
+            email: emailController.text.trim(),
+            password: passwordController.text,
+          ),
+        );
   }
 
   @override
@@ -266,6 +302,53 @@ class _RegisterPageState extends State<RegisterPage> {
                                   }
                                   return null;
                                 },
+                              ),
+                              const SizedBox(height: 14),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: Checkbox(
+                                      value: _isAgreed,
+                                      activeColor: AppColors.primary,
+                                      side: const BorderSide(
+                                        color: AppColors.borderSoft,
+                                      ),
+                                      onChanged: (bool? value) {
+                                        setState(() {
+                                          _isAgreed = value ?? false;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(top: 2.0),
+                                      child: RichText(
+                                        text: TextSpan(
+                                          text: 'Tôi đã đọc và đồng ý với ',
+                                          style: AppTextStyles.bodyMuted,
+                                          children: [
+                                            TextSpan(
+                                              text: 'Chính sách & điều khoản',
+                                              style: const TextStyle(
+                                                color: AppColors.primary,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              recognizer: _termsRecognizer,
+                                            ),
+                                            const TextSpan(
+                                              text: ' dịch vụ của hệ thống.',
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 24),
                               BlocBuilder<AuthBloc, AuthState>(

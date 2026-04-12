@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:mobile_customer/features/customer_favorite/presentation/widgets/customer_favorite_button.dart';
 import '../../../customer_favorite/presentation/bloc/customer_favorite_bloc.dart';
@@ -60,7 +61,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
   }
 
   int _apiDayOfWeek(DateTime now) {
-    return now.weekday == DateTime.sunday ? 0 : now.weekday;
+    return now.weekday;
   }
 
   int _timeToMinutes(String time) {
@@ -95,14 +96,14 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
         return 'Thứ 6';
       case 6:
         return 'Thứ 7';
-      case 0:
+      case 7:
         return 'Chủ nhật';
       default:
         return 'Không rõ';
     }
   }
 
-  int _sortDay(int day) => day == 0 ? 7 : day;
+  int _sortDay(int day) => day;
 
   OperatingHourModel? _todayOperatingHour(List<OperatingHourModel> hours) {
     final today = _apiDayOfWeek(DateTime.now());
@@ -143,6 +144,65 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
 
   String _formatMoney(num value) {
     return '${_moneyFormat.format(value)} đ';
+  }
+
+  Future<void> _openExternal(Uri uri) async {
+    final ok = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không thể mở liên kết'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  String _onlyDigits(String value) {
+    return value.replaceAll(RegExp(r'[^0-9]'), '');
+  }
+
+  Future<void> _openPhone(String phone) async {
+    final raw = phone.trim();
+    if (raw.isEmpty) return;
+
+    final uri = Uri(scheme: 'tel', path: raw);
+    await _openExternal(uri);
+  }
+
+  Future<void> _openMaps(String address) async {
+    final query = Uri.encodeComponent(address.trim());
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$query',
+    );
+    await _openExternal(uri);
+  }
+
+  Future<void> _openZalo(String zalo) async {
+    final raw = zalo.trim();
+    if (raw.isEmpty) return;
+
+    final digits = _onlyDigits(raw);
+    final uri = raw.startsWith('http://') || raw.startsWith('https://')
+        ? Uri.parse(raw)
+        : Uri.parse('https://zalo.me/$digits');
+
+    await _openExternal(uri);
+  }
+
+  Future<void> _openFacebook(String facebook) async {
+    final raw = facebook.trim();
+    if (raw.isEmpty) return;
+
+    final uri = raw.startsWith('http://') || raw.startsWith('https://')
+        ? Uri.parse(raw)
+        : Uri.parse('https://facebook.com/$raw');
+
+    await _openExternal(uri);
   }
 
   void _showOperatingHoursSheet(
@@ -623,21 +683,55 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                               _sectionCard(
                                 child: Column(
                                   children: [
-                                    _detailRow(
+                                    _contactRow(
                                       icon: Icons.phone_in_talk_rounded,
                                       title: 'Điện thoại',
                                       value: (s.phone != null &&
                                               s.phone!.trim().isNotEmpty)
                                           ? s.phone!.trim()
                                           : 'Chưa cập nhật',
+                                      onTap: (s.phone != null &&
+                                              s.phone!.trim().isNotEmpty)
+                                          ? () => _openPhone(s.phone!.trim())
+                                          : null,
                                     ),
                                     const SizedBox(height: 14),
-                                    _detailRow(
+                                    _contactRow(
+                                      icon: Icons.chat_rounded,
+                                      title: 'Zalo',
+                                      value: (s.zaloPhone != null &&
+                                              s.zaloPhone!.trim().isNotEmpty)
+                                          ? s.zaloPhone!.trim()
+                                          : 'Chưa cập nhật',
+                                      onTap: (s.zaloPhone != null &&
+                                              s.zaloPhone!.trim().isNotEmpty)
+                                          ? () => _openZalo(s.zaloPhone!.trim())
+                                          : null,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _contactRow(
+                                      icon: Icons.facebook_rounded,
+                                      title: 'Facebook',
+                                      value: (s.facebookUrl != null &&
+                                              s.facebookUrl!.trim().isNotEmpty)
+                                          ? s.facebookUrl!.trim()
+                                          : 'Chưa cập nhật',
+                                      onTap: (s.facebookUrl != null &&
+                                              s.facebookUrl!.trim().isNotEmpty)
+                                          ? () => _openFacebook(
+                                              s.facebookUrl!.trim())
+                                          : null,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _contactRow(
                                       icon: Icons.location_on_rounded,
                                       title: 'Địa chỉ',
                                       value: s.address.trim().isNotEmpty
                                           ? s.address.trim()
                                           : 'Chưa cập nhật',
+                                      onTap: s.address.trim().isNotEmpty
+                                          ? () => _openMaps(s.address.trim())
+                                          : null,
                                     ),
                                     const SizedBox(height: 14),
                                     InkWell(
@@ -648,7 +742,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                                           s.operatingHours,
                                         );
                                       },
-                                      child: _detailRow(
+                                      child: _contactRow(
                                         icon: Icons.schedule_rounded,
                                         title: 'Giờ hoạt động',
                                         value:
@@ -657,6 +751,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                                             _isStoreOpenNow(s.operatingHours)
                                                 ? AppColors.success
                                                 : AppColors.danger,
+                                        showChevron: true,
                                       ),
                                     ),
                                   ],
@@ -1074,6 +1169,67 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _contactRow({
+    required IconData icon,
+    required String title,
+    required String value,
+    VoidCallback? onTap,
+    Color? valueColor,
+    bool showChevron = false,
+  }) {
+    final content = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceSoft,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            icon,
+            color: AppColors.primary,
+            size: 22,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AppTextStyles.caption,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                value,
+                style: AppTextStyles.body.copyWith(
+                  color: valueColor ?? AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (showChevron)
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.textSecondary,
+          ),
+      ],
+    );
+
+    if (onTap == null) return content;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: content,
     );
   }
 

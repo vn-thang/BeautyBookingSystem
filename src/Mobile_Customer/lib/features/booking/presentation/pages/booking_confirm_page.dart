@@ -40,7 +40,7 @@ class BookingConfirmPage extends StatefulWidget {
 class _BookingConfirmPageState extends State<BookingConfirmPage> {
   static const int _payLater = 0; // COD
   static const int _payFull = 1; // VNPay full
-  static const int _deposit30 = 2; // VNPay deposit
+  static const int _deposit = 2; // VNPay deposit
 
   final NumberFormat _moneyFormat = NumberFormat.currency(
     locale: 'vi_VN',
@@ -68,10 +68,58 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
   int paymentPlan = _payLater;
   String? customerNote;
 
+  bool _loadingBookingPolicy = false;
+  bool _isBookingBlocked = false;
+  int _currentNoShowCount = 0;
+  int _noShowLimit = 0;
+  String? _blockReason;
+
+  bool get _canConfirmBooking =>
+      !isSubmitting && !loading && !_loadingBookingPolicy && !_isBookingBlocked;
+  static const String _vnpayCheckoutBaseUrl =
+      'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
+
+  String _normalizePaymentUrl(String rawUrl) {
+    final url = rawUrl.trim();
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+
+    if (url.startsWith('?')) {
+      return '$_vnpayCheckoutBaseUrl$url';
+    }
+
+    if (url.startsWith('/')) {
+      return '$_vnpayCheckoutBaseUrl$url';
+    }
+
+    return '$_vnpayCheckoutBaseUrl?$url';
+  }
+
+  Future<void> _openPaymentUrl(String rawUrl) async {
+    final fullUrl = _normalizePaymentUrl(rawUrl);
+    final uri = Uri.tryParse(fullUrl);
+
+    if (uri == null) {
+      throw Exception('URL thanh toán không hợp lệ');
+    }
+
+    final ok = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!ok) {
+      throw Exception('Không mở được VNPay');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    _loadBookingPolicy();
     _handleDeepLink();
   }
 
@@ -89,12 +137,6 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
       if ((s['id'] as int) == id) return s;
     }
     return null;
-  }
-
-  String _serviceNameById(int id) {
-    final service = _serviceById(id);
-    final name = service?['name']?.toString().trim();
-    return (name != null && name.isNotEmpty) ? name : 'Dịch vụ #$id';
   }
 
   double get subtotal {
@@ -115,9 +157,9 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
 
   double _voucherBaseAmount(Map<String, dynamic> voucher) {
     final serviceId = (voucher['serviceId'] as num?)?.toInt();
-    
+
     // Nếu serviceId null -> Voucher toàn shop -> Lấy tổng tiền giỏ hàng
-    if (serviceId == null) return subtotal; 
+    if (serviceId == null) return subtotal;
 
     // Nếu có serviceId -> Voucher dịch vụ -> Lấy giá của dịch vụ đó
     final service = _serviceById(serviceId);
@@ -125,6 +167,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
 
     return (service['price'] as num).toDouble();
   }
+
   // 2. Kiểm tra điều kiện áp dụng
   bool _voucherAppliesToCurrentBooking(Map<String, dynamic> voucher) {
     final baseAmount = _voucherBaseAmount(voucher);
@@ -145,9 +188,11 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
         (voucher['maxDiscount'] as num?)?.toDouble() ?? double.infinity;
 
     double raw = 0;
-    if (discountType == 0) { // Giảm %
+    if (discountType == 0) {
+      // Giảm %
       raw = baseAmount * (discountValue / 100);
-    } else { // Giảm tiền mặt
+    } else {
+      // Giảm tiền mặt
       raw = discountValue;
     }
 
@@ -155,16 +200,18 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
     return raw;
   }
 
- // 4. Tính số tiền giảm thực tế của giỏ hàng
+  // 4. Tính số tiền giảm thực tế của giỏ hàng
   double computeDiscount() {
     if (appliedVoucher == null) return 0;
     // Dùng luôn hàm tính nháp ở trên cho gọn code
-    return _calculatePotentialDiscount(appliedVoucher!); 
+    return _calculatePotentialDiscount(appliedVoucher!);
   }
+
   double get finalTotal {
     final value = subtotal - computeDiscount();
     return value < 0 ? 0 : value;
   }
+
   int get storeDepositPercent {
     final val = storeData?['depositPercent'];
     if (val is num) return val.toInt();
@@ -178,16 +225,18 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
     if (val is String) return double.tryParse(val) ?? 0.0;
     return 0.0; // Mặc định 0đ nếu API không có
   }
+
   bool get allowCashOnDelivery => finalTotal < storeDepositThreshold;
-  bool get allowDeposit => finalTotal >= storeDepositThreshold && storeDepositPercent > 0;
+  bool get allowDeposit =>
+      finalTotal >= storeDepositThreshold && storeDepositPercent > 0;
 
   // 0 = COD, 1 = VNPay.
   int get paymentMethod => paymentPlan == _payLater ? 2 : 1;
 
- double get depositAmount {
-    if (paymentPlan == _deposit30) {
+  double get depositAmount {
+    if (paymentPlan == _deposit) {
       // Công thức tính cọc = Tổng sau giảm * (% cọc / 100)
-      return finalTotal * (storeDepositPercent / 100); 
+      return finalTotal * (storeDepositPercent / 100);
     }
     return 0;
   }
@@ -196,8 +245,8 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
     if (paymentPlan == _payLater) {
       return 0;
     }
-    if (paymentPlan == _deposit30) {
-       // Số tiền trả ngay lúc này chính là tiền cọc
+    if (paymentPlan == _deposit) {
+      // Số tiền trả ngay lúc này chính là tiền cọc
       return finalTotal * (storeDepositPercent / 100);
     }
     return finalTotal; // Thanh toán toàn bộ
@@ -208,7 +257,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
       paymentPlan = _payFull;
     }
 
-    if (!allowDeposit && paymentPlan == _deposit30) {
+    if (!allowDeposit && paymentPlan == _deposit) {
       paymentPlan = _payFull;
     }
   }
@@ -226,6 +275,44 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
       }
     }
     return data?.toString() ?? fallback;
+  }
+
+  Future<void> _loadBookingPolicy() async {
+    setState(() {
+      _loadingBookingPolicy = true;
+    });
+
+    try {
+      final dio = di.sl<Dio>();
+      final resp = await dio.get('public/system-configs/booking-policies');
+
+      final data = resp.data;
+      if (data is Map<String, dynamic>) {
+        final policy = data['data'];
+        if (policy is Map<String, dynamic> && mounted) {
+          setState(() {
+            _isBookingBlocked = policy['isBookingBlocked'] == true;
+            _currentNoShowCount = policy['currentNoShowCount'] ?? 0;
+            _noShowLimit = policy['noShowLimit'] ?? 0;
+            _blockReason = policy['blockReason']?.toString();
+            _loadingBookingPolicy = false;
+          });
+          return;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _loadingBookingPolicy = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loadingBookingPolicy = false;
+        });
+      }
+    }
   }
 
   Future<int> _createBookingAndGetId(Dio dio, BookingRequestModel model) async {
@@ -258,7 +345,6 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
     return bookingId;
   }
 
-  
   Future<void> _loadData() async {
     try {
       final dio = di.sl<Dio>();
@@ -383,9 +469,33 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
   Future<void> _confirmAndCreateBooking() async {
     if (isSubmitting) return;
 
-    if (paymentPlan == _deposit30 && !allowDeposit) {
+    if (_isBookingBlocked) {
       ScaffoldMessenger.of(context).showSnackBar(
-        _snackBar('Đặt cọc $storeDepositPercent% chỉ áp dụng cho đơn từ ${_formatMoney(storeDepositThreshold)}'),
+        SnackBar(
+          content: Text(
+            _blockReason ??
+                'Tài khoản của bạn đang bị hạn chế đặt lịch do vượt quá số lần no-show ${_currentNoShowCount}/$_noShowLimit.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (_loadingBookingPolicy) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đang kiểm tra chính sách đặt lịch...'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (paymentPlan == _deposit && !allowDeposit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        _snackBar(
+            'Đặt cọc $storeDepositPercent% chỉ áp dụng cho đơn từ ${_formatMoney(storeDepositThreshold)}'),
       );
       return;
     }
@@ -447,17 +557,13 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
 
         final paymentUrl =
             paymentData is Map ? paymentData['url']?.toString() : null;
+
         if (paymentUrl == null || paymentUrl.isEmpty) {
           _waitingForPayment = false;
           throw Exception('Không nhận được URL thanh toán');
         }
 
-        final uri = Uri.parse(paymentUrl);
-
-        if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-          _waitingForPayment = false;
-          throw Exception('Không mở được VNPay');
-        }
+        await _openPaymentUrl(paymentUrl);
 
         return;
       }
@@ -598,19 +704,19 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
 
     context.go('/booking');
   }
-  
+
   void _showVoucherBottomSheet() {
     Map<String, dynamic>? tempSelectedVoucher = appliedVoucher;
 
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, 
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Container(
-              height: MediaQuery.of(context).size.height * 0.85, 
+              height: MediaQuery.of(context).size.height * 0.85,
               decoration: const BoxDecoration(
                 color: Color(0xFFF5F5F5),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -618,16 +724,20 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
               child: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     decoration: const BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(16)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const SizedBox(width: 24), 
-                        const Text('Chọn Mã Giảm Giá', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 24),
+                        const Text('Chọn Mã Giảm Giá',
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold)),
                         IconButton(
                           icon: const Icon(Icons.close),
                           onPressed: () => Navigator.pop(context),
@@ -648,8 +758,10 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                               controller: voucherCodeController,
                               decoration: InputDecoration(
                                 hintText: 'Nhập mã giảm giá...',
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+                                contentPadding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(4)),
                               ),
                             ),
                           ),
@@ -659,7 +771,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                           height: 40,
                           child: ElevatedButton(
                             onPressed: () {
-                              _applyVoucherByCode(); 
+                              _applyVoucherByCode();
                               Navigator.pop(context);
                             },
                             style: ElevatedButton.styleFrom(
@@ -667,122 +779,204 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                               foregroundColor: Colors.white,
                               elevation: 0,
                             ),
-                            child: const Text('Áp dụng', style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: const Text('Áp dụng',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
 
                   Expanded(
-                    child: vouchers.isEmpty 
-                      ? const Center(child: Text('Hiện chưa có mã giảm giá nào.', style: TextStyle(color: Colors.grey)))
-                      : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      itemCount: vouchers.length,
-                      itemBuilder: (context, index) {
-                        final v = vouchers[index];
-                        final canApply = _voucherAppliesToCurrentBooking(v);
-                        final isSelected = tempSelectedVoucher != null && tempSelectedVoucher!['code'] == v['code'];
-                        
-                        final code = v['code'] ?? '';
-                        final val = (v['discountValue'] as num).toDouble();
-                        final isPercent = v['discountType'] == 0;
-                        final maxDiscount = v['maxDiscount'] != null ? (v['maxDiscount'] as num).toDouble() : null;
-                        final minOrder = v['minOrderValue'] != null ? (v['minOrderValue'] as num).toDouble() : 0;
-                      String expiryDate = 'Đang cập nhật';
-                      if (v['endDate'] != null) {
-                        try {
-                          DateTime parsedDate = DateTime.parse(v['endDate'].toString());
-                          expiryDate =DateFormat('HH:mm dd/MM/yyyy').format(parsedDate);
-                        } catch (e) {
-                          expiryDate = 'Lỗi ngày tháng';
-                        }
-                      }
-                        
-                        String titleStr = isPercent ? 'Giảm ${val.toInt()}%' : 'Giảm ${val.toInt()}đ';
-                        if (isPercent && maxDiscount != null && maxDiscount > 0) {
-                          titleStr += ' Giảm tối đa ${maxDiscount.toInt()}đ';
-                        }
+                    child: vouchers.isEmpty
+                        ? const Center(
+                            child: Text('Hiện chưa có mã giảm giá nào.',
+                                style: TextStyle(color: Colors.grey)))
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            itemCount: vouchers.length,
+                            itemBuilder: (context, index) {
+                              final v = vouchers[index];
+                              final canApply =
+                                  _voucherAppliesToCurrentBooking(v);
+                              final isSelected = tempSelectedVoucher != null &&
+                                  tempSelectedVoucher!['code'] == v['code'];
 
-                        final potentialDiscount = _calculatePotentialDiscount(v);
-
-                        return GestureDetector(
-                          onTap: canApply ? () {
-                            setModalState(() {
-                              if (isSelected) {
-                                tempSelectedVoucher = null; 
-                                voucherCodeController.clear();
-                              } else {
-                                tempSelectedVoucher = v;
-                                voucherCodeController.text = code;
+                              final code = v['code'] ?? '';
+                              final val =
+                                  (v['discountValue'] as num).toDouble();
+                              final isPercent = v['discountType'] == 0;
+                              final maxDiscount = v['maxDiscount'] != null
+                                  ? (v['maxDiscount'] as num).toDouble()
+                                  : null;
+                              final minOrder = v['minOrderValue'] != null
+                                  ? (v['minOrderValue'] as num).toDouble()
+                                  : 0;
+                              String expiryDate = 'Đang cập nhật';
+                              if (v['endDate'] != null) {
+                                try {
+                                  DateTime parsedDate =
+                                      DateTime.parse(v['endDate'].toString());
+                                  expiryDate = DateFormat('HH:mm dd/MM/yyyy')
+                                      .format(parsedDate);
+                                } catch (e) {
+                                  expiryDate = 'Lỗi ngày tháng';
+                                }
                               }
-                            });
-                          } : null,
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: isSelected ? AppColors.primary : Colors.transparent, width: isSelected ? 1.5 : 0),
-                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))],
-                            ),
-                            child: IntrinsicHeight(
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 100,
-                                    decoration: BoxDecoration(
-                                      color: canApply ? AppColors.primary : Colors.grey.shade400,
-                                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(7), bottomLeft: Radius.circular(7)),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+
+                              String titleStr = isPercent
+                                  ? 'Giảm ${val.toInt()}%'
+                                  : 'Giảm ${val.toInt()}đ';
+                              if (isPercent &&
+                                  maxDiscount != null &&
+                                  maxDiscount > 0) {
+                                titleStr +=
+                                    ' Giảm tối đa ${maxDiscount.toInt()}đ';
+                              }
+
+                              final potentialDiscount =
+                                  _calculatePotentialDiscount(v);
+
+                              return GestureDetector(
+                                onTap: canApply
+                                    ? () {
+                                        setModalState(() {
+                                          if (isSelected) {
+                                            tempSelectedVoucher = null;
+                                            voucherCodeController.clear();
+                                          } else {
+                                            tempSelectedVoucher = v;
+                                            voucherCodeController.text = code;
+                                          }
+                                        });
+                                      }
+                                    : null,
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                        color: isSelected
+                                            ? AppColors.primary
+                                            : Colors.transparent,
+                                        width: isSelected ? 1.5 : 0),
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2))
+                                    ],
+                                  ),
+                                  child: IntrinsicHeight(
+                                    child: Row(
                                       children: [
-                                        const Text('VOUCHER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                                        const SizedBox(height: 4),
-                                        Text(code, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        Container(
+                                          width: 100,
+                                          decoration: BoxDecoration(
+                                            color: canApply
+                                                ? AppColors.primary
+                                                : Colors.grey.shade400,
+                                            borderRadius:
+                                                const BorderRadius.only(
+                                                    topLeft: Radius.circular(7),
+                                                    bottomLeft:
+                                                        Radius.circular(7)),
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Text('VOUCHER',
+                                                  style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 12)),
+                                              const SizedBox(height: 4),
+                                              Text(code,
+                                                  style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.w900,
+                                                      fontSize: 14),
+                                                  textAlign: TextAlign.center,
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis),
+                                            ],
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(12),
+                                            child: Opacity(
+                                              opacity: canApply ? 1.0 : 0.5,
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(titleStr,
+                                                      style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 14),
+                                                      maxLines: 2,
+                                                      overflow: TextOverflow
+                                                          .ellipsis),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                      'Đơn tối thiểu ${minOrder.toInt()}đ',
+                                                      style: TextStyle(
+                                                          color: Colors
+                                                              .grey.shade600,
+                                                          fontSize: 12)),
+                                                  const SizedBox(height: 4),
+                                                  Text('HSD: $expiryDate',
+                                                      style: TextStyle(
+                                                          color: Colors
+                                                              .grey.shade500,
+                                                          fontSize: 11)),
+                                                  if (canApply &&
+                                                      potentialDiscount >
+                                                          0) ...[
+                                                    const SizedBox(height: 6),
+                                                    Text(
+                                                        'Tiết kiệm ${potentialDiscount.toInt()}đ',
+                                                        style: const TextStyle(
+                                                            color: Colors.red,
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w600)),
+                                                  ]
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(right: 12),
+                                          child: Icon(
+                                            isSelected
+                                                ? Icons.check_circle
+                                                : Icons.radio_button_unchecked,
+                                            color: isSelected
+                                                ? AppColors.primary
+                                                : Colors.grey.shade300,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Opacity(
-                                        opacity: canApply ? 1.0 : 0.5,
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(titleStr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 2, overflow: TextOverflow.ellipsis),
-                                            const SizedBox(height: 4),
-                                            Text('Đơn tối thiểu ${minOrder.toInt()}đ', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                                            const SizedBox(height: 4),
-                                            Text('HSD: $expiryDate', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
-                                            if (canApply && potentialDiscount > 0) ...[
-                                              const SizedBox(height: 6),
-                                              Text('Tiết kiệm ${potentialDiscount.toInt()}đ', style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w600)),
-                                            ]
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 12),
-                                    child: Icon(
-                                      isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                                      color: isSelected ? AppColors.primary : Colors.grey.shade300,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
 
                   // --- 4. NÚT ĐỒNG Ý ---
@@ -791,21 +985,30 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, -4), blurRadius: 8)],
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            offset: const Offset(0, -4),
+                            blurRadius: 8)
+                      ],
                     ),
                     child: ElevatedButton(
                       onPressed: () {
                         setState(() {
-                          _selectVoucher(tempSelectedVoucher); 
+                          _selectVoucher(tempSelectedVoucher);
                           _normalizePaymentPlan();
                         });
-                        Navigator.pop(context); 
+                        Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: const Text('ĐỒNG Ý', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: const Text('ĐỒNG Ý',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -962,50 +1165,62 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                                 const SizedBox(height: 8),
                                 _sectionHeader('Voucher'),
                                 const SizedBox(height: 10),
-                                 
-                                  _sectionCard(
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    onTap: _showVoucherBottomSheet, 
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 8.0), 
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              const Icon(Icons.local_offer_outlined, color: AppColors.primary),
-                                              const SizedBox(width: 8),
-                                              const Text(
-                                                'Mã giảm giá', 
-                                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                              ),
-                                            ],
-                                          ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                appliedVoucher != null 
-                                                    ? 'Đã chọn 1 mã' 
-                                                    : 'Chọn hoặc nhập mã',
-                                                style: TextStyle(
-                                                  color: appliedVoucher != null ? AppColors.primary : Colors.grey.shade600,
-                                                  fontWeight: appliedVoucher != null ? FontWeight.w600 : FontWeight.normal,
+                                _sectionCard(
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: _showVoucherBottomSheet,
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8.0),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                const Icon(
+                                                    Icons.local_offer_outlined,
+                                                    color: AppColors.primary),
+                                                const SizedBox(width: 8),
+                                                const Text(
+                                                  'Mã giảm giá',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 16),
                                                 ),
-                                              ),
-                                              const SizedBox(width: 4),
-                                              const Icon(Icons.chevron_right, color: Colors.grey),
-                                            ],
-                                          )
-                                        ],
+                                              ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  appliedVoucher != null
+                                                      ? 'Đã chọn 1 mã'
+                                                      : 'Chọn hoặc nhập mã',
+                                                  style: TextStyle(
+                                                    color: appliedVoucher !=
+                                                            null
+                                                        ? AppColors.primary
+                                                        : Colors.grey.shade600,
+                                                    fontWeight:
+                                                        appliedVoucher != null
+                                                            ? FontWeight.w600
+                                                            : FontWeight.normal,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 4),
+                                                const Icon(Icons.chevron_right,
+                                                    color: Colors.grey),
+                                              ],
+                                            )
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-
                                 const SizedBox(height: 16),
                                 _sectionHeader('Thanh toán'),
                                 const SizedBox(height: 10),
@@ -1040,20 +1255,20 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                                       ),
                                       const SizedBox(height: 8),
                                       _paymentOptionCard(
-                                        selected: paymentPlan == _deposit30,
+                                        selected: paymentPlan == _deposit,
                                         enabled: allowDeposit,
                                         onTap: allowDeposit
                                             ? () {
                                                 setState(() {
-                                                  paymentPlan = _deposit30;
+                                                  paymentPlan = _deposit;
                                                 });
                                               }
                                             : null,
-                                      title: 'Đặt cọc $storeDepositPercent%',
-                                    subtitle: allowDeposit
-                                        ? 'VNPay • ${_formatMoney(finalTotal * (storeDepositPercent / 100))}'
-                                        : 'Chỉ áp dụng cho đơn từ ${_formatMoney(storeDepositThreshold)}',
-                                  ),
+                                        title: 'Đặt cọc $storeDepositPercent%',
+                                        subtitle: allowDeposit
+                                            ? 'VNPay • ${_formatMoney(finalTotal * (storeDepositPercent / 100))}'
+                                            : 'Chỉ áp dụng cho đơn từ ${_formatMoney(storeDepositThreshold)}',
+                                      ),
                                     ],
                                   ),
                                 ),
