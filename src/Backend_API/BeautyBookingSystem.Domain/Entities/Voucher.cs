@@ -23,12 +23,9 @@ namespace BeautyBookingSystem.Domain.Entities
         public DateTime EndDate { get; set; }
         public int UsageLimit { get; set; }
         public int UsedCount { get; set; }
-
-        public string? ImageUrl { get; set; } // Giữ lại ảnh của App Khách
-
+        public string? ImageUrl { get; set; } 
         public int? ServiceId { get; set; }
         public virtual Service? Service { get; set; }
-
         public virtual ICollection<UserVoucher> UserVouchers { get; set; } = new List<UserVoucher>();
         public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     }

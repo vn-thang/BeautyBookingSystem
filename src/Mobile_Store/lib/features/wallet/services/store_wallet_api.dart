@@ -49,9 +49,10 @@ class StoreWalletApi {
     return res['paymentUrl']; 
   }
 
-  static Future<void> requestWithdraw(double amount) async {
+ static Future<void> requestWithdraw(double amount, String firebaseIdToken) async {
     final bodyData = {
-      "amount": amount
+      "amount": amount,
+      "firebaseIdToken": firebaseIdToken 
     };
     await ApiClient.post(
       '/api/store/wallet/withdrawals', 

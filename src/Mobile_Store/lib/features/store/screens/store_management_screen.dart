@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_store/core/screens/custom_webview_screen.dart';
 import 'package:mobile_store/features/statistics/screens/statistics_screen.dart';
 import 'package:mobile_store/features/support/screens/contact_support_screen.dart';
+import 'package:mobile_store/features/voucher/screens/marketing_menu_screen.dart';
 import 'package:mobile_store/features/wallet/screens/store_wallet_screen.dart';
 import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
 import 'package:mobile_store/shared/widgets/inputs/app_header.dart';
@@ -9,7 +10,6 @@ import 'update_profile_screen.dart';
 import '../../../shared/token_storage.dart';
 import '../../service/screens/service_management_screen.dart';
 import '../../staff/screens/staff_management_screen.dart';
-import '../../voucher/screens/voucher_management_screen.dart';
 import '../../payment/screens/store_payment_screen.dart';
 import '../../auth/services/auth_service.dart';
 import 'package:mobile_store/features/auth/screens/login_screen.dart';
@@ -120,12 +120,12 @@ class StoreManagementScreen extends StatelessWidget {
                   _buildListTile(
                     context, 
                     Icons.local_offer_outlined, 
-                    'Quản lý chương trình khuyến mãi',
+                    'Khuyến mãi & Banner',
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const VoucherManagementScreen(), 
+                          builder: (context) => const MarketingMenuScreen(), 
                         ),
                       );
                     },

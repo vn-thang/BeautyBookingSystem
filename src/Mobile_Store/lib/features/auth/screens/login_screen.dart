@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/core/theme/app_spacing.dart';
+import 'package:mobile_store/core/theme/app_text_styles.dart';
+import 'package:mobile_store/features/auth/utils/social_auth_helper.dart';
 import '../../../shared/widgets/inputs/app_text_field.dart'; 
 import '../widgets/auth_components.dart'; 
 import 'register_screen.dart';
@@ -53,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (result.isSuccess) {
         final loginData = result.data!;
         if (loginData.role != 'StoreOwner') {
-          setState(() => _serverErrorMessage = "Tài khoản không có quyền truy cập.");
+          setState(() => _serverErrorMessage = "Tài khoản không có quyền truy cập. Ứng dụng này chỉ dành cho cửa hàng!");
           return; 
         }
 
@@ -73,6 +76,40 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
+void _handleSocialLogin(String provider) {
+    _clearError();
+    SocialAuthHelper.processSocialAuth(
+      context: context,
+      provider: provider,
+      onLoading: (loading) {
+        if (mounted) setState(() => _isLoading = loading);
+      },
+      onSuccess: (loginData) {
+        if (!mounted) return;
+  
+        if (loginData.role != 'StoreOwner') {
+          setState(() => _serverErrorMessage = "Tài khoản không có quyền truy cập. Ứng dụng này chỉ dành cho cửa hàng!");
+          return; 
+        }
+
+        final status = loginData.storeStatus ?? 'Incomplete';
+        if (status == 'Incomplete') {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const StoreSetupScreen()));
+        } else {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainScreen()));
+        }
+      },
+      onError: (String error) {
+        if (!mounted) return;
+        
+        if (error.contains("REQUIRE_PHONE_VERIFICATION")) {
+          setState(() => _serverErrorMessage = "Tài khoản chưa hoàn tất đăng ký. Vui lòng chuyển qua màn hình Đăng ký để xác thực số điện thoại.");
+        } else {
+          setState(() => _serverErrorMessage = error);
+        }
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,10 +120,23 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Hello Again!', 
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: AppColors.authTextTitle)),
-              const SizedBox(height: 35),
-              
+              const Text(
+                'Chào mừng trở lại!', 
+                style: TextStyle(
+                  fontSize: 24, 
+                  fontWeight: FontWeight.w900, 
+                  color: AppColors.authTextTitle
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm), 
+              Text(
+                'Đăng nhập để quản lý cửa hàng của bạn',
+                style: AppTextStyles.bodyText.copyWith(
+                  color: const Color.fromARGB(255, 255, 255, 255),
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 15),
               AppTextField(
                 hint: 'Email hoặc số điện thoại',
                 icon: Icons.person_outline,
@@ -112,23 +162,62 @@ class _LoginScreenState extends State<LoginScreen> {
               
               const SizedBox(height: 25),
               AppPrimaryButton(
-                text: 'Đăng nhập', 
+                text: 'ĐĂNG NHẬP', 
                 isLoading: _isLoading, 
                 onPressed: _handleLogin,
-                color: const Color(0xFFFF758C), 
+                 color: const Color(0xFFFF758C),
               ),
               
-              const SizedBox(height: 20),
+              const SizedBox(height: 15),
               GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordScreen())),
                 child: const Text('Quên mật khẩu?', 
                   style: TextStyle(color: AppColors.authTextSub, fontSize: 12, fontWeight: FontWeight.bold)),
               ),
-              const SizedBox(height: 30),
+              
+              const SizedBox(height: 15),
+              Row(
+                children: [
+                  Expanded(child: Divider(color: AppColors.authTextSub.withValues(alpha: 0.3), thickness: 1)),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: Text('Hoặc đăng nhập bằng', 
+                      style: TextStyle(color: AppColors.authTextSub, fontSize: 12)),
+                  ),
+                  Expanded(child: Divider(color: AppColors.authTextSub.withValues(alpha: 0.3), thickness: 1)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SocialIconButton(
+                  icon: Image.asset(
+                    'assets/images/facebook_logo.png', 
+                    width: 45, 
+                    height: 45,
+                    fit: BoxFit.contain,
+                  ),
+                  onTap: () => _handleSocialLogin('Facebook'),
+                ),
+                  const SizedBox(width: 25), 
+               SocialIconButton(
+                icon: Image.asset(
+                  'assets/images/google_logo.png',
+                  width: 45, 
+                  height: 45,
+                  fit: BoxFit.contain,
+                ),
+                onTap: () => _handleSocialLogin('Google'),
+              ),
+                ],
+              ),
+            
+              const SizedBox(height: 20),
               const Text('Chưa có tài khoản?', style: TextStyle(color: AppColors.authTextBody, fontSize: 13)),
               const SizedBox(height: 10),
               AppOutlineButton(
-                text: 'Đăng ký ngay',
+                text: 'ĐĂNG KÝ NGAY',
                 color: AppColors.authLink,
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
               ),

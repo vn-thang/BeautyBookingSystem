@@ -33,6 +33,7 @@ namespace BeautyBookingSystem.Application.Interfaces
         IGenericRepository<WithdrawalRequest> WithdrawalRequestRepository { get; }
         IGenericRepository<StaffSchedule> StaffScheduleRepository { get; }
         IGenericRepository<StaffLeave> StaffLeaveRepository { get; }
+        IGenericRepository<StoreBanner> StoreBannerRepository { get; }
 
         Task<int> SaveChangesAsync();
     }

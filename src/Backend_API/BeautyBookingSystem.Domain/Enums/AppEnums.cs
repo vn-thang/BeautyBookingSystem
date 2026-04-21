@@ -25,4 +25,5 @@ namespace BeautyBookingSystem.Domain.Enums
     public enum WithdrawalStatus { Pending = 1, Approved = 2, Rejected = 3 }
     public enum TransactionStatus { Pending = 0, Completed = 1, Failed = 2, Cancelled = 3 }
     public enum BookingSource { CustomerApp = 1, StoreAdmin = 2 }
+    public enum AuthProvider { Local, Google, Facebook}
 }

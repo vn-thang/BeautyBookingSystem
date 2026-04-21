@@ -19,5 +19,6 @@ namespace BeautyBookingSystem.Application.DTOs.Auth
         [MinLength(6, ErrorMessage = "Mật khẩu tối thiểu 6 ký tự")]
         [MaxLength(50)]
         public string Password { get; set; } = string.Empty;
+        public string FirebaseIdToken { get; set; } = string.Empty;
     }
 }

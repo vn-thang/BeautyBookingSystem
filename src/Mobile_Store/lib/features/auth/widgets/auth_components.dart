@@ -17,7 +17,8 @@ class AuthGlassBackground extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFFF6FD8), Color(0xFFFF9A8B), Color(0xFF5EFCE8)],
+          colors: [Color.fromARGB(255, 243, 173, 224), Color.fromARGB(255, 248, 182, 172), Color.fromARGB(255, 174, 241, 232)],
+          // colors: [Color(0xFFFF6FD8), Color(0xFFFF9A8B), Color(0xFF5EFCE8)],
         ),
       ),
       child: SafeArea(
@@ -25,7 +26,7 @@ class AuthGlassBackground extends StatelessWidget {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: AppDimens.paddingLarge, vertical: AppDimens.paddingMedium),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppDimens.radiusLarge * 1.5), // Bo góc mượt mà hơn
+              borderRadius: BorderRadius.circular(AppDimens.radiusLarge * 1.5), 
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                 child: Container(
@@ -41,6 +42,28 @@ class AuthGlassBackground extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+class SocialIconButton extends StatelessWidget {
+  final Widget icon;
+  final VoidCallback onTap;
+
+  const SocialIconButton({
+    super.key,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(50),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0), 
+        child: icon, 
       ),
     );
   }

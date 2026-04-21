@@ -164,23 +164,52 @@ static Future<List<int>> downloadFile(String endpoint) async {
     navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
   }
 
-  static dynamic _processResponse(http.Response response) {
-  final json = response.body.isNotEmpty ? jsonDecode(response.body) : {};
-  switch (response.statusCode) {
-    case 200: case 201: case 204: return json;
-    case 400: 
-    debugPrint("LỖI 400 RAW: ${response.body}");
-        if (json.containsKey('errors')) {
-          final errors = json['errors'] as Map<String, dynamic>;
-          final firstError = errors.values.first[0];
-          throw Exception(firstError);
+ static dynamic _processResponse(http.Response response) {
+    dynamic json;
+    try {
+      json = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+    } catch (e) {
+      debugPrint("⚠️ Lỗi Parse JSON: $e");
+      if (response.body.toLowerCase() == 'true') return true;
+      if (response.body.toLowerCase() == 'false') return false;
+      json = {'message': response.body}; 
+    }
+
+    switch (response.statusCode) {
+      case 200: 
+      case 201: 
+      case 204: 
+        return json; 
+        
+      case 400: 
+        debugPrint("❌ LỖI 400 RAW: ${response.body}");
+        if (json is Map) {
+          if (json.containsKey('errors') && json['errors'] is Map) {
+            final errors = json['errors'] as Map;
+            if (errors.isNotEmpty) {
+              final firstError = errors.values.first[0];
+              throw Exception(firstError.toString());
+            }
+          }
+          throw Exception(json['message']?.toString() ?? 'Dữ liệu không hợp lệ (400)');
         }
-    throw Exception(json['message'] ?? 'Dữ liệu không hợp lệ');
-    case 401: throw Exception('Phiên đăng nhập đã hết hạn (401)'); 
-    case 403: throw Exception('Không có quyền thực hiện');
-    case 404: throw Exception(json['message'] ?? 'Không tìm thấy dữ liệu');
-    case 500: throw Exception('Lỗi máy chủ. Vui lòng thử lại sau');
-    default: throw Exception(json['message'] ?? 'Đã có lỗi xảy ra (${response.statusCode})');
+        throw Exception('Dữ liệu không hợp lệ (400)');
+      case 401: 
+        throw Exception('Phiên đăng nhập đã hết hạn (401)'); 
+      case 403: 
+        throw Exception('Không có quyền thực hiện (403)');
+      case 404: 
+        if (json is Map && json.containsKey('message')) {
+           throw Exception(json['message'].toString());
+        }
+        throw Exception('Không tìm thấy dữ liệu (404)');
+      case 500: 
+        throw Exception('Lỗi máy chủ. Vui lòng thử lại sau (500)');
+      default: 
+        if (json is Map && json.containsKey('message')) {
+           throw Exception(json['message'].toString());
+        }
+        throw Exception('Đã có lỗi xảy ra (${response.statusCode})');
+    }
   }
-}
 }

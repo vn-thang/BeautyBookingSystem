@@ -92,6 +92,7 @@ builder.Services.AddScoped<IStoreVnPayService, StoreVnPayService>();
 builder.Services.AddScoped<IWithdrawalService, WithdrawalService>();
 builder.Services.AddScoped<IStoreStatisticsService, StoreStatisticsService>();
 builder.Services.AddScoped<IStoreBillingService, StoreBillingService>();
+builder.Services.AddScoped<IStoreBannerService, StoreBannerService>();
 
 builder.Services.AddScoped<IAdminCategoryService, AdminCategoryService>();
 builder.Services.AddScoped<IAdminUserService, AdminUserService>();

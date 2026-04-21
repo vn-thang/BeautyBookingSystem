@@ -16,6 +16,8 @@ class BookingCard extends StatelessWidget {
     switch (status.toLowerCase()) {
       case 'pending':
         return ('Chờ duyệt', AppColors.warning);
+      case 'depositpaid':
+        return ('Đã cọc', const Color(0xFF00897B));
       case 'confirmed':
         return ('Đã duyệt', const Color(0xFF0068FF)); 
       case 'completed':

@@ -10,5 +10,6 @@ namespace BeautyBookingSystem.Application.DTOs.StoreWallet
         public string? BankName { get; set; }
         public string? BankAccountNumber { get; set; }
         public string? BankAccountName { get; set; }
+        public string? OwnerPhone { get; set; }
     }
 }

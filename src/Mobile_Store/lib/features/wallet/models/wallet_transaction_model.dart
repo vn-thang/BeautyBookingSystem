@@ -29,6 +29,7 @@ class WalletDashboardModel {
   final String? bankName;
   final String? bankAccountNumber;
   final String? bankAccountName;
+  final String? ownerPhone;
 
   WalletDashboardModel({
     required this.currentBalance,
@@ -39,6 +40,7 @@ class WalletDashboardModel {
     this.bankName,
     this.bankAccountNumber,
     this.bankAccountName,
+    this.ownerPhone,
   });
 
   factory WalletDashboardModel.fromJson(Map<String, dynamic> json) {
@@ -51,6 +53,7 @@ class WalletDashboardModel {
       bankName: json['bankName'],
       bankAccountNumber: json['bankAccountNumber'],
       bankAccountName: json['bankAccountName'],
+      ownerPhone: json['ownerPhone'],
     );
   }
 }

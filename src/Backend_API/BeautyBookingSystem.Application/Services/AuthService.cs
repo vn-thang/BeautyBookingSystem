@@ -11,6 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using FirebaseAdmin.Auth;
 
 namespace BeautyBookingSystem.Application.Services
 {
@@ -31,9 +32,30 @@ namespace BeautyBookingSystem.Application.Services
 
         public async Task<TokenResponse> RegisterAsync(RegisterRequest request)
         {
-            await CheckDuplicateUserAsync(request.Phone, request.Email);
+            if (string.IsNullOrEmpty(request.FirebaseIdToken))
+                throw new BadRequestException("Thiếu mã xác thực Firebase.");
+
+            FirebaseToken decodedToken;
+            try {
+                decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(request.FirebaseIdToken);
+            } catch {
+                throw new BadRequestException("Mã xác thực số điện thoại không hợp lệ hoặc đã hết hạn.");
+            }
+
+            string verifiedPhone = decodedToken.Claims.TryGetValue("phone_number", out var phoneObj) 
+                                ? phoneObj.ToString()! : "";
+
+            if (string.IsNullOrEmpty(verifiedPhone))
+                throw new BadRequestException("Không lấy được số điện thoại từ hệ thống xác thực.");
+
+            await CheckDuplicateUserAsync(verifiedPhone, request.Email);
 
             var newUser = _mapper.Map<User>(request);
+            
+            newUser.Phone = verifiedPhone; 
+            newUser.IsPhoneVerified = true;
+            newUser.FirebaseUid = decodedToken.Uid;
+
             newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password).Trim();
             newUser.Role = Role.Customer;
             newUser.Status = UserStatus.Active;
@@ -127,7 +149,7 @@ namespace BeautyBookingSystem.Application.Services
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Name, user.FullName),
-                new Claim(ClaimTypes.MobilePhone, user.Phone),
+                new Claim(ClaimTypes.MobilePhone, user.Phone??""),
                 new Claim(ClaimTypes.Role, user.Role.ToString())
             };
             
@@ -253,11 +275,31 @@ namespace BeautyBookingSystem.Application.Services
 
         public async Task<bool> RegisterPartnerAsync(RegisterRequest request)
         {
-            await CheckDuplicateUserAsync(request.Phone, request.Email);
+            if (string.IsNullOrEmpty(request.FirebaseIdToken))
+                throw new BadRequestException("Thiếu mã xác thực Firebase.");
+
+            FirebaseToken decodedToken;
+            try {
+                decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(request.FirebaseIdToken);
+            } catch {
+                throw new BadRequestException("Mã xác thực số điện thoại không hợp lệ hoặc đã hết hạn.");
+            }
+
+            string verifiedPhone = decodedToken.Claims.TryGetValue("phone_number", out var phoneObj) 
+                                ? phoneObj.ToString()! : "";
+
+            if (string.IsNullOrEmpty(verifiedPhone))
+                throw new BadRequestException("Không lấy được số điện thoại từ hệ thống xác thực.");
+
+            await CheckDuplicateUserAsync(verifiedPhone, request.Email);
 
             var newUser = _mapper.Map<User>(request);
-            newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            
+            newUser.Phone = verifiedPhone; 
+            newUser.IsPhoneVerified = true;
+            newUser.FirebaseUid = decodedToken.Uid;
 
+            newUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
             newUser.Role = Role.StoreOwner;
             newUser.Status = UserStatus.Active;
 
@@ -269,13 +311,162 @@ namespace BeautyBookingSystem.Application.Services
                 OwnerId = newUser.Id,
                 Name = "Chưa cập nhật",
                 Address = "Chưa cập nhật",
-                Phone = request.Phone,
+                Phone = verifiedPhone, 
                 Description = "",
                 IsOpen = false,
                 ApprovalStatus = ApprovalStatus.Incomplete
             };
 
             await _unitOfWork.StoreRepository.AddAsync(newStore);
+            await _unitOfWork.SaveChangesAsync();
+
+            return true;
+        }
+       public async Task<TokenResponse> LoginWithFirebaseAsync(FirebaseLoginRequest request)
+        {
+            FirebaseToken decodedToken;
+            try
+            {
+                decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(request.IdToken);
+            }
+            catch (Exception)
+            {
+                throw new BadRequestException("Firebase Token không hợp lệ hoặc đã hết hạn.");
+            }
+
+            string uid = decodedToken.Uid;
+            string email = decodedToken.Claims.TryGetValue("email", out var emailObj) ? emailObj.ToString()! : "";
+            string name = decodedToken.Claims.TryGetValue("name", out var nameObj) ? nameObj.ToString()! : "Khách hàng";
+            string picture = decodedToken.Claims.TryGetValue("picture", out var picObj) ? picObj.ToString()! : "";
+            string phone = decodedToken.Claims.TryGetValue("phone_number", out var phoneObj) ? phoneObj.ToString()! : "";
+
+            AuthProvider provider = AuthProvider.Local;
+            if (decodedToken.Claims.TryGetValue("firebase", out var firebaseInfoObj) && firebaseInfoObj is IDictionary<string, object> firebaseInfo)
+            {
+                var signInProvider = firebaseInfo["sign_in_provider"]?.ToString();
+                if (signInProvider == "google.com") provider = AuthProvider.Google;
+                else if (signInProvider == "facebook.com") provider = AuthProvider.Facebook;
+            }
+
+            var user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.FirebaseUid == uid);
+
+            if (user == null && !string.IsNullOrEmpty(email))
+            {
+                var existingUser = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == email);
+                if (existingUser != null) 
+                {
+                    if (!request.LinkToExistingAccount)
+                    {
+                        throw new BadRequestException("REQUIRE_LINK_CONFIRM:Email này đã được đăng ký. Bạn có muốn liên kết không?");
+                    }
+                    user = existingUser;
+                    user.FirebaseUid = uid; 
+                }
+            }
+
+            if (user == null && !string.IsNullOrEmpty(phone))
+            {
+                user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Phone == phone);
+                if (user != null) 
+                {
+                    user.FirebaseUid = uid;
+                    user.IsPhoneVerified = true;
+                }
+            }
+
+            if (user == null)
+            {
+                if (request.IsStoreOwnerApp && string.IsNullOrEmpty(phone))
+                {
+                    throw new BadRequestException($"REQUIRE_PHONE_VERIFICATION|{email}|{name}|{picture}");
+                }
+                user = new User
+                {
+                    FirebaseUid = uid,
+                    Email = email,
+                    FullName = name,
+                    AvatarUrl = picture,
+                    Phone = phone ?? "",
+                    AuthProvider = provider,
+                    Role = request.IsStoreOwnerApp ? Role.StoreOwner : Role.Customer, 
+                    Status = UserStatus.Active,
+                    IsPhoneVerified = !string.IsNullOrEmpty(phone) 
+                };
+                if (user.Role == Role.StoreOwner)
+                {
+                    user.Stores.Add(new Store 
+                    {
+                        Name = "Chưa cập nhật",
+                        Address = "Chưa cập nhật",
+                        Phone = phone ?? "", 
+                        Description = "",
+                        IsOpen = false,
+                        ApprovalStatus = ApprovalStatus.Incomplete
+                    });
+                }
+
+                await _unitOfWork.UserRepository.AddAsync(user);
+            }
+            else
+            {
+                if (user.Status != UserStatus.Active)
+                    throw new BadRequestException("Tài khoản của bạn đã bị khóa.");
+                    
+                if (user.Id > 0) _unitOfWork.UserRepository.Update(user);
+            }
+            if (!string.IsNullOrEmpty(request.FcmToken))
+            {
+                user.FcmToken = request.FcmToken;
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+
+            int? currentStoreId = null;
+            string? currentStoreStatus = null;
+
+            if (user.Role == Role.StoreOwner)
+            {
+                var store = await _unitOfWork.StoreRepository.FirstOrDefaultAsync(s => s.OwnerId == user.Id);
+                if (store != null)
+                {
+                    currentStoreId = store.Id;
+                    currentStoreStatus = store.ApprovalStatus.ToString();
+                }
+            }
+
+            var tokenResponse = await GenerateTokensAndUpdateUserAsync(user, currentStoreId);
+            tokenResponse.Role = user.Role.ToString();
+            if (currentStoreStatus != null) tokenResponse.StoreStatus = currentStoreStatus;
+
+            return tokenResponse;
+        }
+      
+        public async Task<bool> VerifyPhoneNumberAsync(string userId, string firebaseIdToken)
+        {
+            var user = await GetUserByIdAsync(userId);
+            
+            FirebaseToken decodedToken;
+            try
+            {
+                decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(firebaseIdToken);
+            }
+            catch (Exception)
+            {
+                throw new BadRequestException("Mã xác thực Firebase không hợp lệ hoặc đã hết hạn.");
+            }
+            string verifiedPhone = decodedToken.Claims.TryGetValue("phone_number", out var phoneObj) 
+                                ? phoneObj.ToString()! : "";
+
+            if (string.IsNullOrEmpty(verifiedPhone))
+                throw new BadRequestException("Token không chứa thông tin số điện thoại hợp lệ.");
+
+            user.Phone = verifiedPhone; 
+
+            user.IsPhoneVerified = true;
+
+            user.FirebaseUid = decodedToken.Uid;
+
+            _unitOfWork.UserRepository.Update(user);
             await _unitOfWork.SaveChangesAsync();
 
             return true;

@@ -193,7 +193,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                 child: TabBarView(
                   children: [
                     BookingListTab(status: null, startDate: _startDate, endDate: _endDate, staffId: _staffId),        
-                    BookingListTab(status: 'Pending', startDate: _startDate, endDate: _endDate, staffId: _staffId),    
+                    BookingListTab(status: 'Pending_And_Deposit', startDate: _startDate, endDate: _endDate, staffId: _staffId),     
                     BookingListTab(status: 'Confirmed', startDate: _startDate, endDate: _endDate, staffId: _staffId),  
                     BookingListTab(status: 'Completed', startDate: _startDate, endDate: _endDate, staffId: _staffId),  
                     BookingListTab(status: 'Cancelled', startDate: _startDate, endDate: _endDate, staffId: _staffId),  

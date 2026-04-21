@@ -39,17 +39,44 @@ class _BookingListTabState extends State<BookingListTab> with AutomaticKeepAlive
     }
   }
 
-  Future<void> _loadData() async {
+ Future<void> _loadData() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
     
     try {
-      final data = await StoreBookingApi.getBookings(
-        status: widget.status,
-        startDate: widget.startDate,
-        endDate: widget.endDate,
-        staffId: widget.staffId,
-      );
+      List<StoreBookingListModel> data = [];
+      if (widget.status == 'Pending_And_Deposit') {
+        
+        final pendingFuture = StoreBookingApi.getBookings(
+          status: 'Pending',
+          startDate: widget.startDate,
+          endDate: widget.endDate,
+          staffId: widget.staffId,
+        );
+        final depositFuture = StoreBookingApi.getBookings(
+          status: 'DepositPaid',
+          startDate: widget.startDate,
+          endDate: widget.endDate,
+          staffId: widget.staffId,
+        );
+
+        final results = await Future.wait([pendingFuture, depositFuture]);
+        
+        data = [...results[0], ...results[1]];
+        data.sort((a, b) {
+          if (a.createdAt == null || b.createdAt == null) return 0;
+          return b.createdAt!.compareTo(a.createdAt!);
+        });
+        
+      } else {
+        data = await StoreBookingApi.getBookings(
+          status: widget.status,
+          startDate: widget.startDate,
+          endDate: widget.endDate,
+          staffId: widget.staffId,
+        );
+      }
+
       if (mounted) {
         setState(() {
           _bookings = data;

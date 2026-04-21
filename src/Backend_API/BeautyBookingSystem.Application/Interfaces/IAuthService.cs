@@ -18,5 +18,7 @@ namespace BeautyBookingSystem.Application.Interfaces
         Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request);
         Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
         Task<bool> RegisterPartnerAsync(RegisterRequest request);
+        Task<TokenResponse> LoginWithFirebaseAsync(FirebaseLoginRequest request);
+        Task<bool> VerifyPhoneNumberAsync(string userId, string firebaseIdToken);
     }
 }
