@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FirebaseAdmin.Auth;
 
 namespace BeautyBookingSystem.Application.Services
 {
@@ -32,6 +33,34 @@ namespace BeautyBookingSystem.Application.Services
             var store = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
             if (store == null) 
                 throw new BadRequestException("Không tìm thấy cửa hàng.");
+
+            if (string.IsNullOrEmpty(dto.FirebaseIdToken))
+            throw new BadRequestException("Yêu cầu mã xác thực OTP để rút tiền.");
+
+            FirebaseToken decodedToken;
+            try
+            {
+                decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(dto.FirebaseIdToken);
+            }
+            catch (Exception)
+            {
+                throw new BadRequestException("Mã xác thực OTP không hợp lệ hoặc đã hết hạn.");
+            }
+
+            string verifiedPhone = decodedToken.Claims.TryGetValue("phone_number", out var phoneObj) 
+                                ? phoneObj.ToString()! : "";
+
+            if (string.IsNullOrEmpty(verifiedPhone))
+                throw new BadRequestException("Không lấy được số điện thoại từ hệ thống xác thực.");
+
+            var owner = await _unitOfWork.UserRepository.GetByIdAsync(store.OwnerId);
+            if (owner == null)
+                throw new BadRequestException("Không tìm thấy thông tin chủ cửa hàng.");
+
+            if (owner.Phone != verifiedPhone)
+            {
+                throw new BadRequestException("Số điện thoại xác thực OTP không khớp với số điện thoại của tài khoản chủ cửa hàng.");
+            }
 
             ValidateStoreForWithdrawal(store, dto.Amount);
 

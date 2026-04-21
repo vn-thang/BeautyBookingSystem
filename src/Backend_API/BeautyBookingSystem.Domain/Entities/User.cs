@@ -12,20 +12,20 @@ namespace BeautyBookingSystem.Domain.Entities
     public class User : BaseEntity
     {
         public string FullName { get; set; } = string.Empty;
-        public string Phone { get; set; } = string.Empty;
+        public string? Phone { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string? AvatarUrl { get; set; }
-        public string PasswordHash { get; set; } = string.Empty;
+        public string? PasswordHash { get; set; } = string.Empty;
         public Role Role { get; set; }
         public UserStatus Status { get; set; }
         public bool IsPhoneVerified { get; set; }
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
-
         public string? ResetPasswordOtp { get; set; }
         public DateTime? ResetPasswordOtpExpiry { get; set; }
         public string? FcmToken { get; set; }
-
+        public AuthProvider AuthProvider { get; set; } = AuthProvider.Local;
+        public string? FirebaseUid { get; set; } 
         public virtual ICollection<Store> Stores { get; set; } = new List<Store>();
         public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
         public virtual ICollection<UserVoucher> UserVouchers { get; set; } = new List<UserVoucher>();

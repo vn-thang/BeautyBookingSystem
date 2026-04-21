@@ -109,7 +109,7 @@ class _AppTextFieldState extends State<AppTextField> {
               
               prefixIcon: Icon(
                 widget.icon, 
-                size: 22, 
+                size: 20, 
                 color: _isFocused ? AppColors.primary : AppColors.textSub 
               ),
               
@@ -118,7 +118,7 @@ class _AppTextFieldState extends State<AppTextField> {
                 color: AppColors.textSub.withValues(alpha: 0.6),
                 fontWeight: FontWeight.w400
               ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               
               errorStyle: AppTextStyles.labelSmall.copyWith(
                 color: AppColors.error, 
@@ -129,7 +129,7 @@ class _AppTextFieldState extends State<AppTextField> {
                   ? IconButton(
                       icon: Icon(
                         _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        size: 22, 
+                        size: 20, 
                         color: _isFocused ? AppColors.primary : AppColors.textSub,
                       ),
                       onPressed: () => setState(() => _obscurePassword = !_obscurePassword),

@@ -4,7 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/utils/formatters.dart'; // Đổi đường dẫn cho phù hợp
+import '../../../core/utils/formatters.dart'; 
 import '../../../shared/widgets/cards/stat_item_widget.dart';
 import '../models/store_dashboard_model.dart';
 
@@ -85,12 +85,18 @@ class DetailedStatsCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    dateString,
-                    style: AppTextStyles.bodyText.copyWith(
-                      color: date != null ? AppColors.textMain : AppColors.textSub,
-                    ),
-                  ),
+                  Expanded( 
+      child: Text(
+        dateString,
+        style: AppTextStyles.bodyText.copyWith(
+          color: date != null ? AppColors.textMain : AppColors.textSub,
+          fontSize: 13, 
+        ),
+        overflow: TextOverflow.ellipsis, 
+        maxLines: 1,
+      ),
+    ),
+    const SizedBox(width: 4), 
                   const Icon(Icons.calendar_month, size: 18, color: AppColors.textSub),
                 ],
               ),
@@ -101,7 +107,7 @@ class DetailedStatsCard extends StatelessWidget {
     );
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
@@ -114,16 +120,24 @@ class DetailedStatsCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.bar_chart, color: AppColors.primary, size: 24),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      'Thống kê chi tiết', 
-                      style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.bold)
-                    ),
-                  ],
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.bar_chart, color: AppColors.primary, size: 24),
+                      const SizedBox(width: AppSpacing.sm),
+                      Flexible(
+                        child: Text(
+                          'Thống kê chi tiết', 
+                          style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
+                          overflow: TextOverflow.ellipsis, 
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                
+                const SizedBox(width: 8), 
+                
                 SizedBox(
                   width: 130, 
                   child: AppFilterDropdown<String>(

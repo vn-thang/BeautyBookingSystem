@@ -34,6 +34,7 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         public IGenericRepository<WithdrawalRequest> WithdrawalRequestRepository { get; private set; }
         public IGenericRepository<StaffSchedule> StaffScheduleRepository { get; private set; }
         public IGenericRepository<StaffLeave> StaffLeaveRepository { get; private set; }
+        public IGenericRepository<StoreBanner> StoreBannerRepository { get; private set; }
         public UnitOfWork(AppDbContext context)
         {
             _context = context;
@@ -59,6 +60,7 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
             WithdrawalRequestRepository = new GenericRepository<WithdrawalRequest>(_context);
             StaffScheduleRepository = new GenericRepository<StaffSchedule>(_context);
             StaffLeaveRepository = new GenericRepository<StaffLeave>(_context);
+            StoreBannerRepository = new GenericRepository<StoreBanner>(_context);
         }
 
         public async Task<int> SaveChangesAsync()

@@ -22,7 +22,7 @@ class AppPrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 40,
+      height: 44,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: color ?? AppColors.primary,
@@ -84,7 +84,7 @@ class AppOutlineButton extends StatelessWidget {
     final buttonColor = color ?? AppColors.primary;
     return SizedBox(
       width: double.infinity,
-      height: 40, 
+      height: 44, 
       child: OutlinedButton(
         onPressed: onTap,
         style: OutlinedButton.styleFrom(

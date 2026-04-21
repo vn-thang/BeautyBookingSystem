@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // THÊM IMPORT NÀY
 import 'package:mobile_store/features/store/screens/update_profile_screen.dart';
 import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
 import 'package:mobile_store/shared/widgets/feedback/snackbar_helper.dart';
 import 'package:mobile_store/shared/widgets/inputs/app_header.dart';
+import 'package:mobile_store/shared/widgets/inputs/app_text_field.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_spacing.dart';
-
+import '../../../core/theme/app_text_styles.dart';
 import '../models/wallet_transaction_model.dart';
 import '../services/store_wallet_api.dart'; 
 import '../widgets/withdraw/withdraw_balance_card.dart';
@@ -52,7 +54,7 @@ class _StoreWithdrawScreenState extends State<StoreWithdrawScreen> {
     });
   }
 
-  Future<void> _validateAndSubmit() async {
+  Future<void> _validateAndRequestOtp() async {
     if (_bankName == null || _bankName!.isEmpty || _accountNumber == null || _accountNumber!.isEmpty) {
       SnackBarHelper.showError(context, 'Vui lòng thiết lập tài khoản ngân hàng trước khi rút tiền!');
       return;
@@ -75,29 +77,146 @@ class _StoreWithdrawScreenState extends State<StoreWithdrawScreen> {
       return;
     }
 
+    final phoneStr = widget.dashboard.ownerPhone; 
+
+    if (phoneStr == null || phoneStr.isEmpty) {
+      SnackBarHelper.showError(context, 'Tài khoản chưa có số điện thoại để nhận OTP.');
+      return;
+    }
+
     setState(() {
       _errorText = null;
       _isLoadingSubmit = true;
     });
 
+    await _verifyPhoneForWithdrawal(phoneStr, amount);
+  }
+
+  Future<void> _verifyPhoneForWithdrawal(String phoneStr, double amount) async {
     try {
-      await StoreWalletApi.requestWithdraw(amount);
+      await FirebaseAuth.instance.setSettings(appVerificationDisabledForTesting: true);
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phoneStr,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          await _processWithdrawal(credential, amount);
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          setState(() => _isLoadingSubmit = false);
+          SnackBarHelper.showError(context, e.message ?? 'Gửi mã xác thực thất bại.');
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          setState(() => _isLoadingSubmit = false);
+          _showOtpDialogForWithdrawal(verificationId, phoneStr, amount);
+        },
+        codeAutoRetrievalTimeout: (_) {},
+      );
+    } catch (e) {
+      setState(() => _isLoadingSubmit = false);
+      SnackBarHelper.showError(context, 'Lỗi hệ thống: $e');
+    }
+  }
+
+  void _showOtpDialogForWithdrawal(String verificationId, String phoneStr, double amount) {
+    final otpController = TextEditingController();
+    bool isVerifying = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(
+                'Xác thực giao dịch',
+                style: AppTextStyles.heading1.copyWith(fontSize: 20, color: AppColors.textMain),
+                textAlign: TextAlign.center,
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Để bảo mật, mã OTP đã được gửi đến số $phoneStr',
+                    style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  AppTextField(
+                    hint: 'Nhập mã OTP 6 số',
+                    icon: Icons.security_outlined,
+                    controller: otpController,
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 20),
+                  AppPrimaryButton(
+                    text: 'XÁC NHẬN RÚT TIỀN',
+                    isLoading: isVerifying,
+                    onPressed: () async {
+                      final code = otpController.text.trim();
+                      if (code.isEmpty || code.length < 6) {
+                        SnackBarHelper.showError(ctx, 'Vui lòng nhập đủ 6 số OTP');
+                        return;
+                      }
+
+                      setDialogState(() => isVerifying = true);
+                      try {
+                        final credential = PhoneAuthProvider.credential(
+                          verificationId: verificationId,
+                          smsCode: code,
+                        );
+                        
+                        Navigator.pop(ctx); 
+                        await _processWithdrawal(credential, amount); 
+                        
+                      } catch (e) {
+                        setDialogState(() => isVerifying = false);
+                        SnackBarHelper.showError(ctx, 'Mã OTP không hợp lệ hoặc đã hết hạn.');
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: isVerifying ? null : () => Navigator.pop(ctx),
+                    child: const Text('Hủy bỏ', style: TextStyle(color: AppColors.textSub)),
+                  ),
+                ],
+              ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _processWithdrawal(PhoneAuthCredential credential, double amount) async {
+    try {
+      setState(() => _isLoadingSubmit = true);
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      final idToken = await FirebaseAuth.instance.currentUser?.getIdToken(true);
+
+      if (idToken == null) throw Exception("Không lấy được mã xác thực an toàn.");
+
+      await StoreWalletApi.requestWithdraw(amount, idToken);
       
       if (!mounted) return;
-      setState(() => _isLoadingSubmit = false);
       
-      SnackBarHelper.showSuccess(context, 'Tạo lệnh rút tiền thành công! Đang chờ duyệt.');
-      
+      SnackBarHelper.showSuccess(context, 'Yêu cầu rút tiền đã được gửi! Đang chờ Admin duyệt.');
       Navigator.pop(context, true); 
       
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isLoadingSubmit = false);
       SnackBarHelper.showError(context, e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLoadingSubmit = false);
     }
   }
 
- Future<void> _navigateToSetupBank() async {
+  Future<void> _navigateToSetupBank() async {
     await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const UpdateProfileScreen()),
@@ -151,9 +270,9 @@ class _StoreWithdrawScreenState extends State<StoreWithdrawScreen> {
             ),
             child: SafeArea(
               child: AppPrimaryButton(
-                text: 'XÁC NHẬN RÚT TIỀN',
+                text: 'YÊU CẦU RÚT TIỀN',
                 isLoading: _isLoadingSubmit,
-                onPressed: _validateAndSubmit,
+                onPressed: _validateAndRequestOtp, 
               ),
             ),
           ),

@@ -29,6 +29,16 @@ namespace BeautyBookingSystem.Application.Services
             int customerId,
             CreateBookingRequest request)
         {
+            var currentUser = await _unitOfWork.UserRepository.GetByIdAsync(customerId);
+            if (currentUser == null)
+                throw new KeyNotFoundException("Không tìm thấy thông tin khách hàng.");
+
+            if (!currentUser.IsPhoneVerified || string.IsNullOrEmpty(currentUser.Phone))
+            {
+                throw new BadRequestException("REQUIRE_PHONE_VERIFICATION: Vui lòng bổ sung và xác thực số điện thoại để cửa hàng có thể liên hệ với bạn nhé!");
+            } 
+    //======================================== đoạn này mới thêm xác thực sdt nếu chưa nhé ===
+
             bool blockUserIfNoShow = await _systemConfigService.GetValueAsync<bool>(SystemConfigKeys.BlockUserIfNoShow);
 
             if (blockUserIfNoShow)
@@ -43,6 +53,7 @@ namespace BeautyBookingSystem.Application.Services
                     throw new UnauthorizedAccessException($"Tài khoản của bạn đã bị khóa tính năng đặt lịch do có {currentNoShowCount} lần không đến đúng hẹn. Vui lòng liên hệ cửa hàng để được hỗ trợ.");
                 }
             }
+
             int maxCancelPerDay = await _systemConfigService.GetValueAsync<int>(SystemConfigKeys.MaxCancelPerDay);
 
             if (maxCancelPerDay > 0)
@@ -906,8 +917,6 @@ namespace BeautyBookingSystem.Application.Services
 
             if (firstDetail == null)
                 throw new InvalidOperationException("Đơn đặt lịch không có chi tiết dịch vụ.");
-
-            // LẤY CẤU HÌNH: Thời gian châm chước đi trễ (Grace Period)
             int graceMinutes = await _systemConfigService.GetValueAsync<int>(SystemConfigKeys.GracePeriodMinutes);
             if (graceMinutes <= 0) graceMinutes = 30;
 
@@ -920,7 +929,6 @@ namespace BeautyBookingSystem.Application.Services
                 throw new InvalidOperationException($"Chưa hết thời gian giữ chỗ ({graceMinutes} phút). Khách hàng vẫn có thể đến trước {maxAllowedTime:HH:mm}.");
             }
 
-            // UPDATE BOOKING THÀNH NO-SHOW
             booking.Status = BookingStatus.Cancelled;
             booking.CancelledBy = CancelledByType.Store;
             booking.CancelReason = "Khách hàng không đến (No-Show)";

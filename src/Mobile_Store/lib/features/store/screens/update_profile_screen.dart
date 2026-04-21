@@ -39,7 +39,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       oldData.description = formData['description'] ?? oldData.description;
       
       oldData.isOpen = formData['isOpen'] ?? oldData.isOpen;
-      
+      oldData.logoUrl = formData['logoUrl'] ?? oldData.logoUrl;
+      oldData.coverImageUrl = formData['coverImageUrl'] ?? oldData.coverImageUrl;
       oldData.depositPercent = formData['depositPercent'] ?? oldData.depositPercent; 
       oldData.depositThreshold = formData['depositThreshold'] ?? oldData.depositThreshold; 
       oldData.bankName = formData['bankName']; 

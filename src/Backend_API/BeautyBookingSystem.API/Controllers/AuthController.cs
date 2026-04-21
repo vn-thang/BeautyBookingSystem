@@ -22,7 +22,6 @@ namespace BeautyBookingSystem.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            // AuthService sẽ ném Exception nếu lỗi, nên đến đây chắc chắn là thành công
             var result = await _authService.RegisterAsync(request);
             return Ok(ApiResponse<TokenResponse>.Ok(result, "Đăng ký thành công!"));
         }
@@ -59,7 +58,6 @@ namespace BeautyBookingSystem.API.Controllers
         [Authorize]
         public async Task<IActionResult> Logout()
         {
-            // Cập nhật lại cách lấy userId cho đồng bộ
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) 
                 ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
@@ -89,6 +87,28 @@ namespace BeautyBookingSystem.API.Controllers
         {
             var result = await _authService.RegisterPartnerAsync(request);
             return Ok(ApiResponse<bool>.Ok(result, "Đăng ký tài khoản Đối tác thành công! Cửa hàng của bạn đang ở trạng thái Chờ phê duyệt. Bạn có thể đăng nhập vào App Đối tác ngay bây giờ."));
+        }
+        [HttpPost("firebase-login")]
+        public async Task<IActionResult> FirebaseLogin([FromBody] FirebaseLoginRequest request)
+        {
+            var result = await _authService.LoginWithFirebaseAsync(request);
+            return Ok(ApiResponse<TokenResponse>.Ok(result, "Đăng nhập thành công!"));
+        }
+        [HttpPost("verify-phone")]
+        [Authorize] 
+        public async Task<IActionResult> VerifyPhone([FromBody] VerifyPhoneRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Không xác định được người dùng." });
+
+            var result = await _authService.VerifyPhoneNumberAsync(userId, request.FirebaseIdToken);
+            
+            return Ok(new { 
+                isSuccess = true, 
+                message = "Xác thực số điện thoại thành công!" 
+            });
         }
     }
 }

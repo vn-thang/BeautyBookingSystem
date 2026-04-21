@@ -53,11 +53,13 @@ namespace BeautyBookingSystem.Application.Services
             };
         }
 
-        public async Task<WalletDashboardDto> GetWalletDashboardAsync(int? month = null, int? year = null)
+       public async Task<WalletDashboardDto> GetWalletDashboardAsync(int? month = null, int? year = null)
         {
             int storeId = await _currentUserService.GetCurrentStoreIdAsync();
+            var store = await _unitOfWork.StoreRepository.GetQueryable()
+                .Include(s => s.Owner) 
+                .FirstOrDefaultAsync(s => s.Id == storeId);
 
-            var store = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
             if (store == null) throw new NotFoundException("Không tìm thấy cửa hàng.");
 
             int targetMonth = month ?? DateTime.UtcNow.Month;
@@ -65,8 +67,8 @@ namespace BeautyBookingSystem.Application.Services
 
             var transactionsThisMonth = await _unitOfWork.WalletTransactionRepository.GetQueryable()
                 .Where(t => t.StoreId == storeId 
-                         && t.CreatedAt.Month == targetMonth 
-                         && t.CreatedAt.Year == targetYear)
+                        && t.CreatedAt.Month == targetMonth 
+                        && t.CreatedAt.Year == targetYear)
                 .ToListAsync();
 
             decimal totalTopUp = transactionsThisMonth
@@ -86,7 +88,8 @@ namespace BeautyBookingSystem.Application.Services
                 TotalFeeThisMonth = totalFee,
                 BankName = store.BankName,
                 BankAccountNumber = store.BankAccountNumber,
-                BankAccountName = store.BankAccountName
+                BankAccountName = store.BankAccountName,
+                OwnerPhone = store.Owner?.Phone 
             };
         }
         public async Task<PagedResponse<WalletTransactionDto>> GetTransactionHistoryAsync(

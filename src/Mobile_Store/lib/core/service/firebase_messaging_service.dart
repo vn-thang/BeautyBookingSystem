@@ -1,10 +1,15 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:firebase_core/firebase_core.dart'; 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:mobile_store/core/constant/global_keys.dart';
+import 'package:mobile_store/features/service/widgets/shared_service_widgets.dart';
 import '../../features/notification/services/notification_api.dart';
+
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(); 
   log('🌙 [Background/Killed] Nhận thông báo: ${message.notification?.title}');
 }
 
@@ -18,8 +23,9 @@ class FirebaseMessagingService {
     NotificationSettings settings = await messaging.requestPermission(
       alert: true, badge: true, sound: true,
     );
+    
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      log('✅ Người dùng ĐÃ CẤP QUYỀN nhận thông báo');
+      log('Người dùng ĐÃ CẤP QUYỀN nhận thông báo');
       
       await messaging.setForegroundNotificationPresentationOptions(
         alert: true, badge: true, sound: true,
@@ -40,7 +46,19 @@ class FirebaseMessagingService {
 
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         log('📩 [Foreground] Nhận thông báo: ${message.notification?.title}');
+        
         _onNotificationArrived.add(null);
+
+        if (message.notification != null) {
+          
+          if (navigatorKey.currentContext != null) {
+            SnackBarHelper.showSuccess(
+              navigatorKey.currentContext!, 
+              "${message.notification!.title}\n${message.notification!.body}",
+            );
+          }
+          
+        }
       });
 
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
