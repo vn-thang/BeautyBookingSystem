@@ -74,6 +74,12 @@ namespace BeautyBookingSystem.API.Controllers
             var result = await _authService.ForgotPasswordAsync(request);
             return Ok(ApiResponse<bool>.Ok(result, "Mã OTP đã được gửi đến Email của bạn!"));
         }
+        [HttpPost("verify-reset-password-otp")]
+        public async Task<IActionResult> VerifyResetPasswordOtp([FromBody] VerifyForgotPasswordOtpRequest request)
+        {
+            var result = await _authService.VerifyForgotPasswordOtpAsync(request);
+            return Ok(ApiResponse<bool>.Ok(result, "Xác nhận OTP thành công!"));
+        }
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
@@ -132,6 +133,16 @@ class _BookingDetailPageState extends State<BookingDetailPage>
     return dt.difference(now).inHours >= _rescheduleBeforeHours;
   }
 
+  void _openStoreDetail(int storeId) {
+    if (storeId <= 0) return;
+    context.push('/store/$storeId');
+  }
+
+  void _openServiceDetail(int serviceId) {
+    if (serviceId <= 0) return;
+    context.push('/service-detail/$serviceId');
+  }
+
   Future<void> _loadDetail() async {
     setState(() {
       _loading = true;
@@ -147,12 +158,9 @@ class _BookingDetailPageState extends State<BookingDetailPage>
       Map<String, dynamic>? bookingJson;
 
       if (data is Map<String, dynamic>) {
-        // Trường hợp API trả trực tiếp DTO
         if (data.containsKey('id')) {
           bookingJson = data;
-        }
-        // Trường hợp API trả kiểu { success: true, data: {...} }
-        else if (data['data'] is Map<String, dynamic>) {
+        } else if (data['data'] is Map<String, dynamic>) {
           bookingJson = Map<String, dynamic>.from(data['data']);
         }
       }
@@ -251,7 +259,7 @@ class _BookingDetailPageState extends State<BookingDetailPage>
           'bookingId': item.id,
           'amount': amount,
           'orderInfo': 'Thanh toán booking #${item.id}',
-          'paymentMethod': 1, // đổi theo enum backend của bạn
+          'paymentMethod': 1,
         },
       );
 
@@ -268,8 +276,6 @@ class _BookingDetailPageState extends State<BookingDetailPage>
       if (!ok) {
         throw Exception('Không mở được cổng thanh toán');
       }
-
-      // Khi người dùng quay lại app, didChangeAppLifecycleState sẽ tự reload booking
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -763,11 +769,20 @@ class _BookingDetailPageState extends State<BookingDetailPage>
           Row(
             children: [
               Expanded(
-                child: Text(
-                  item.storeName?.trim().isNotEmpty == true
-                      ? item.storeName!
-                      : 'Booking #${item.id}',
-                  style: AppTextStyles.sectionTitle.copyWith(fontSize: 17),
+                child: InkWell(
+                  onTap: item.storeId > 0
+                      ? () => _openStoreDetail(item.storeId)
+                      : null,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      item.storeName?.trim().isNotEmpty == true
+                          ? item.storeName!
+                          : 'Booking #${item.id}',
+                      style: AppTextStyles.sectionTitle.copyWith(fontSize: 17),
+                    ),
+                  ),
                 ),
               ),
               _StatusChip(label: statusInfo.label, color: statusInfo.color),
@@ -788,42 +803,53 @@ class _BookingDetailPageState extends State<BookingDetailPage>
   }
 
   Widget _serviceTile(BookingServiceItem s) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: s.serviceId > 0 ? () => _openServiceDetail(s.serviceId) : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.serviceName,
+                      style: AppTextStyles.body.copyWith(
+                        fontWeight: FontWeight.w700,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${DateFormat('dd/MM/yyyy').format(s.appointmentDate)} • ${s.startTime.substring(0, 5)}',
+                      style: AppTextStyles.bodyMuted,
+                    ),
+                    if ((s.staffName ?? '').trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Nhân viên: ${s.staffName}',
+                        style: AppTextStyles.bodyMuted,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
               Text(
-                s.serviceName,
+                _formatVnd(s.price),
                 style: AppTextStyles.body.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${DateFormat('dd/MM/yyyy').format(s.appointmentDate)} • ${s.startTime.substring(0, 5)}',
-                style: AppTextStyles.bodyMuted,
-              ),
-              if ((s.staffName ?? '').trim().isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'Nhân viên: ${s.staffName}',
-                  style: AppTextStyles.bodyMuted,
-                ),
-              ],
             ],
           ),
         ),
-        const SizedBox(width: 12),
-        Text(
-          _formatVnd(s.price),
-          style: AppTextStyles.body.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -1009,7 +1035,13 @@ class _BookingDetailPageState extends State<BookingDetailPage>
         boxShadow: AppDecorations.topBarShadow,
       ),
       child: IconButton(
-        onPressed: () => Navigator.pop(context),
+        onPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/bookings');
+          }
+        },
         icon: const Icon(
           Icons.arrow_back_ios_new_rounded,
           size: 17,

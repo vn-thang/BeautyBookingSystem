@@ -5,6 +5,8 @@ abstract class StoreReviewsRepository {
     required int storeId,
     required int page,
     required int pageSize,
+    int? rating,
+    String sortBy,
   });
 
   Future<List<StoreReviewEntity>> getTopStoreReviews({

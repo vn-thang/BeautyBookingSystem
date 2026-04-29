@@ -4,46 +4,58 @@ import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../domain/usecases/login.dart';
-import '../../domain/usecases/get_profile.dart';
-import '../../domain/usecases/register.dart';
 import '../../domain/usecases/change_password.dart';
 import '../../domain/usecases/forgot_password.dart';
+import '../../domain/usecases/get_profile.dart';
+import '../../domain/usecases/login.dart';
+import '../../domain/usecases/login_with_firebase.dart';
+import '../../domain/usecases/register.dart';
 import '../../domain/usecases/reset_password.dart';
 import '../../domain/usecases/update_profile.dart';
 import '../../domain/usecases/upload_avatar.dart';
+import '../../domain/usecases/verify_forgot_password_otp.dart';
+import '../../domain/usecases/verify_phone.dart';
 
 import 'auth_event.dart';
 import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final Login login;
+  final LoginWithFirebase loginWithFirebase;
   final GetProfile getProfile;
   final Register register;
   final ChangePassword changePassword;
   final ForgotPassword forgotPassword;
+  final VerifyForgotPasswordOtp verifyForgotPasswordOtp;
   final ResetPassword resetPassword;
   final UpdateProfile updateProfile;
   final UploadAvatar uploadAvatar;
+  final VerifyPhone verifyPhone;
 
   Future<void> _profileMutationQueue = Future.value();
 
   AuthBloc(
     this.login,
+    this.loginWithFirebase,
     this.getProfile,
     this.register,
     this.changePassword,
     this.forgotPassword,
+    this.verifyForgotPasswordOtp,
     this.resetPassword,
     this.updateProfile,
     this.uploadAvatar,
+    this.verifyPhone,
   ) : super(AuthInitial()) {
     on<LoginEvent>(_onLogin);
+    on<LoginWithFirebaseEvent>(_onLoginWithFirebase);
+    on<VerifyPhoneEvent>(_onVerifyPhone);
     on<LogoutEvent>(_onLogout);
     on<CheckAuthEvent>(_onCheckAuth);
     on<RegisterEvent>(_onRegister);
     on<ChangePasswordEvent>(_onChangePassword);
     on<ForgotPasswordEvent>(_onForgotPassword);
+    on<VerifyForgotPasswordOtpEvent>(_onVerifyForgotPasswordOtp);
     on<ResetPasswordEvent>(_onResetPassword);
     on<UpdateProfileEvent>(_onUpdateProfile);
     on<UploadAvatarEvent>(_onUploadAvatar);
@@ -96,7 +108,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString("token");
 
-    if (token == null) {
+    if (token == null || token.isEmpty) {
       emit(AuthUnauthenticated());
       return;
     }
@@ -106,12 +118,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       if (state is AuthAuthenticated) {
         final current = (state as AuthAuthenticated).user;
-        if (current.id == user.id) return;
+        if (current.id == user.id) {
+          emit(AuthAuthenticated(current));
+          return;
+        }
       }
 
       emit(AuthAuthenticated(user));
-    } catch (e) {
+    } catch (_) {
       await prefs.remove("token");
+      await prefs.remove("refreshToken");
+      await prefs.remove("user");
+      await prefs.remove("sessionExpired");
       emit(AuthUnauthenticated());
     }
   }
@@ -129,6 +147,39 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
+  Future<void> _onLoginWithFirebase(
+    LoginWithFirebaseEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      final user = await loginWithFirebase(
+        idToken: event.idToken,
+        fcmToken: event.fcmToken,
+        linkToExistingAccount: event.linkToExistingAccount,
+        isStoreOwnerApp: event.isStoreOwnerApp,
+      );
+      emit(AuthAuthenticated(user));
+    } catch (e) {
+      emit(AuthError(_extractMessage(e)));
+    }
+  }
+
+  Future<void> _onVerifyPhone(
+    VerifyPhoneEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    try {
+      await verifyPhone(event.firebaseIdToken);
+      final user = await getProfile();
+
+      emit(AuthSuccess("Xác minh số điện thoại thành công"));
+      emit(AuthAuthenticated(user));
+    } catch (e) {
+      emit(AuthError(_extractMessage(e)));
+    }
+  }
+
   Future<void> _onRegister(
     RegisterEvent event,
     Emitter<AuthState> emit,
@@ -140,6 +191,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         event.phone,
         event.email,
         event.password,
+        event.firebaseIdToken,
       );
       emit(AuthAuthenticated(user));
     } catch (e) {
@@ -177,6 +229,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       await forgotPassword(event.email);
       emit(AuthSuccess("Đã gửi OTP tới email"));
+    } catch (e) {
+      emit(AuthError(_extractMessage(e)));
+    }
+  }
+
+  Future<void> _onVerifyForgotPasswordOtp(
+    VerifyForgotPasswordOtpEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      await verifyForgotPasswordOtp(event.email, event.otp);
+      emit(AuthSuccess("Xác nhận OTP thành công"));
     } catch (e) {
       emit(AuthError(_extractMessage(e)));
     }
@@ -223,9 +288,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           event.avatarUrl,
         );
 
-        final user = await getProfile();
-        emit(AuthAuthenticated(user));
+        final freshUser = await getProfile();
+
         emit(AuthSuccess("Cập nhật thông tin thành công"));
+        emit(AuthAuthenticated(freshUser));
       });
     } catch (e) {
       emit(AuthError(_extractMessage(e)));
@@ -245,9 +311,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _runSerialized(() async {
         await uploadAvatar(event.file);
 
-        final user = await getProfile();
-        emit(AuthAuthenticated(user));
+        final freshUser = await getProfile();
+
         emit(AuthSuccess("Cập nhật avatar thành công"));
+        emit(AuthAuthenticated(freshUser));
       });
     } catch (e) {
       emit(AuthError(_extractMessage(e)));

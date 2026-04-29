@@ -4,6 +4,7 @@ class User {
   final String? name;
   final String? phone;
   final String? avatarUrl;
+  final bool isPhoneVerified;
 
   User({
     required this.id,
@@ -11,5 +12,6 @@ class User {
     this.name,
     this.phone,
     this.avatarUrl,
+    this.isPhoneVerified = false,
   });
 }

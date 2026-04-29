@@ -8,15 +8,34 @@ import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
 
-class ChangePasswordPage extends StatelessWidget {
+class ChangePasswordPage extends StatefulWidget {
   const ChangePasswordPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final formKey = GlobalKey<FormState>();
-    final oldPass = TextEditingController();
-    final newPass = TextEditingController();
+  State<ChangePasswordPage> createState() => _ChangePasswordPageState();
+}
 
+class _ChangePasswordPageState extends State<ChangePasswordPage> {
+  final formKey = GlobalKey<FormState>();
+
+  final oldPass = TextEditingController();
+  final newPass = TextEditingController();
+  final confirmPass = TextEditingController();
+
+  bool _obscureOld = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
+
+  @override
+  void dispose() {
+    oldPass.dispose();
+    newPass.dispose();
+    confirmPass.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is AuthSuccess) {
@@ -76,31 +95,62 @@ class ChangePasswordPage extends StatelessWidget {
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       child: Column(
                         children: [
-                          _dialogTextField(
+                          _passwordField(
                             controller: oldPass,
                             labelText: "Mật khẩu cũ",
-                            obscureText: true,
+                            obscureText: _obscureOld,
+                            onToggleObscure: () {
+                              setState(() => _obscureOld = !_obscureOld);
+                            },
                             validator: (value) {
                               final v = value?.trim() ?? '';
-                              if (v.isEmpty) return "Vui lòng nhập mật khẩu cũ";
-                              if (v.length < 6)
+                              if (v.isEmpty) {
+                                return "Vui lòng nhập mật khẩu cũ";
+                              }
+                              if (v.length < 6) {
                                 return "Mật khẩu tối thiểu 6 ký tự";
+                              }
                               return null;
                             },
                           ),
                           const SizedBox(height: 12),
-                          _dialogTextField(
+                          _passwordField(
                             controller: newPass,
                             labelText: "Mật khẩu mới",
-                            obscureText: true,
+                            obscureText: _obscureNew,
+                            onToggleObscure: () {
+                              setState(() => _obscureNew = !_obscureNew);
+                            },
                             validator: (value) {
                               final v = value?.trim() ?? '';
-                              if (v.isEmpty)
+                              if (v.isEmpty) {
                                 return "Vui lòng nhập mật khẩu mới";
-                              if (v.length < 6)
+                              }
+                              if (v.length < 6) {
                                 return "Mật khẩu tối thiểu 6 ký tự";
+                              }
                               if (v == oldPass.text.trim()) {
                                 return "Mật khẩu mới phải khác mật khẩu cũ";
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _passwordField(
+                            controller: confirmPass,
+                            labelText: "Xác nhận mật khẩu mới",
+                            obscureText: _obscureConfirm,
+                            onToggleObscure: () {
+                              setState(
+                                  () => _obscureConfirm = !_obscureConfirm);
+                            },
+                            validator: (value) {
+                              final v = value?.trim() ?? '';
+                              if (v.isEmpty) {
+                                return "Vui lòng xác nhận mật khẩu mới";
+                              }
+                              if (v != newPass.text.trim()) {
+                                return "Mật khẩu xác nhận không khớp";
                               }
                               return null;
                             },
@@ -128,6 +178,8 @@ class ChangePasswordPage extends StatelessWidget {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
                               ),
                               child: const Text("Xác nhận"),
                             ),
@@ -145,10 +197,11 @@ class ChangePasswordPage extends StatelessWidget {
     );
   }
 
-  Widget _dialogTextField({
+  Widget _passwordField({
     required TextEditingController controller,
     required String labelText,
-    bool obscureText = false,
+    required bool obscureText,
+    required VoidCallback onToggleObscure,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {
@@ -168,6 +221,15 @@ class ChangePasswordPage extends StatelessWidget {
           vertical: 16,
         ),
         errorMaxLines: 2,
+        suffixIcon: IconButton(
+          onPressed: onToggleObscure,
+          icon: Icon(
+            obscureText
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+            color: AppColors.textSecondary,
+          ),
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: AppColors.borderSoft),

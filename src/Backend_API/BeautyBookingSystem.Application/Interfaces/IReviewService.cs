@@ -10,7 +10,14 @@ namespace BeautyBookingSystem.Application.Interfaces
         Task<List<ReviewResponseDto>> GetMyReviewsAsync(int customerId);
         Task ReplyAsync(int reviewId, string reply);
         Task<List<StoreReviewResponseDto>> GetTopByStoreIdAsync(int storeId, int take = 5);
-        Task<List<StoreReviewResponseDto>> GetPagedByStoreIdAsync(int storeId, int page, int pageSize);
-        Task<int> CountByStoreIdAsync(int storeId);
+
+        Task<List<StoreReviewResponseDto>> GetPagedByStoreIdAsync(
+            int storeId,
+            int page,
+            int pageSize,
+            int? rating = null,
+            string sortBy = "latest");
+
+        Task<int> CountByStoreIdAsync(int storeId, int? rating = null);
     }
 }

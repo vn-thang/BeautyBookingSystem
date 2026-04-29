@@ -250,12 +250,33 @@ namespace BeautyBookingSystem.Application.Services
 
             return true;
         }
+        public async Task<bool> VerifyForgotPasswordOtpAsync(VerifyForgotPasswordOtpRequest request)
+        {
+            var user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
+
+            if (user == null)
+                throw new NotFoundException("Tài khoản không tồn tại");
+
+            if (string.IsNullOrWhiteSpace(user.ResetPasswordOtp))
+                throw new BadRequestException("Bạn chưa yêu cầu đặt lại mật khẩu.");
+
+            if (user.ResetPasswordOtpExpiry < DateTime.UtcNow)
+                throw new BadRequestException("Mã OTP đã hết hạn");
+
+            if (user.ResetPasswordOtp != request.Otp)
+                throw new BadRequestException("Mã OTP không đúng");
+
+            return true;
+        }
 
         public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
         {
             var user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
                 throw new NotFoundException("Tài khoản không tồn tại");
+
+            if (string.IsNullOrWhiteSpace(user.ResetPasswordOtp))
+                throw new BadRequestException("OTP chưa được xác thực");
 
             if (user.ResetPasswordOtp != request.Otp)
                 throw new BadRequestException("Mã OTP không đúng");
@@ -322,125 +343,172 @@ namespace BeautyBookingSystem.Application.Services
 
             return true;
         }
-       public async Task<TokenResponse> LoginWithFirebaseAsync(FirebaseLoginRequest request)
+        public async Task<TokenResponse> LoginWithFirebaseAsync(FirebaseLoginRequest request)
         {
+            if (string.IsNullOrWhiteSpace(request.IdToken))
+                throw new BadRequestException("Thiếu mã xác thực Firebase.");
+
             FirebaseToken decodedToken;
             try
             {
                 decodedToken = await FirebaseAuth.DefaultInstance.VerifyIdTokenAsync(request.IdToken);
             }
-            catch (Exception)
+            catch
             {
                 throw new BadRequestException("Firebase Token không hợp lệ hoặc đã hết hạn.");
             }
 
             string uid = decodedToken.Uid;
-            string email = decodedToken.Claims.TryGetValue("email", out var emailObj) ? emailObj.ToString()! : "";
-            string name = decodedToken.Claims.TryGetValue("name", out var nameObj) ? nameObj.ToString()! : "Khách hàng";
-            string picture = decodedToken.Claims.TryGetValue("picture", out var picObj) ? picObj.ToString()! : "";
-            string phone = decodedToken.Claims.TryGetValue("phone_number", out var phoneObj) ? phoneObj.ToString()! : "";
+            string email = decodedToken.Claims.TryGetValue("email", out var emailObj) ? emailObj?.ToString() ?? "" : "";
+            string fullName = decodedToken.Claims.TryGetValue("name", out var nameObj) ? nameObj?.ToString() ?? "Khách hàng" : "Khách hàng";
+            string avatarUrl = decodedToken.Claims.TryGetValue("picture", out var picObj) ? picObj?.ToString() ?? "" : "";
+            string phone = decodedToken.Claims.TryGetValue("phone_number", out var phoneObj) ? phoneObj?.ToString() ?? "" : "";
 
-            AuthProvider provider = AuthProvider.Local;
-            if (decodedToken.Claims.TryGetValue("firebase", out var firebaseInfoObj) && firebaseInfoObj is IDictionary<string, object> firebaseInfo)
+            var provider = AuthProvider.Google;
+
+            // 1) Đã từng đăng nhập bằng FirebaseUid thì đăng nhập luôn
+            var userByUid = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.FirebaseUid == uid);
+            if (userByUid != null)
             {
-                var signInProvider = firebaseInfo["sign_in_provider"]?.ToString();
-                if (signInProvider == "google.com") provider = AuthProvider.Google;
-                else if (signInProvider == "facebook.com") provider = AuthProvider.Facebook;
-            }
-
-            var user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.FirebaseUid == uid);
-
-            if (user == null && !string.IsNullOrEmpty(email))
-            {
-                var existingUser = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == email);
-                if (existingUser != null) 
-                {
-                    if (!request.LinkToExistingAccount)
-                    {
-                        throw new BadRequestException("REQUIRE_LINK_CONFIRM:Email này đã được đăng ký. Bạn có muốn liên kết không?");
-                    }
-                    user = existingUser;
-                    user.FirebaseUid = uid; 
-                }
-            }
-
-            if (user == null && !string.IsNullOrEmpty(phone))
-            {
-                user = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Phone == phone);
-                if (user != null) 
-                {
-                    user.FirebaseUid = uid;
-                    user.IsPhoneVerified = true;
-                }
-            }
-
-            if (user == null)
-            {
-                if (request.IsStoreOwnerApp && string.IsNullOrEmpty(phone))
-                {
-                    throw new BadRequestException($"REQUIRE_PHONE_VERIFICATION|{email}|{name}|{picture}");
-                }
-                user = new User
-                {
-                    FirebaseUid = uid,
-                    Email = email,
-                    FullName = name,
-                    AvatarUrl = picture,
-                    Phone = phone ?? "",
-                    AuthProvider = provider,
-                    Role = request.IsStoreOwnerApp ? Role.StoreOwner : Role.Customer, 
-                    Status = UserStatus.Active,
-                    IsPhoneVerified = !string.IsNullOrEmpty(phone) 
-                };
-                if (user.Role == Role.StoreOwner)
-                {
-                    user.Stores.Add(new Store 
-                    {
-                        Name = "Chưa cập nhật",
-                        Address = "Chưa cập nhật",
-                        Phone = phone ?? "", 
-                        Description = "",
-                        IsOpen = false,
-                        ApprovalStatus = ApprovalStatus.Incomplete
-                    });
-                }
-
-                await _unitOfWork.UserRepository.AddAsync(user);
-            }
-            else
-            {
-                if (user.Status != UserStatus.Active)
+                if (userByUid.Status != UserStatus.Active)
                     throw new BadRequestException("Tài khoản của bạn đã bị khóa.");
-                    
-                if (user.Id > 0) _unitOfWork.UserRepository.Update(user);
-            }
-            if (!string.IsNullOrEmpty(request.FcmToken))
-            {
-                user.FcmToken = request.FcmToken;
+
+                userByUid.AuthProvider = provider;
+
+                if (!string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(userByUid.Email))
+                    userByUid.Email = email;
+
+                if (!string.IsNullOrWhiteSpace(phone) && string.IsNullOrWhiteSpace(userByUid.Phone))
+                    userByUid.Phone = phone;
+
+                if (!string.IsNullOrWhiteSpace(request.FcmToken))
+                    userByUid.FcmToken = request.FcmToken;
+
+                _unitOfWork.UserRepository.Update(userByUid);
+                await _unitOfWork.SaveChangesAsync();
+
+                var tokenResult = await GenerateTokensAndUpdateUserAsync(userByUid);
+                tokenResult.Role = userByUid.Role.ToString();
+                return tokenResult;
             }
 
+            // 2) Nếu chưa có FirebaseUid, thử tìm theo email
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                var userByEmail = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == email);
+
+                if (userByEmail != null)
+                {
+                    if (userByEmail.Status != UserStatus.Active)
+                        throw new BadRequestException("Tài khoản của bạn đã bị khóa.");
+
+                    // Tài khoản này đã là Google rồi -> login luôn, không hỏi link nữa
+                    if (userByEmail.AuthProvider == AuthProvider.Google)
+                    {
+                        userByEmail.FirebaseUid = uid;
+                        userByEmail.AuthProvider = provider;
+
+                        if (!string.IsNullOrWhiteSpace(phone) && string.IsNullOrWhiteSpace(userByEmail.Phone))
+                            userByEmail.Phone = phone;
+
+                        if (!string.IsNullOrWhiteSpace(request.FcmToken))
+                            userByEmail.FcmToken = request.FcmToken;
+
+                        _unitOfWork.UserRepository.Update(userByEmail);
+                        await _unitOfWork.SaveChangesAsync();
+
+                        var tokenResult = await GenerateTokensAndUpdateUserAsync(userByEmail);
+                        tokenResult.Role = userByEmail.Role.ToString();
+                        return tokenResult;
+                    }
+
+                    // Tài khoản thường đăng ký bằng mật khẩu -> chỉ lúc này mới hỏi liên kết
+                    if (!request.LinkToExistingAccount)
+                        throw new BadRequestException("REQUIRE_LINK_CONFIRM:Email này đã được đăng ký. Bạn có muốn liên kết không?");
+
+                    userByEmail.FirebaseUid = uid;
+                    userByEmail.AuthProvider = provider;
+
+                    if (!string.IsNullOrWhiteSpace(phone) && string.IsNullOrWhiteSpace(userByEmail.Phone))
+                        userByEmail.Phone = phone;
+
+                    if (!string.IsNullOrWhiteSpace(request.FcmToken))
+                        userByEmail.FcmToken = request.FcmToken;
+
+                    _unitOfWork.UserRepository.Update(userByEmail);
+                    await _unitOfWork.SaveChangesAsync();
+
+                    var linkedTokenResult = await GenerateTokensAndUpdateUserAsync(userByEmail);
+                    linkedTokenResult.Role = userByEmail.Role.ToString();
+                    return linkedTokenResult;
+                }
+            }
+
+            // 3) Thử tìm theo số điện thoại nếu có
+            if (!string.IsNullOrWhiteSpace(phone))
+            {
+                var userByPhone = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Phone == phone);
+
+                if (userByPhone != null)
+                {
+                    if (userByPhone.Status != UserStatus.Active)
+                        throw new BadRequestException("Tài khoản của bạn đã bị khóa.");
+
+                    userByPhone.FirebaseUid = uid;
+                    userByPhone.IsPhoneVerified = true;
+                    userByPhone.AuthProvider = provider;
+
+                    if (!string.IsNullOrWhiteSpace(request.FcmToken))
+                        userByPhone.FcmToken = request.FcmToken;
+
+                    _unitOfWork.UserRepository.Update(userByPhone);
+                    await _unitOfWork.SaveChangesAsync();
+
+                    var tokenResult = await GenerateTokensAndUpdateUserAsync(userByPhone);
+                    tokenResult.Role = userByPhone.Role.ToString();
+                    return tokenResult;
+                }
+            }
+
+            // 4) Chưa có tài khoản -> tạo mới
+            if (request.IsStoreOwnerApp && string.IsNullOrWhiteSpace(phone))
+                throw new BadRequestException("REQUIRE_PHONE_VERIFICATION:Bạn cần xác thực số điện thoại trước.");
+
+            var newUser = new User
+            {
+                FirebaseUid = uid,
+                Email = email,
+                FullName = fullName,
+                AvatarUrl = avatarUrl,
+                Phone = phone ?? "",
+                AuthProvider = provider,
+                Role = request.IsStoreOwnerApp ? Role.StoreOwner : Role.Customer,
+                Status = UserStatus.Active,
+                IsPhoneVerified = !string.IsNullOrWhiteSpace(phone),
+                FcmToken = request.FcmToken
+            };
+
+            if (newUser.Role == Role.StoreOwner)
+            {
+                newUser.Stores.Add(new Store
+                {
+                    Name = "Chưa cập nhật",
+                    Address = "Chưa cập nhật",
+                    Phone = phone ?? "",
+                    Description = "",
+                    IsOpen = false,
+                    ApprovalStatus = ApprovalStatus.Incomplete
+                });
+            }
+
+            await _unitOfWork.UserRepository.AddAsync(newUser);
             await _unitOfWork.SaveChangesAsync();
 
-            int? currentStoreId = null;
-            string? currentStoreStatus = null;
-
-            if (user.Role == Role.StoreOwner)
-            {
-                var store = await _unitOfWork.StoreRepository.FirstOrDefaultAsync(s => s.OwnerId == user.Id);
-                if (store != null)
-                {
-                    currentStoreId = store.Id;
-                    currentStoreStatus = store.ApprovalStatus.ToString();
-                }
-            }
-
-            var tokenResponse = await GenerateTokensAndUpdateUserAsync(user, currentStoreId);
-            tokenResponse.Role = user.Role.ToString();
-            if (currentStoreStatus != null) tokenResponse.StoreStatus = currentStoreStatus;
-
-            return tokenResponse;
+            var newTokenResult = await GenerateTokensAndUpdateUserAsync(newUser);
+            newTokenResult.Role = newUser.Role.ToString();
+            return newTokenResult;
         }
-      
+
         public async Task<bool> VerifyPhoneNumberAsync(string userId, string firebaseIdToken)
         {
             var user = await GetUserByIdAsync(userId);

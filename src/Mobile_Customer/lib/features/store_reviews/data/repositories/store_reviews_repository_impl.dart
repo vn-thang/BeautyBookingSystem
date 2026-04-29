@@ -12,11 +12,15 @@ class StoreReviewsRepositoryImpl implements StoreReviewsRepository {
     required int storeId,
     required int page,
     required int pageSize,
+    int? rating,
+    String sortBy = 'latest',
   }) async {
     final model = await remoteDataSource.getStoreReviews(
       storeId: storeId,
       page: page,
       pageSize: pageSize,
+      rating: rating,
+      sortBy: sortBy,
     );
     return model.toEntity();
   }

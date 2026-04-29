@@ -8,7 +8,7 @@ namespace BeautyBookingSystem.Application.DTOs.Booking
         public DateTime CreatedAt { get; set; }
 
         public DateTime AppointmentDateTime { get; set; }
-
+        public int StoreId { get; set; }
         public string StoreName { get; set; } = string.Empty;
         public string? StoreAvatarUrl { get; set; }
 

@@ -11,12 +11,14 @@ class Register {
     String phone,
     String email,
     String password,
+    String firebaseIdToken,
   ) {
     return repository.register(
       fullName,
       phone,
       email,
       password,
+      firebaseIdToken,
     );
   }
 }

@@ -10,11 +10,15 @@ class GetStoreReviewsUseCase {
     required int storeId,
     int page = 1,
     int pageSize = 10,
+    int? rating,
+    String sortBy = 'latest',
   }) {
     return repository.getStoreReviews(
       storeId: storeId,
       page: page,
       pageSize: pageSize,
+      rating: rating,
+      sortBy: sortBy,
     );
   }
 }

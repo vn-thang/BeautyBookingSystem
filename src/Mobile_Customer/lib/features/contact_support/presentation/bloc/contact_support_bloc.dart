@@ -22,7 +22,9 @@ class ContactSupportBloc
       final result = await getContactInfoUseCase();
       emit(ContactSupportLoaded(result));
     } catch (e) {
-      emit(ContactSupportError('Không tải được thông tin hỗ trợ'));
+      emit(ContactSupportError(
+        e.toString().replaceFirst('Exception: ', ''),
+      ));
     }
   }
 }

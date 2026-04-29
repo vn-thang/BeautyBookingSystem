@@ -49,10 +49,10 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
   }
 
   Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
-    final phone = phoneNumber.trim();
+    final phone = phoneNumber.replaceAll(RegExp(r'\s+'), '').trim();
     if (phone.isEmpty || phone == 'Đang cập nhật') return;
 
-    final Uri uri = Uri(scheme: 'tel', path: phone);
+    final Uri uri = Uri.parse('tel:$phone');
     await _launchInExternalApp(context, uri);
   }
 
@@ -60,10 +60,8 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
     final mail = email.trim();
     if (mail.isEmpty || mail == 'Đang cập nhật') return;
 
-    final Uri uri = Uri(
-      scheme: 'mailto',
-      path: mail,
-      queryParameters: {'subject': 'Cần hỗ trợ từ BeautyBooking'},
+    final Uri uri = Uri.parse(
+      'mailto:$mail?subject=${Uri.encodeComponent('Cần hỗ trợ từ BeautyBooking')}',
     );
     await _launchInExternalApp(context, uri);
   }

@@ -7,6 +7,8 @@ abstract class StoreReviewsRemoteDataSource {
     required int storeId,
     required int page,
     required int pageSize,
+    int? rating,
+    String sortBy,
   });
 
   Future<List<StoreReviewModel>> getTopStoreReviews({
@@ -25,13 +27,22 @@ class StoreReviewsRemoteDataSourceImpl implements StoreReviewsRemoteDataSource {
     required int storeId,
     required int page,
     required int pageSize,
+    int? rating,
+    String sortBy = 'latest',
   }) async {
+    final query = <String, dynamic>{
+      'page': page,
+      'pageSize': pageSize,
+      'sortBy': sortBy,
+    };
+
+    if (rating != null) {
+      query['rating'] = rating;
+    }
+
     final res = await dio.get(
       'reviews/store/$storeId',
-      queryParameters: {
-        'page': page,
-        'pageSize': pageSize,
-      },
+      queryParameters: query,
     );
 
     return PagedStoreReviewModel.fromJson(res.data as Map<String, dynamic>);

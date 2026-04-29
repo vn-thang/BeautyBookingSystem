@@ -446,7 +446,7 @@ namespace BeautyBookingSystem.Application.Services
                         Id = b.Id,
                         CreatedAt = b.CreatedAt,
                         AppointmentDateTime = appointmentDateTime,
-
+                        StoreId = b.StoreId,
                         StoreName = b.Store?.Name ?? string.Empty,
                         StoreAvatarUrl = b.Store?.LogoUrl,
 

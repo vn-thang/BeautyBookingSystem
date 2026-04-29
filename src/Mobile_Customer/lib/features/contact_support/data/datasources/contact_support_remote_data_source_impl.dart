@@ -12,7 +12,16 @@ class ContactSupportRemoteDataSourceImpl
   @override
   Future<ContactInfoModel> getContactInfo() async {
     final response = await dio.get('/public/system-configs/contact-info');
-    final data = Map<String, dynamic>.from(response.data as Map);
-    return ContactInfoModel.fromJson(data);
+
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      return ContactInfoModel.fromJson(data);
+    }
+
+    if (data is Map) {
+      return ContactInfoModel.fromJson(Map<String, dynamic>.from(data));
+    }
+
+    throw Exception('Dữ liệu contact info không hợp lệ');
   }
 }
