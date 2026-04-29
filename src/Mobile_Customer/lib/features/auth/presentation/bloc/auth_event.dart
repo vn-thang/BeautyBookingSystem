@@ -1,4 +1,5 @@
 import 'package:image_picker/image_picker.dart';
+
 abstract class AuthEvent {}
 
 class LoginEvent extends AuthEvent {
@@ -10,18 +11,26 @@ class LoginEvent extends AuthEvent {
     required this.password,
   });
 }
+
 class RegisterEvent extends AuthEvent {
   final String fullName;
   final String phone;
   final String email;
   final String password;
+  final String firebaseIdToken;
 
   RegisterEvent({
     required this.fullName,
     required this.phone,
     required this.email,
     required this.password,
+    required this.firebaseIdToken,
   });
+}
+
+class VerifyPhoneEvent extends AuthEvent {
+  final String firebaseIdToken;
+  VerifyPhoneEvent(this.firebaseIdToken);
 }
 
 class ChangePasswordEvent extends AuthEvent {
@@ -33,6 +42,16 @@ class ChangePasswordEvent extends AuthEvent {
 class ForgotPasswordEvent extends AuthEvent {
   final String email;
   ForgotPasswordEvent(this.email);
+}
+
+class VerifyForgotPasswordOtpEvent extends AuthEvent {
+  final String email;
+  final String otp;
+
+  VerifyForgotPasswordOtpEvent({
+    required this.email,
+    required this.otp,
+  });
 }
 
 class ResetPasswordEvent extends AuthEvent {
@@ -52,6 +71,20 @@ class UpdateProfileEvent extends AuthEvent {
 class UploadAvatarEvent extends AuthEvent {
   final XFile file;
   UploadAvatarEvent(this.file);
+}
+
+class LoginWithFirebaseEvent extends AuthEvent {
+  final String idToken;
+  final String? fcmToken;
+  final bool linkToExistingAccount;
+  final bool isStoreOwnerApp;
+
+  LoginWithFirebaseEvent({
+    required this.idToken,
+    this.fcmToken,
+    this.linkToExistingAccount = false,
+    this.isStoreOwnerApp = false,
+  });
 }
 
 class LogoutEvent extends AuthEvent {}

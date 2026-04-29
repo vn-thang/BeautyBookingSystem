@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 
-import '../../../customer_favorite/presentation/bloc/customer_favorite_bloc.dart';
-import '../../../customer_favorite/presentation/widgets/customer_favorite_button.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mobile_customer/features/home/data/datasources/home_remote_datasource.dart';
+
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
@@ -13,17 +14,28 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decorations.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
-import '../../../home/data/datasources/home_remote_datasource.dart';
-import '../../../home/domain/entities/favorite_service.dart';
-import '../../../home/domain/entities/favorite_store.dart';
-
 class ProfilePage extends StatelessWidget {
-  final HomeRemoteDataSource homeRemoteDataSource;
-
   const ProfilePage({
     super.key,
-    required this.homeRemoteDataSource,
+    required HomeRemoteDataSource homeRemoteDataSource,
   });
+
+  Future<void> _logout(BuildContext context) async {
+    try {
+      await fb_auth.FirebaseAuth.instance.signOut();
+
+      final googleSignIn = GoogleSignIn(
+        serverClientId:
+            '361936167810-bs47k71bsrvrcg8bt0d3780focaif9b7.apps.googleusercontent.com',
+      );
+
+      await googleSignIn.signOut();
+    } catch (_) {}
+
+    if (context.mounted) {
+      context.read<AuthBloc>().add(LogoutEvent());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +45,7 @@ class ProfilePage extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: AppColors.surface,
+              backgroundColor: AppColors.danger,
             ),
           );
         }
@@ -67,68 +79,72 @@ class ProfilePage extends StatelessWidget {
                   );
                 }
 
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 24,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface.withValues(alpha: 0.88),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: AppColors.borderSoft),
-                        boxShadow: AppDecorations.cardShadow,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 110,
-                            height: 110,
-                            decoration: BoxDecoration(
-                              gradient: AppDecorations.heroGradient,
-                              shape: BoxShape.circle,
-                              boxShadow: AppDecorations.avatarShadow,
-                            ),
-                            child: const Icon(
-                              Icons.person_off_rounded,
-                              size: 54,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          Text(
-                            "Bạn chưa đăng nhập",
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.pageTitle,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Vui lòng đăng nhập để xem và quản lý hồ sơ cá nhân của bạn.",
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.bodyMuted,
-                          ),
-                          const SizedBox(height: 22),
-                          SizedBox(
-                            width: double.infinity,
-                            child: _actionButton(
-                              context,
-                              text: "Đi đến trang đăng nhập",
-                              icon: Icons.login_rounded,
-                              primary: true,
-                              onTap: () => context.go("/login"),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
+                return _buildGuestView(context);
               },
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGuestView(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 24,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.88),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: AppColors.borderSoft),
+            boxShadow: AppDecorations.cardShadow,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  gradient: AppDecorations.heroGradient,
+                  shape: BoxShape.circle,
+                  boxShadow: AppDecorations.avatarShadow,
+                ),
+                child: const Icon(
+                  Icons.person_off_rounded,
+                  size: 54,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                "Bạn chưa đăng nhập",
+                textAlign: TextAlign.center,
+                style: AppTextStyles.pageTitle,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Vui lòng đăng nhập để quản lý tài khoản của bạn.",
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMuted,
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                child: _actionButton(
+                  context,
+                  text: "Đi đến đăng nhập",
+                  icon: Icons.login_rounded,
+                  primary: true,
+                  onTap: () => context.go("/login"),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -141,13 +157,13 @@ class ProfilePage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _profileHeader(context, user),
+          _profileHeader(user),
           const SizedBox(height: 18),
           _sectionTitle("Hồ sơ"),
           _menuTile(
             icon: Icons.person_outline_rounded,
             title: "Thông tin cá nhân",
-            subtitle: "Xem và chỉnh sửa hồ sơ của bạn",
+            subtitle: "Xem và chỉnh sửa hồ sơ",
             onTap: () => context.push('/profile/info'),
           ),
           const SizedBox(height: 18),
@@ -155,7 +171,7 @@ class ProfilePage extends StatelessWidget {
           _menuTile(
             icon: Icons.favorite_border_rounded,
             title: "Danh sách yêu thích",
-            subtitle: "Xem cửa hàng và dịch vụ đã lưu",
+            subtitle: "Cửa hàng và dịch vụ đã lưu",
             onTap: () => context.push('/profile/favorites'),
           ),
           const SizedBox(height: 18),
@@ -163,7 +179,7 @@ class ProfilePage extends StatelessWidget {
           _menuTile(
             icon: Icons.settings_outlined,
             title: "Cài đặt",
-            subtitle: "Đổi mật khẩu, chính sách, điều khoản, liên hệ",
+            subtitle: "Mật khẩu, chính sách, điều khoản",
             onTap: () => context.push('/settings'),
           ),
           const SizedBox(height: 18),
@@ -180,15 +196,13 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _profileHeader(BuildContext context, dynamic user) {
+  Widget _profileHeader(dynamic user) {
     final name = _safeName(user);
-    final email = _safeEmail(user);
-    final phone = _safePhone(user);
     final avatarUrl = _safeAvatarUrl(user);
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
         color: AppColors.surface.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(30),
@@ -197,16 +211,6 @@ class ProfilePage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              const Spacer(),
-              _iconCircle(
-                icon: Icons.settings_outlined,
-                onTap: () {},
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
           Container(
             width: 132,
             height: 132,
@@ -215,18 +219,10 @@ class ProfilePage extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: AppDecorations.avatarShadow,
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: () => _pickAndUploadAvatar(context),
-                child: ClipOval(
-                  child: _buildAvatar(
-                    avatarUrl: avatarUrl,
-                    name: name,
-                    email: email,
-                  ),
-                ),
+            child: ClipOval(
+              child: _buildAvatar(
+                avatarUrl: avatarUrl,
+                name: name,
               ),
             ),
           ),
@@ -236,32 +232,6 @@ class ProfilePage extends StatelessWidget {
             textAlign: TextAlign.center,
             style: AppTextStyles.pageTitle,
           ),
-          const SizedBox(height: 6),
-          Text(
-            email.isNotEmpty ? email : "Chưa có email",
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodyMuted,
-          ),
-          if (phone != null && phone.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 8,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceSoft,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: AppColors.borderSoft),
-              ),
-              child: Text(
-                phone,
-                style: AppTextStyles.caption.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -269,7 +239,7 @@ class ProfilePage extends StatelessWidget {
 
   Widget _sectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 10, top: 2),
+      padding: const EdgeInsets.only(left: 4, bottom: 10),
       child: Text(
         title,
         style: AppTextStyles.caption.copyWith(
@@ -283,7 +253,7 @@ class ProfilePage extends StatelessWidget {
   Widget _menuTile({
     required IconData icon,
     required String title,
-    String? subtitle,
+    required String subtitle,
     required VoidCallback onTap,
     Color? iconColor,
   }) {
@@ -328,15 +298,11 @@ class ProfilePage extends StatelessWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: AppTextStyles.caption,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.caption,
+                    ),
                   ],
                 ),
               ),
@@ -354,98 +320,39 @@ class ProfilePage extends StatelessWidget {
   Widget _buildAvatar({
     required String? avatarUrl,
     required String name,
-    required String email,
   }) {
     if (avatarUrl != null && avatarUrl.trim().isNotEmpty) {
       return Image.network(
         avatarUrl.trim(),
         fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        errorBuilder: (_, __, ___) => _avatarFallback(name: name, email: email),
+        errorBuilder: (_, __, ___) => _avatarFallback(name),
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
-          return Container(
-            decoration: const BoxDecoration(
-              gradient: AppDecorations.heroGradient,
-            ),
-            alignment: Alignment.center,
-            child: const SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: AppColors.primary,
-              ),
+
+          return const Center(
+            child: CircularProgressIndicator(
+              color: AppColors.primary,
             ),
           );
         },
       );
     }
 
-    return _avatarFallback(name: name, email: email);
+    return _avatarFallback(name);
   }
 
-  Widget _avatarFallback({required String name, required String email}) {
-    final initials = _initials(name, email);
+  Widget _avatarFallback(String name) {
     return Container(
       decoration: const BoxDecoration(
         gradient: AppDecorations.heroGradient,
       ),
       alignment: Alignment.center,
       child: Text(
-        initials,
+        _initials(name),
         style: AppTextStyles.sectionTitle.copyWith(
-          color: AppColors.primary,
           fontSize: 36,
+          color: AppColors.primary,
         ),
-      ),
-    );
-  }
-
-  Widget _infoTile({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.borderSoft),
-        boxShadow: AppDecorations.softShadow,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: AppColors.primary, size: 22),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: AppTextStyles.caption),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -458,6 +365,14 @@ class ProfilePage extends StatelessWidget {
     bool danger = false,
     required VoidCallback onTap,
   }) {
+    final color = primary ? AppColors.primary : AppColors.surface;
+
+    final textColor = primary
+        ? AppColors.surface
+        : danger
+            ? AppColors.danger
+            : AppColors.primary;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -465,10 +380,13 @@ class ProfilePage extends StatelessWidget {
         onTap: onTap,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 16),
+          padding: const EdgeInsets.symmetric(
+            vertical: 15,
+            horizontal: 16,
+          ),
           decoration: BoxDecoration(
+            color: color,
             borderRadius: BorderRadius.circular(20),
-            color: primary ? AppColors.primary : AppColors.surface,
             border: Border.all(
               color: primary ? AppColors.primary : AppColors.borderSoft,
             ),
@@ -477,401 +395,25 @@ class ProfilePage extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 19,
-                color: primary
-                    ? AppColors.surface
-                    : danger
-                        ? AppColors.danger
-                        : AppColors.primary,
-              ),
+              Icon(icon, size: 19, color: textColor),
               const SizedBox(width: 10),
               Text(
                 text,
                 style: AppTextStyles.body.copyWith(
-                  fontSize: 14.5,
                   fontWeight: FontWeight.w700,
-                  color: primary
-                      ? AppColors.surface
-                      : danger
-                          ? AppColors.danger
-                          : AppColors.primary,
+                  color: textColor,
                 ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _iconCircle({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceSoft,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: AppColors.borderSoft),
-          ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: AppColors.primary,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showProfileBottomSheet(BuildContext context, dynamic user) {
-    final name = _safeName(user);
-    final email = _safeEmail(user);
-    final phone = _safePhone(user);
-    final avatarUrl = _safeAvatarUrl(user);
-
-    showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 12,
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 42,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.borderSoft,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    gradient: AppDecorations.heroGradient,
-                    shape: BoxShape.circle,
-                    boxShadow: AppDecorations.avatarShadow,
-                  ),
-                  child: ClipOval(
-                    child: _buildAvatar(
-                      avatarUrl: avatarUrl,
-                      name: name,
-                      email: email,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  name.isNotEmpty ? name : "Người dùng",
-                  style: AppTextStyles.pageTitle,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  email.isNotEmpty ? email : "Chưa có email",
-                  style: AppTextStyles.bodyMuted,
-                ),
-                if (phone != null && phone.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  _infoTile(
-                    icon: Icons.phone_outlined,
-                    label: "Số điện thoại",
-                    value: phone,
-                  ),
-                ],
-                const SizedBox(height: 12),
-                _infoTile(
-                  icon: Icons.badge_outlined,
-                  label: "Họ và tên",
-                  value: name.isNotEmpty ? name : "Chưa cập nhật",
-                ),
-                const SizedBox(height: 12),
-                _infoTile(
-                  icon: Icons.email_outlined,
-                  label: "Email",
-                  value: email.isNotEmpty ? email : "Chưa cập nhật",
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: _actionButton(
-                    context,
-                    text: "Chỉnh sửa thông tin",
-                    icon: Icons.edit_outlined,
-                    primary: true,
-                    onTap: () {
-                      Navigator.pop(sheetContext);
-                      _showEditProfileDialog(context, user);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showFavoritesBottomSheet(BuildContext context) {
-    Future<_FavoriteBundle> future = _loadFavoriteData();
-
-    showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            void reloadFavorites() {
-              setSheetState(() {
-                future = _loadFavoriteData();
-              });
-            }
-
-            return DefaultTabController(
-              length: 2,
-              child: FutureBuilder<_FavoriteBundle>(
-                future: future,
-                builder: (context, snapshot) {
-                  final loading =
-                      snapshot.connectionState == ConnectionState.waiting;
-                  final error = snapshot.hasError;
-                  final data = snapshot.data;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: SizedBox(
-                      height: MediaQuery.of(sheetContext).size.height * 0.78,
-                      child: Column(
-                        children: [
-                          Container(
-                            width: 42,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: AppColors.borderSoft,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 20),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                "Yêu thích",
-                                style: AppTextStyles.sectionTitle,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const TabBar(
-                            labelColor: AppColors.primary,
-                            unselectedLabelColor: AppColors.textSecondary,
-                            indicatorColor: AppColors.primary,
-                            tabs: [
-                              Tab(text: "Cửa hàng"),
-                              Tab(text: "Dịch vụ"),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Expanded(
-                            child: error
-                                ? _favoriteErrorState()
-                                : loading
-                                    ? const Center(
-                                        child: CircularProgressIndicator(
-                                          color: AppColors.primary,
-                                        ),
-                                      )
-                                    : TabBarView(
-                                        children: [
-                                          _favoriteStoreList(
-                                            data?.stores ?? const [],
-                                            reloadFavorites,
-                                          ),
-                                          _favoriteServiceList(
-                                            data?.services ?? const [],
-                                            reloadFavorites,
-                                          ),
-                                        ],
-                                      ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _favoriteEmptyCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 22),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.borderSoft),
-        boxShadow: AppDecorations.softShadow,
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceSoft,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(icon, color: AppColors.primary, size: 32),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            title,
-            style: AppTextStyles.body.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: AppTextStyles.bodyMuted,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showInfoSheet(
-    BuildContext context, {
-    required String title,
-    required String content,
-  }) {
-    showModalBottomSheet(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.borderSoft,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(title, style: AppTextStyles.sectionTitle),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                content,
-                style: AppTextStyles.bodyMuted,
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(22),
-        ),
-        backgroundColor: AppColors.surface,
-        title: const Text(
-          "Đăng xuất",
-          style: AppTextStyles.sectionTitle,
-        ),
-        content: const Text("Bạn chắc chắn muốn đăng xuất?"),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("Huỷ"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<AuthBloc>().add(LogoutEvent());
-              Navigator.pop(dialogContext);
-              Future.microtask(() {
-                context.go("/login");
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: const Text("Đăng xuất"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showChangePasswordDialog(BuildContext context) {
-    final formKey = GlobalKey<FormState>();
-    final oldPass = TextEditingController();
-    final newPass = TextEditingController();
-
-    showDialog(
-      context: context,
       builder: (dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
@@ -879,345 +421,50 @@ class ProfilePage extends StatelessWidget {
           ),
           backgroundColor: AppColors.surface,
           title: const Text(
-            "Đổi mật khẩu",
+            "Đăng xuất",
             style: AppTextStyles.sectionTitle,
           ),
-          content: Form(
-            key: formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _dialogTextField(
-                    controller: oldPass,
-                    labelText: "Mật khẩu cũ",
-                    obscureText: true,
-                    validator: (value) {
-                      final v = value?.trim() ?? '';
-                      if (v.isEmpty) return "Vui lòng nhập mật khẩu cũ";
-                      if (v.length < 6) return "Mật khẩu tối thiểu 6 ký tự";
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _dialogTextField(
-                    controller: newPass,
-                    labelText: "Mật khẩu mới",
-                    obscureText: true,
-                    validator: (value) {
-                      final v = value?.trim() ?? '';
-                      if (v.isEmpty) return "Vui lòng nhập mật khẩu mới";
-                      if (v.length < 6) return "Mật khẩu tối thiểu 6 ký tự";
-                      if (v == oldPass.text.trim()) {
-                        return "Mật khẩu mới phải khác mật khẩu cũ";
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
-            ),
+          content: const Text(
+            "Bạn chắc chắn muốn đăng xuất?",
           ),
-          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text("Huỷ"),
             ),
             ElevatedButton(
-              onPressed: () {
-                if (!(formKey.currentState?.validate() ?? false)) return;
-
+              onPressed: () async {
                 Navigator.pop(dialogContext);
-                context.read<AuthBloc>().add(
-                      ChangePasswordEvent(
-                        oldPass.text.trim(),
-                        newPass.text.trim(),
-                      ),
-                    );
+                await _logout(context);
+
+                if (context.mounted) {
+                  context.go("/login");
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
               ),
-              child: const Text("Xác nhận"),
+              child: const Text("Đăng xuất"),
             ),
           ],
         );
       },
     );
-  }
-
-  void _showEditProfileDialog(BuildContext context, dynamic user) {
-    final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController(text: _safeName(user));
-    final emailController = TextEditingController(text: _safeEmail(user));
-    final avatarUrl = _safeAvatarUrl(user);
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
-          ),
-          backgroundColor: AppColors.surface,
-          title: const Text(
-            "Cập nhật thông tin",
-            style: AppTextStyles.sectionTitle,
-          ),
-          content: Form(
-            key: formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: () => _pickAndUploadAvatar(context),
-                    child: Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: AppDecorations.heroGradient,
-                        boxShadow: AppDecorations.avatarShadow,
-                      ),
-                      child: ClipOval(
-                        child: _buildAvatar(
-                          avatarUrl: avatarUrl,
-                          name: _safeName(user),
-                          email: _safeEmail(user),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Bấm vào ảnh để đổi avatar",
-                    style: AppTextStyles.caption,
-                  ),
-                  const SizedBox(height: 14),
-                  _dialogTextField(
-                    controller: nameController,
-                    labelText: "Tên",
-                    validator: (value) {
-                      final v = value?.trim() ?? '';
-                      if (v.isEmpty) return "Vui lòng nhập tên";
-                      if (v.length < 2) return "Tên phải có ít nhất 2 ký tự";
-                      if (v.length > 60) return "Tên không được quá 60 ký tự";
-
-                      final nameRegex =
-                          RegExp(r"^[\p{L}\s'.-]+$", unicode: true);
-                      if (!nameRegex.hasMatch(v)) {
-                        return "Tên chỉ nên chứa chữ và khoảng trắng";
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _dialogTextField(
-                    controller: emailController,
-                    labelText: "Email",
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      final v = value?.trim() ?? '';
-                      if (v.isEmpty) return "Vui lòng nhập email";
-
-                      final emailRegex =
-                          RegExp(r'^[\w\.-]+@([\w-]+\.)+[\w-]{2,}$');
-                      if (!emailRegex.hasMatch(v)) return "Email không hợp lệ";
-
-                      return null;
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text("Huỷ"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (!(formKey.currentState?.validate() ?? false)) return;
-
-                Navigator.pop(dialogContext);
-
-                context.read<AuthBloc>().add(
-                      UpdateProfileEvent(
-                        nameController.text.trim(),
-                        emailController.text.trim(),
-                        null,
-                      ),
-                    );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: const Text("Lưu"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _dialogTextField({
-    required TextEditingController controller,
-    required String labelText,
-    bool obscureText = false,
-    TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      validator: validator,
-      style: AppTextStyles.body.copyWith(
-        color: AppColors.textPrimary,
-      ),
-      decoration: InputDecoration(
-        labelText: labelText,
-        labelStyle: AppTextStyles.bodyMuted,
-        filled: true,
-        fillColor: AppColors.surfaceSoft,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-        errorMaxLines: 2,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.borderSoft),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-          borderSide: BorderSide(color: AppColors.primary, width: 1.2),
-        ),
-        errorBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-          borderSide: BorderSide(color: AppColors.danger, width: 1.2),
-        ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-          borderSide: BorderSide(color: AppColors.danger, width: 1.2),
-        ),
-      ),
-    );
-  }
-
-  Future<ImageSource?> _showImageSourceSheet(BuildContext context) async {
-    return showModalBottomSheet<ImageSource>(
-      context: context,
-      useRootNavigator: true,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.borderSoft,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              const SizedBox(height: 12),
-              ListTile(
-                leading: const Icon(Icons.camera_alt_outlined),
-                title: const Text("Chụp ảnh"),
-                onTap: () {
-                  Navigator.pop(sheetContext, ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text("Chọn từ thư viện"),
-                onTap: () {
-                  Navigator.pop(sheetContext, ImageSource.gallery);
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _pickAndUploadAvatar(BuildContext context) async {
-    final source = await _showImageSourceSheet(context);
-    if (source == null) return;
-    if (!context.mounted) return;
-
-    final picker = ImagePicker();
-    final image = await picker.pickImage(
-      source: source,
-      imageQuality: 85,
-    );
-
-    if (image == null) return;
-    if (!context.mounted) return;
-
-    context.read<AuthBloc>().add(UploadAvatarEvent(image));
   }
 
   String _safeName(dynamic user) {
     try {
-      final value = user.name;
-      final text = value?.toString().trim() ?? '';
-      return text;
+      return user.name?.toString().trim() ?? '';
     } catch (_) {
       return '';
-    }
-  }
-
-  String _safeEmail(dynamic user) {
-    try {
-      final value = user.email;
-      final text = value?.toString().trim() ?? '';
-      return text;
-    } catch (_) {
-      return '';
-    }
-  }
-
-  String? _safePhone(dynamic user) {
-    try {
-      final value = user.phone;
-      final text = value?.toString().trim();
-      if (text == null || text.isEmpty) return null;
-      return text;
-    } catch (_) {
-      return null;
     }
   }
 
   String? _safeAvatarUrl(dynamic user) {
     try {
-      final value = user.avatarUrl;
-      final text = value?.toString().trim();
+      final text = user.avatarUrl?.toString().trim();
+
       if (text == null || text.isEmpty) return null;
       return text;
     } catch (_) {
@@ -1225,13 +472,10 @@ class ProfilePage extends StatelessWidget {
     }
   }
 
-  String _initials(String name, String email) {
-    final source = name.trim().isNotEmpty ? name.trim() : email.trim();
-    if (source.isEmpty) return "U";
+  String _initials(String name) {
+    if (name.trim().isEmpty) return "U";
 
-    final parts =
-        source.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
-    if (parts.isEmpty) return source[0].toUpperCase();
+    final parts = name.trim().split(RegExp(r'\s+'));
 
     if (parts.length == 1) {
       return parts.first[0].toUpperCase();
@@ -1239,306 +483,4 @@ class ProfilePage extends StatelessWidget {
 
     return (parts.first[0] + parts.last[0]).toUpperCase();
   }
-
-  Future<_FavoriteBundle> _loadFavoriteData() async {
-    final response = await homeRemoteDataSource.getHomeFavorites();
-
-    final storeList = (response['favoriteStores'] as List? ?? [])
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .map(
-          (json) => FavoriteStore(
-            id: (json['id'] as num).toInt(),
-            name: json['name']?.toString() ?? '',
-            address: json['address']?.toString(),
-            logoUrl: json['logoUrl']?.toString(),
-            coverImageUrl: json['coverImageUrl']?.toString(),
-            averageRating: (json['averageRating'] as num?)?.toDouble(),
-            totalReviews: (json['totalReviews'] as num?)?.toInt(),
-            distanceKm: (json['distanceKm'] as num?)?.toDouble(),
-          ),
-        )
-        .toList();
-
-    final serviceList = (response['favoriteServices'] as List? ?? [])
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .map(
-          (json) => FavoriteService(
-            id: (json['id'] as num).toInt(),
-            name: json['name']?.toString() ?? '',
-            imageUrl: json['imageUrl']?.toString(),
-            price: (json['price'] as num?)?.toDouble(),
-            storeId: (json['storeId'] as num?)?.toInt(),
-            storeName: json['storeName']?.toString(),
-          ),
-        )
-        .toList();
-
-    return _FavoriteBundle(
-      stores: storeList,
-      services: serviceList,
-    );
-  }
-
-  Widget _favoriteErrorState() {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: _favoriteEmptyCard(
-        icon: Icons.error_outline_rounded,
-        title: "Không tải được dữ liệu yêu thích",
-        subtitle: "Vui lòng thử lại sau.",
-      ),
-    );
-  }
-
-  Widget _favoriteStoreList(
-    List<FavoriteStore> stores,
-    VoidCallback onChanged,
-  ) {
-    if (stores.isEmpty) {
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-        children: [
-          _favoriteEmptyCard(
-            icon: Icons.storefront_outlined,
-            title: "Chưa có cửa hàng yêu thích",
-            subtitle: "Các cửa hàng bạn lưu sẽ hiển thị ở đây.",
-          ),
-        ],
-      );
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-      itemCount: stores.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final item = stores[index];
-
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () => _openStoreDetail(context, item.id),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.surface.withValues(alpha: 0.92),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.borderSoft),
-                boxShadow: AppDecorations.softShadow,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 62,
-                    height: 62,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceSoft,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: item.coverImageUrl != null &&
-                              item.coverImageUrl!.isNotEmpty
-                          ? Image.network(
-                              item.coverImageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(
-                                Icons.storefront_rounded,
-                                color: AppColors.primary,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.storefront_rounded,
-                              color: AppColors.primary,
-                            ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.name,
-                          style: AppTextStyles.body.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.address ?? "Chưa có địa chỉ",
-                          style: AppTextStyles.caption,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (item.averageRating != null) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            "⭐ ${item.averageRating!.toStringAsFixed(1)}"
-                            "${item.totalReviews != null ? " (${item.totalReviews})" : ""}",
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  CustomerFavoriteButton(
-                    type: CustomerFavoriteType.store,
-                    targetId: item.id,
-                    initialIsFavorite: true,
-                    removeConfirmTitle: "Bỏ yêu thích cửa hàng?",
-                    removeConfirmMessage:
-                        "Bạn có muốn bỏ '${item.name}' khỏi danh sách yêu thích không?",
-                    onChanged: onChanged,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _favoriteServiceList(
-    List<FavoriteService> services,
-    VoidCallback onChanged,
-  ) {
-    if (services.isEmpty) {
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-        children: [
-          _favoriteEmptyCard(
-            icon: Icons.spa_outlined,
-            title: "Chưa có dịch vụ yêu thích",
-            subtitle: "Các dịch vụ bạn lưu sẽ hiển thị ở đây.",
-          ),
-        ],
-      );
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-      itemCount: services.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final item = services[index];
-
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () => _openServiceDetail(context, item.id),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.surface.withValues(alpha: 0.92),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.borderSoft),
-                boxShadow: AppDecorations.softShadow,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 62,
-                    height: 62,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceSoft,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                          ? Image.network(
-                              item.imageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(
-                                Icons.spa_rounded,
-                                color: AppColors.primary,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.spa_rounded,
-                              color: AppColors.primary,
-                            ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.name,
-                          style: AppTextStyles.body.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.storeName ?? "Chưa rõ cửa hàng",
-                          style: AppTextStyles.caption,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.price != null
-                              ? "${item.price!.toStringAsFixed(0)} đ"
-                              : "Liên hệ",
-                          style: AppTextStyles.caption.copyWith(
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  CustomerFavoriteButton(
-                    type: CustomerFavoriteType.service,
-                    targetId: item.id,
-                    initialIsFavorite: true,
-                    removeConfirmTitle: "Bỏ yêu thích dịch vụ?",
-                    removeConfirmMessage:
-                        "Bạn có muốn bỏ '${item.name}' khỏi danh sách yêu thích không?",
-                    onChanged: onChanged,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _FavoriteBundle {
-  final List<FavoriteStore> stores;
-  final List<FavoriteService> services;
-
-  const _FavoriteBundle({
-    required this.stores,
-    required this.services,
-  });
-}
-
-void _openStoreDetail(BuildContext context, int storeId) {
-  context.push('customer/store/$storeId');
-}
-
-void _openServiceDetail(BuildContext context, int serviceId) {
-  context.push('/service/$serviceId');
 }

@@ -28,9 +28,10 @@ class _BookingPageState extends State<BookingPage> {
   static const _filters = <({int value, String label})>[
     (value: -1, label: 'Tất cả'),
     (value: 0, label: 'Chờ xác nhận'),
-    (value: 1, label: 'Đã xác nhận'),
-    (value: 2, label: 'Hoàn thành'),
-    (value: 3, label: 'Đã hủy'),
+    (value: 1, label: 'Đã đặt cọc'),
+    (value: 2, label: 'Đã xác nhận'),
+    (value: 3, label: 'Hoàn thành'),
+    (value: 4, label: 'Đã hủy'),
   ];
 
   @override
@@ -176,6 +177,7 @@ class _BookingPageState extends State<BookingPage> {
                         1 => _bookings.where((e) => e.status == 1).length,
                         2 => _bookings.where((e) => e.status == 2).length,
                         3 => _bookings.where((e) => e.status == 3).length,
+                        4 => _bookings.where((e) => e.status == 4).length,
                         _ => 0,
                       };
 
@@ -229,11 +231,17 @@ class _BookingPageState extends State<BookingPage> {
                                       const SizedBox(height: 12),
                                   itemBuilder: (context, index) {
                                     final item = bookings[index];
+                                    final hasStoreId = item.storeId > 0;
+
                                     return _BookingCard(
                                       item: item,
                                       onTap: _openingDetail
                                           ? null
                                           : () => _openBookingDetail(item),
+                                      onStoreTap: hasStoreId
+                                          ? () => context
+                                              .push('/store/${item.storeId}')
+                                          : null,
                                     );
                                   },
                                 ),
@@ -405,10 +413,12 @@ class _BookingPageState extends State<BookingPage> {
 class _BookingCard extends StatelessWidget {
   final BookingItem item;
   final VoidCallback? onTap;
+  final VoidCallback? onStoreTap;
 
   const _BookingCard({
     required this.item,
     this.onTap,
+    this.onStoreTap,
   });
 
   @override
@@ -417,8 +427,8 @@ class _BookingCard extends StatelessWidget {
     final firstService = item.services.isNotEmpty ? item.services.first : null;
     final appointmentText = item.appointmentText;
     final serviceSummary = item.effectiveServiceSummary;
-    final serviceCount = item.extraServiceCount;
     final staffName = (item.staffName ?? firstService?.staffName ?? '').trim();
+    final hasStoreId = item.storeId > 0;
 
     return Container(
       decoration: BoxDecoration(
@@ -453,15 +463,28 @@ class _BookingCard extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                child: Text(
-                                  item.storeName?.trim().isNotEmpty == true
-                                      ? item.storeName!
-                                      : 'Booking #${item.id}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.sectionTitle.copyWith(
-                                    fontSize: 15.5,
-                                    height: 1.2,
+                                child: GestureDetector(
+                                  onTap: hasStoreId ? onStoreTap : null,
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Padding(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 2),
+                                    child: Text(
+                                      item.storeName?.trim().isNotEmpty == true
+                                          ? item.storeName!
+                                          : 'Booking #${item.id}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style:
+                                          AppTextStyles.sectionTitle.copyWith(
+                                        fontSize: 15.5,
+                                        height: 1.2,
+                                        decoration: TextDecoration.none,
+                                        color: hasStoreId
+                                            ? AppColors.textPrimary
+                                            : AppColors.textSecondary,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -557,11 +580,11 @@ class _BookingCard extends StatelessWidget {
       case 0:
         return (label: 'Chờ xác nhận', color: AppColors.warning);
       case 1:
-        return (label: 'Đã thanh toán cọc', color: AppColors.success);
+        return (label: 'Đã đặt cọc', color: AppColors.success);
       case 2:
-        return (label: 'Đã xác nhận', color: AppColors.success);
+        return (label: 'Đã xác nhận', color: AppColors.secondary);
       case 3:
-        return (label: 'Hoàn thành', color: AppColors.secondary);
+        return (label: 'Hoàn thành', color: AppColors.primary);
       case 4:
         return (label: 'Đã hủy', color: AppColors.danger);
       default:
@@ -698,7 +721,7 @@ class _MoneyLine extends StatelessWidget {
           ),
         ),
         Text(
-          '${value.toStringAsFixed(0)} VND',
+          formatVnd(value),
           style: AppTextStyles.body.copyWith(
             fontSize: 13.5,
             fontWeight: emphasis ? FontWeight.w800 : FontWeight.w600,
@@ -708,4 +731,20 @@ class _MoneyLine extends StatelessWidget {
       ],
     );
   }
+}
+
+String formatVnd(double value) {
+  final text = value.toStringAsFixed(0);
+  final buffer = StringBuffer();
+
+  for (int i = 0; i < text.length; i++) {
+    final indexFromRight = text.length - i;
+    buffer.write(text[i]);
+
+    if (indexFromRight > 1 && indexFromRight % 3 == 1) {
+      buffer.write('.');
+    }
+  }
+
+  return '${buffer.toString()} ₫';
 }

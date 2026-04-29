@@ -4,11 +4,6 @@ using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Entities;
 using BeautyBookingSystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BeautyBookingSystem.Application.Services
 {
@@ -17,7 +12,7 @@ namespace BeautyBookingSystem.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly INotificationService _notificationService;
 
-        public ReviewService(IUnitOfWork unitOfWork,  INotificationService notificationService)
+        public ReviewService(IUnitOfWork unitOfWork, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _notificationService = notificationService;
@@ -58,16 +53,16 @@ namespace BeautyBookingSystem.Application.Services
             await _unitOfWork.SaveChangesAsync();
 
             if (booking.Store != null)
-    {
-        string customerName = booking.Customer?.FullName ?? "Một khách hàng";
-        string message = $"{customerName} vừa để lại đánh giá {request.Rating} sao cho đơn đặt lịch #{booking.Id}.";
-        _ = _notificationService.CreateAndSendNotificationAsync(
-            booking.Store.OwnerId, 
-            "⭐ Có đánh giá mới",
-            message,
-            NotificationType.SystemAlert 
-        );
-    }
+            {
+                string customerName = booking.Customer?.FullName ?? "Một khách hàng";
+                string message = $"{customerName} vừa để lại đánh giá {request.Rating} sao cho đơn đặt lịch #{booking.Id}.";
+                _ = _notificationService.CreateAndSendNotificationAsync(
+                    booking.Store.OwnerId,
+                    "⭐ Có đánh giá mới",
+                    message,
+                    NotificationType.SystemAlert
+                );
+            }
 
             return new ReviewResponseDto
             {
@@ -113,6 +108,40 @@ namespace BeautyBookingSystem.Application.Services
             _unitOfWork.ReviewRepository.Update(review);
             await _unitOfWork.SaveChangesAsync();
         }
+
+        public async Task<List<StoreReviewResponseDto>> GetTopByStoreIdAsync(int storeId, int take = 5)
+        {
+            var reviews = await _unitOfWork.ReviewRepository.GetTopByStoreIdAsync(storeId, take);
+            return reviews.Select(MapToStoreReviewDto).ToList();
+        }
+
+        public async Task<List<StoreReviewResponseDto>> GetPagedByStoreIdAsync(
+            int storeId,
+            int page,
+            int pageSize,
+            int? rating = null,
+            string sortBy = "latest")
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            var skip = (page - 1) * pageSize;
+
+            var reviews = await _unitOfWork.ReviewRepository.GetPagedByStoreIdAsync(
+                storeId,
+                rating,
+                sortBy,
+                skip,
+                pageSize);
+
+            return reviews.Select(MapToStoreReviewDto).ToList();
+        }
+
+        public async Task<int> CountByStoreIdAsync(int storeId, int? rating = null)
+        {
+            return await _unitOfWork.ReviewRepository.CountByStoreIdAsync(storeId, rating);
+        }
+
         private async Task RecalculateStoreRatingAsync(int storeId)
         {
             var stats = await _unitOfWork.ReviewRepository
@@ -138,6 +167,7 @@ namespace BeautyBookingSystem.Application.Services
 
             _unitOfWork.StoreRepository.Update(store);
         }
+
         private static StoreReviewResponseDto MapToStoreReviewDto(Review r)
         {
             return new StoreReviewResponseDto
@@ -160,32 +190,6 @@ namespace BeautyBookingSystem.Application.Services
                 IsHidden = r.IsHidden,
                 CreatedAt = r.CreatedAt
             };
-        }
-        public async Task<List<StoreReviewResponseDto>> GetTopByStoreIdAsync(int storeId, int take = 5)
-        {
-            var reviews = await _unitOfWork.ReviewRepository.GetByStoreIdAsync(storeId);
-
-            return reviews
-                .Take(take)
-                .Select(MapToStoreReviewDto)
-                .ToList();
-        }
-        public async Task<List<StoreReviewResponseDto>> GetPagedByStoreIdAsync(int storeId, int page, int pageSize)
-        {
-            if (page < 1) page = 1;
-            if (pageSize < 1) pageSize = 10;
-
-            var skip = (page - 1) * pageSize;
-
-            var reviews = await _unitOfWork.ReviewRepository.GetPagedByStoreIdAsync(storeId, skip, pageSize);
-
-            return reviews
-                .Select(MapToStoreReviewDto)
-                .ToList();
-        }
-        public async Task<int> CountByStoreIdAsync(int storeId)
-        {
-            return await _unitOfWork.ReviewRepository.CountByStoreIdAsync(storeId);
         }
     }
 }

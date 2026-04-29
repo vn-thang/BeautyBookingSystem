@@ -1,11 +1,15 @@
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
 import '../bloc/auth_state.dart';
+import 'forgot_password_page.dart';
 import 'register_page.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -29,6 +33,24 @@ class _LoginPageState extends State<LoginPage> {
 
   final FocusNode _emailOrPhoneFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
+
+  bool _phoneDialogShown = false;
+  String? _pendingFirebaseIdToken;
+  bool _isShowingLinkDialog = false;
+
+  String _normalizePhoneNumber(String phone) {
+    phone = phone.trim().replaceAll(RegExp(r'[^\d+]'), '');
+
+    if (phone.startsWith('0')) {
+      return '+84${phone.substring(1)}';
+    }
+
+    if (phone.startsWith('84') && !phone.startsWith('+84')) {
+      return '+$phone';
+    }
+
+    return phone;
+  }
 
   @override
   void initState() {
@@ -61,6 +83,190 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  bool _needsPhoneVerification(dynamic user) {
+    final phone = (user.phone as String?)?.trim() ?? '';
+    final verified = user.isPhoneVerified == true;
+    return phone.isEmpty || !verified;
+  }
+
+  void _showVerifyPhoneDialog() {
+    final formKey = GlobalKey<FormState>();
+    final phoneController = TextEditingController();
+    final otpController = TextEditingController();
+
+    String? verificationId;
+    bool otpSent = false;
+    bool loading = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            Future<void> sendOtp() async {
+              if (!(formKey.currentState?.validate() ?? false)) return;
+
+              final phoneNumber = _normalizePhoneNumber(phoneController.text);
+
+              setStateDialog(() => loading = true);
+
+              await fb_auth.FirebaseAuth.instance.verifyPhoneNumber(
+                phoneNumber: phoneNumber,
+                verificationCompleted: (credential) async {
+                  final userCredential =
+                      await fb_auth.FirebaseAuth.instance.signInWithCredential(
+                    credential,
+                  );
+
+                  final firebaseIdToken =
+                      await userCredential.user?.getIdToken();
+
+                  if (firebaseIdToken == null || firebaseIdToken.isEmpty) {
+                    return;
+                  }
+
+                  if (!mounted) return;
+
+                  context.read<AuthBloc>().add(
+                        VerifyPhoneEvent(firebaseIdToken),
+                      );
+
+                  Navigator.pop(dialogContext);
+                  _phoneDialogShown = false;
+                },
+                verificationFailed: (e) {
+                  setStateDialog(() => loading = false);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Gửi OTP thất bại: ${e.message}"),
+                      backgroundColor: AppColors.danger,
+                    ),
+                  );
+                },
+                codeSent: (vid, _) {
+                  verificationId = vid;
+                  setStateDialog(() {
+                    otpSent = true;
+                    loading = false;
+                  });
+                },
+                codeAutoRetrievalTimeout: (vid) {
+                  verificationId = vid;
+                },
+              );
+            }
+
+            Future<void> confirmOtp() async {
+              if (verificationId == null) return;
+
+              try {
+                setStateDialog(() => loading = true);
+
+                final credential = fb_auth.PhoneAuthProvider.credential(
+                  verificationId: verificationId!,
+                  smsCode: otpController.text.trim(),
+                );
+
+                final userCredential =
+                    await fb_auth.FirebaseAuth.instance.signInWithCredential(
+                  credential,
+                );
+
+                final firebaseIdToken = await userCredential.user?.getIdToken();
+
+                if (firebaseIdToken == null || firebaseIdToken.isEmpty) return;
+
+                if (!mounted) return;
+
+                context.read<AuthBloc>().add(
+                      VerifyPhoneEvent(firebaseIdToken),
+                    );
+
+                Navigator.pop(dialogContext);
+                _phoneDialogShown = false;
+              } catch (e) {
+                setStateDialog(() => loading = false);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("OTP không chính xác"),
+                    backgroundColor: AppColors.danger,
+                  ),
+                );
+              }
+            }
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(22),
+              ),
+              title: const Text("Xác minh số điện thoại"),
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      enabled: !otpSent && !loading,
+                      readOnly: otpSent || loading,
+                      decoration: const InputDecoration(
+                        labelText: "Số điện thoại",
+                      ),
+                      validator: (v) {
+                        if ((v ?? '').trim().isEmpty) {
+                          return "Vui lòng nhập số điện thoại";
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    if (otpSent)
+                      TextFormField(
+                        controller: otpController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: "Nhập OTP",
+                        ),
+                        validator: (v) {
+                          if ((v ?? '').trim().isEmpty) {
+                            return "Vui lòng nhập OTP";
+                          }
+                          return null;
+                        },
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    _phoneDialogShown = false;
+                  },
+                  child: const Text("Hủy"),
+                ),
+                TextButton(
+                  onPressed: loading ? null : (otpSent ? confirmOtp : sendOtp),
+                  child: Text(
+                    loading
+                        ? "Đang xử lý..."
+                        : otpSent
+                            ? "Xác nhận"
+                            : "Gửi OTP",
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,6 +278,21 @@ class _LoginPageState extends State<LoginPage> {
           child: BlocListener<AuthBloc, AuthState>(
             listener: (context, state) {
               if (state is AuthAuthenticated) {
+                final needPhone = _needsPhoneVerification(state.user);
+
+                if (needPhone) {
+                  if (!_phoneDialogShown) {
+                    _phoneDialogShown = true;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!mounted) return;
+                      _showVerifyPhoneDialog();
+                    });
+                  }
+                  return;
+                }
+
+                _phoneDialogShown = false;
+
                 if (widget.redirectPath != null) {
                   context.go(widget.redirectPath!);
                 } else {
@@ -89,9 +310,68 @@ class _LoginPageState extends State<LoginPage> {
               }
 
               if (state is AuthError) {
+                final message = state.message;
+
+                if (message.startsWith("REQUIRE_LINK_CONFIRM:")) {
+                  final confirmMessage =
+                      message.replaceFirst("REQUIRE_LINK_CONFIRM:", "").trim();
+
+                  if (_isShowingLinkDialog) return;
+                  _isShowingLinkDialog = true;
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) async {
+                    if (!mounted) return;
+
+                    final shouldLink = await showDialog<bool>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (dialogContext) {
+                            return AlertDialog(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(22),
+                              ),
+                              title: const Text("Liên kết tài khoản"),
+                              content: Text(confirmMessage),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(dialogContext, false);
+                                  },
+                                  child: const Text("Hủy"),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(dialogContext, true);
+                                  },
+                                  child: const Text("OK"),
+                                ),
+                              ],
+                            );
+                          },
+                        ) ??
+                        false;
+
+                    _isShowingLinkDialog = false;
+
+                    if (shouldLink && _pendingFirebaseIdToken != null) {
+                      if (!mounted) return;
+
+                      context.read<AuthBloc>().add(
+                            LoginWithFirebaseEvent(
+                              idToken: _pendingFirebaseIdToken!,
+                              isStoreOwnerApp: false,
+                              linkToExistingAccount: true,
+                            ),
+                          );
+                    }
+                  });
+
+                  return;
+                }
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(state.message),
+                    content: Text(message),
                     backgroundColor: AppColors.danger,
                   ),
                 );
@@ -102,8 +382,6 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _backButton(),
-                  const SizedBox(height: 8),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
@@ -120,38 +398,47 @@ class _LoginPageState extends State<LoginPage> {
                       key: _formKey,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            width: 170,
-                            height: 170,
-                            decoration: BoxDecoration(
-                              gradient: AppDecorations.heroGradient,
-                              shape: BoxShape.circle,
-                              boxShadow: AppDecorations.avatarShadow,
-                            ),
-                            child: ClipOval(
-                              child: Image.network(
-                                'https://res.cloudinary.com/dbie57o9w/image/upload/v1774090680/ae61e167-0891-4498-8167-c2191898f6da.png',
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Icon(
-                                  Icons.favorite,
-                                  size: 72,
-                                  color: AppColors.primary,
+                          _backButton(),
+                          const SizedBox(height: 16),
+                          Center(
+                            child: Container(
+                              width: 170,
+                              height: 170,
+                              decoration: BoxDecoration(
+                                gradient: AppDecorations.heroGradient,
+                                shape: BoxShape.circle,
+                                boxShadow: AppDecorations.avatarShadow,
+                              ),
+                              child: ClipOval(
+                                child: Image.network(
+                                  'https://res.cloudinary.com/dbie57o9w/image/upload/v1774090680/ae61e167-0891-4498-8167-c2191898f6da.png',
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.favorite,
+                                    size: 72,
+                                    color: AppColors.primary,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                           const SizedBox(height: 20),
-                          Text(
-                            "Chào mừng trở lại",
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.pageTitle,
+                          Center(
+                            child: Text(
+                              "Chào mừng trở lại",
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.pageTitle,
+                            ),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            "Đăng nhập để tiếp tục trải nghiệm dịch vụ của bạn",
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.bodyMuted,
+                          Center(
+                            child: Text(
+                              "Đăng nhập để tiếp tục trải nghiệm dịch vụ của bạn",
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.bodyMuted,
+                            ),
                           ),
                           const SizedBox(height: 28),
                           _buildField(
@@ -193,6 +480,31 @@ class _LoginPageState extends State<LoginPage> {
                             },
                             onSubmitted: _login,
                           ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.center,
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => BlocProvider.value(
+                                      value: context.read<AuthBloc>(),
+                                      child: const ForgotPasswordPage(),
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                "Quên mật khẩu?",
+                                style: AppTextStyles.bodyMuted.copyWith(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 24),
                           BlocBuilder<AuthBloc, AuthState>(
                             builder: (context, state) {
@@ -209,18 +521,25 @@ class _LoginPageState extends State<LoginPage> {
                                 width: double.infinity,
                                 child: _primaryButton(
                                   text: "Đăng nhập",
-                                  icon: Icons.login_rounded,
                                   onTap: _login,
                                 ),
                               );
                             },
                           ),
                           const SizedBox(height: 16),
+                          _rowOrDivider(),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: _googleButton(
+                              onTap: _loginWithGoogle,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
                             child: _secondaryButton(
-                              text: "Chưa có tài khoản? Đăng ký",
-                              icon: Icons.person_add_alt_1_rounded,
+                              text: "Đăng ký",
                               onTap: () {
                                 Navigator.push(
                                   context,
@@ -231,17 +550,6 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
                                 );
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            width: double.infinity,
-                            child: _secondaryButton(
-                              text: "Quên mật khẩu?",
-                              icon: Icons.help_outline_rounded,
-                              onTap: () {
-                                _showForgotDialog(context);
                               },
                             ),
                           ),
@@ -260,7 +568,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _backButton() {
     return InkWell(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(14),
       onTap: () => context.go('/'),
       child: const Padding(
         padding: EdgeInsets.all(4),
@@ -268,6 +576,78 @@ class _LoginPageState extends State<LoginPage> {
           Icons.arrow_back_ios_new_rounded,
           size: 16,
           color: AppColors.primary,
+        ),
+      ),
+    );
+  }
+
+  Widget _rowOrDivider() {
+    return Row(
+      children: [
+        const Expanded(
+          child: Divider(
+            thickness: 1,
+            color: AppColors.borderSoft,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            "hoặc",
+            style: AppTextStyles.bodyMuted.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const Expanded(
+          child: Divider(
+            thickness: 1,
+            color: AppColors.borderSoft,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _googleButton({
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            color: AppColors.surface,
+            border: Border.all(color: AppColors.borderSoft),
+            boxShadow: AppDecorations.softShadow,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.network(
+                'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                width: 20,
+                height: 20,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.g_mobiledata_rounded,
+                  size: 24,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                "Google",
+                style: AppTextStyles.bodyMuted.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -355,12 +735,19 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final emailOrPhone = _emailOrPhoneController.text.trim();
+    String input = _emailOrPhoneController.text.trim();
+
+    final isPhone = RegExp(r'^[0-9+]+$').hasMatch(input);
+
+    if (isPhone) {
+      input = _normalizePhoneNumber(input);
+    }
+
     final password = _passwordController.text.trim();
 
     context.read<AuthBloc>().add(
           LoginEvent(
-            email: emailOrPhone,
+            email: input,
             password: password,
           ),
         );
@@ -381,147 +768,57 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _showForgotDialog(BuildContext context) {
-    final formKey = GlobalKey<FormState>();
-    final email = TextEditingController();
-    final otp = TextEditingController();
-    final newPass = TextEditingController();
+  Future<void> _loginWithGoogle() async {
+    try {
+      final googleSignIn = GoogleSignIn(
+        serverClientId:
+            '361936167810-bs47k71bsrvrcg8bt0d3780focaif9b7.apps.googleusercontent.com',
+      );
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(22),
-        ),
-        backgroundColor: AppColors.surface,
-        title: const Text(
-          "Quên mật khẩu",
-          style: AppTextStyles.sectionTitle,
-        ),
-        content: Form(
-          key: formKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _dialogField(
-                  controller: email,
-                  label: "Email",
-                  validator: (value) {
-                    final v = value?.trim() ?? '';
-                    if (v.isEmpty) return "Vui lòng nhập email";
-                    final emailRegex =
-                        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                    if (!emailRegex.hasMatch(v)) return "Email không hợp lệ";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                _dialogField(
-                  controller: otp,
-                  label: "OTP",
-                  validator: (value) {
-                    final v = value?.trim() ?? '';
-                    if (v.isEmpty) return "Vui lòng nhập OTP";
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                _dialogField(
-                  controller: newPass,
-                  label: "Mật khẩu mới",
-                  obscureText: true,
-                  validator: (value) {
-                    final v = value?.trim() ?? '';
-                    if (v.isEmpty) return "Vui lòng nhập mật khẩu mới";
-                    if (v.length < 6) return "Mật khẩu tối thiểu 6 ký tự";
-                    return null;
-                  },
-                ),
-              ],
+      await googleSignIn.signOut();
+
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) return;
+
+      final googleAuth = await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+        accessToken: googleAuth.accessToken,
+      );
+
+      final userCredential =
+          await fb_auth.FirebaseAuth.instance.signInWithCredential(credential);
+
+      final firebaseIdToken = await userCredential.user?.getIdToken();
+
+      if (firebaseIdToken == null || firebaseIdToken.isEmpty) {
+        throw Exception("Không lấy được Firebase ID token");
+      }
+
+      _pendingFirebaseIdToken = firebaseIdToken;
+
+      if (!mounted) return;
+      context.read<AuthBloc>().add(
+            LoginWithFirebaseEvent(
+              idToken: firebaseIdToken,
+              isStoreOwnerApp: false,
             ),
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-        actions: [
-          _dialogButton(
-            text: "Gửi OTP",
-            primary: false,
-            onTap: () {
-              if (!(formKey.currentState?.validate() ?? false)) return;
-              context
-                  .read<AuthBloc>()
-                  .add(ForgotPasswordEvent(email.text.trim()));
-            },
-          ),
-          const SizedBox(width: 10),
-          _dialogButton(
-            text: "Xác nhận",
-            primary: true,
-            onTap: () {
-              if (!(formKey.currentState?.validate() ?? false)) return;
+          );
+    } catch (e) {
+      if (!mounted) return;
 
-              context.read<AuthBloc>().add(
-                    ResetPasswordEvent(
-                      email.text.trim(),
-                      otp.text.trim(),
-                      newPass.text.trim(),
-                    ),
-                  );
-              Navigator.pop(dialogContext);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _dialogField({
-    required TextEditingController controller,
-    required String label,
-    required String? Function(String?) validator,
-    bool obscureText = false,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      validator: validator,
-      style: AppTextStyles.body.copyWith(
-        color: AppColors.textPrimary,
-      ),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: AppTextStyles.bodyMuted,
-        filled: true,
-        fillColor: AppColors.surfaceSoft,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.borderSoft),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Đăng nhập Google thất bại: $e"),
+          backgroundColor: AppColors.danger,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.borderSoft),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-          borderSide: BorderSide(color: AppColors.primary, width: 1.3),
-        ),
-        errorBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-          borderSide: BorderSide(color: AppColors.danger, width: 1.1),
-        ),
-        focusedErrorBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
-          borderSide: BorderSide(color: AppColors.danger, width: 1.3),
-        ),
-      ),
-    );
+      );
+    }
   }
 
   Widget _primaryButton({
     required String text,
-    required IconData icon,
     required VoidCallback onTap,
   }) {
     return Material(
@@ -543,20 +840,15 @@ class _LoginPageState extends State<LoginPage> {
             ),
             boxShadow: AppDecorations.cardShadow,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: AppColors.primary, size: 20),
-              const SizedBox(width: 10),
-              Text(
-                text,
-                style: AppTextStyles.body.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primary,
-                ),
+          child: Center(
+            child: Text(
+              text,
+              style: AppTextStyles.body.copyWith(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primary,
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -565,7 +857,6 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _secondaryButton({
     required String text,
-    required IconData icon,
     required VoidCallback onTap,
   }) {
     return Material(
@@ -581,50 +872,13 @@ class _LoginPageState extends State<LoginPage> {
             border: Border.all(color: AppColors.borderSoft),
             boxShadow: AppDecorations.softShadow,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 18, color: AppColors.primary),
-              const SizedBox(width: 8),
-              Text(
-                text,
-                style: AppTextStyles.bodyMuted.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
-                ),
+          child: Center(
+            child: Text(
+              text,
+              style: AppTextStyles.bodyMuted.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _dialogButton({
-    required String text,
-    required VoidCallback onTap,
-    required bool primary,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            color: primary ? AppColors.primary : AppColors.surface,
-            border: Border.all(
-              color: primary ? AppColors.primary : AppColors.borderSoft,
-            ),
-            boxShadow: AppDecorations.softShadow,
-          ),
-          child: Text(
-            text,
-            style: AppTextStyles.body.copyWith(
-              color: primary ? AppColors.surface : AppColors.primary,
-              fontWeight: FontWeight.w700,
             ),
           ),
         ),

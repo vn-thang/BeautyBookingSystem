@@ -10,12 +10,16 @@ class LoadStoreReviews extends StoreReviewsEvent {
   final int page;
   final int pageSize;
   final bool append;
+  final int? rating;
+  final String sortBy;
 
   LoadStoreReviews({
     required this.storeId,
     this.page = 1,
     this.pageSize = 10,
     this.append = false,
+    this.rating,
+    this.sortBy = 'latest',
   });
 }
 
@@ -31,6 +35,8 @@ class StoreReviewsLoaded extends StoreReviewsState {
   final int page;
   final int pageSize;
   final int total;
+  final int? rating;
+  final String sortBy;
 
   StoreReviewsLoaded({
     required this.storeId,
@@ -38,6 +44,8 @@ class StoreReviewsLoaded extends StoreReviewsState {
     required this.page,
     required this.pageSize,
     required this.total,
+    required this.rating,
+    required this.sortBy,
   });
 
   bool get hasMore => items.length < total;
@@ -68,6 +76,8 @@ class StoreReviewsBloc extends Bloc<StoreReviewsEvent, StoreReviewsState> {
         storeId: event.storeId,
         page: event.page,
         pageSize: event.pageSize,
+        rating: event.rating,
+        sortBy: event.sortBy,
       );
 
       final currentItems = state is StoreReviewsLoaded && event.append
@@ -83,6 +93,8 @@ class StoreReviewsBloc extends Bloc<StoreReviewsEvent, StoreReviewsState> {
         page: result.page,
         pageSize: result.pageSize,
         total: result.total,
+        rating: event.rating,
+        sortBy: event.sortBy,
       ));
     } catch (e) {
       emit(StoreReviewsError(e.toString()));

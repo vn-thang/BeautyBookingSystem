@@ -30,7 +30,6 @@ class AuthRepositoryImpl implements AuthRepository {
       return error.message ?? 'Đã xảy ra lỗi';
     }
 
-    // FIX QUAN TRỌNG
     if (error is Exception) {
       return error.toString().replaceFirst('Exception: ', '');
     }
@@ -54,6 +53,31 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<User> loginWithFirebase({
+    required String idToken,
+    String? fcmToken,
+    bool linkToExistingAccount = false,
+    bool isStoreOwnerApp = false,
+  }) async {
+    try {
+      final result = await remoteDataSource.firebaseLogin(
+        idToken: idToken,
+        fcmToken: fcmToken,
+        linkToExistingAccount: linkToExistingAccount,
+        isStoreOwnerApp: isStoreOwnerApp,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString("token", result.accessToken);
+      await prefs.setString("refreshToken", result.refreshToken);
+
+      return await remoteDataSource.getProfile();
+    } catch (e) {
+      throw Exception(_mapErrorMessage(e));
+    }
+  }
+
+  @override
   Future<User> getProfile() async {
     try {
       return await remoteDataSource.getProfile();
@@ -68,6 +92,7 @@ class AuthRepositoryImpl implements AuthRepository {
     String phone,
     String email,
     String password,
+    String firebaseIdToken,
   ) async {
     try {
       final result = await remoteDataSource.register(
@@ -75,6 +100,7 @@ class AuthRepositoryImpl implements AuthRepository {
         phone,
         email,
         password,
+        firebaseIdToken,
       );
 
       final prefs = await SharedPreferences.getInstance();
@@ -100,6 +126,15 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> forgotPassword(String email) async {
     try {
       await remoteDataSource.forgotPassword(email);
+    } catch (e) {
+      throw Exception(_mapErrorMessage(e));
+    }
+  }
+
+  @override
+  Future<void> verifyForgotPasswordOtp(String email, String otp) async {
+    try {
+      await remoteDataSource.verifyForgotPasswordOtp(email, otp);
     } catch (e) {
       throw Exception(_mapErrorMessage(e));
     }
@@ -141,6 +176,15 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> uploadAvatar(XFile file) async {
     try {
       await remoteDataSource.uploadAvatar(file);
+    } catch (e) {
+      throw Exception(_mapErrorMessage(e));
+    }
+  }
+
+  @override
+  Future<void> verifyPhone(String firebaseIdToken) async {
+    try {
+      await remoteDataSource.verifyPhone(firebaseIdToken);
     } catch (e) {
       throw Exception(_mapErrorMessage(e));
     }

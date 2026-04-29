@@ -7,9 +7,13 @@ class ContactInfoModel extends ContactInfo {
   });
 
   factory ContactInfoModel.fromJson(Map<String, dynamic> json) {
+    final hotline =
+        (json['hotline'] ?? json['Hotline'] ?? '').toString().trim();
+    final email = (json['email'] ?? json['Email'] ?? '').toString().trim();
+
     return ContactInfoModel(
-      hotline: (json['Hotline'] ?? 'Đang cập nhật').toString(),
-      email: (json['Email'] ?? 'Đang cập nhật').toString(),
+      hotline: hotline.isNotEmpty ? hotline : 'Đang cập nhật',
+      email: email.isNotEmpty ? email : 'Đang cập nhật',
     );
   }
 }

@@ -61,10 +61,15 @@ namespace BeautyBookingSystem.API.Controllers
 
         [HttpGet("store/{storeId}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetByStoreId(int storeId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetByStoreId(
+            int storeId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] int? rating = null,
+            [FromQuery] string sortBy = "latest")
         {
-            var items = await _reviewService.GetPagedByStoreIdAsync(storeId, page, pageSize);
-            var total = await _reviewService.CountByStoreIdAsync(storeId);
+            var items = await _reviewService.GetPagedByStoreIdAsync(storeId, page, pageSize, rating, sortBy);
+            var total = await _reviewService.CountByStoreIdAsync(storeId, rating);
 
             return Ok(new
             {

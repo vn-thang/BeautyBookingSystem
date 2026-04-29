@@ -1126,52 +1126,6 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
     );
   }
 
-  Widget _detailRow({
-    required IconData icon,
-    required String title,
-    required String value,
-    Color? valueColor,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceSoft,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(
-            icon,
-            color: AppColors.primary,
-            size: 22,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: AppTextStyles.caption,
-              ),
-              const SizedBox(height: 5),
-              Text(
-                value,
-                style: AppTextStyles.body.copyWith(
-                  color: valueColor ?? AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _contactRow({
     required IconData icon,
     required String title,
@@ -1236,7 +1190,13 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
   Widget _backButton(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () => Navigator.of(context).pop(_favoriteChanged),
+      onTap: () {
+        if (context.canPop()) {
+          context.pop(_favoriteChanged);
+        } else {
+          context.go('/');
+        }
+      },
       child: Container(
         width: 40,
         height: 40,

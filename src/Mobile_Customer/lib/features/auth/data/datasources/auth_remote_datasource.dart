@@ -7,19 +7,33 @@ import '../models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<LoginResponseModel> login(String emailOrPhone, String password);
+  Future<LoginResponseModel> firebaseLogin({
+    required String idToken,
+    String? fcmToken,
+    bool linkToExistingAccount = false,
+    bool isStoreOwnerApp = false,
+  });
+
   Future<UserModel> getProfile();
+
   Future<LoginResponseModel> register(
     String fullName,
     String phone,
     String email,
     String password,
+    String firebaseIdToken,
   );
+
+  Future<void> verifyPhone(String firebaseIdToken);
+
   Future<LoginResponseModel> refreshToken(
     String accessToken,
     String refreshToken,
   );
+
   Future<void> changePassword(String oldPassword, String newPassword);
   Future<void> forgotPassword(String email);
+  Future<void> verifyForgotPasswordOtp(String email, String otp);
   Future<void> resetPassword(String email, String otp, String newPassword);
   Future<void> updateProfile(UpdateProfileRequestModel request);
   Future<void> uploadAvatar(XFile file);
@@ -81,13 +95,46 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final data = response.data["data"] ?? response.data;
       return LoginResponseModel.fromJson(Map<String, dynamic>.from(data));
     } on DioException catch (e) {
-      // QUAN TRỌNG: giữ message từ BE
       final message = _extractMessage(
         e.response?.data,
         "Số điện thoại/Email hoặc mật khẩu không đúng.",
       );
-
       throw Exception(message);
+    }
+  }
+
+  @override
+  Future<LoginResponseModel> firebaseLogin({
+    required String idToken,
+    String? fcmToken,
+    bool linkToExistingAccount = false,
+    bool isStoreOwnerApp = false,
+  }) async {
+    try {
+      final response = await dio.post(
+        'auth/firebase-login',
+        data: {
+          "idToken": idToken,
+          "fcmToken": fcmToken,
+          "linkToExistingAccount": linkToExistingAccount,
+          "isStoreOwnerApp": isStoreOwnerApp,
+        },
+        options: Options(
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      final body = response.data;
+
+      if (body is Map<String, dynamic> && body["success"] == false) {
+        throw Exception(_extractMessage(body, "Đăng nhập Firebase thất bại"));
+      }
+
+      final data = _unwrapData(body);
+      return LoginResponseModel.fromJson(
+          Map<String, dynamic>.from(data as Map));
+    } on DioException catch (e) {
+      throw Exception(_mapDioException(e, "Đăng nhập Firebase thất bại"));
     }
   }
 
@@ -115,6 +162,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     String phone,
     String email,
     String password,
+    String firebaseIdToken,
   ) async {
     try {
       final response = await dio.post(
@@ -124,6 +172,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           "phone": phone,
           "email": email,
           "password": password,
+          "firebaseIdToken": firebaseIdToken,
         },
         options: Options(
           validateStatus: (status) => status != null && status < 500,
@@ -133,18 +182,25 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final body = response.data;
 
       if (body is Map<String, dynamic> && body["success"] == false) {
-        throw Exception(
-          _extractMessage(body, "Đăng ký thất bại"),
-        );
+        throw Exception(_extractMessage(body, "Đăng ký thất bại"));
       }
 
       final data = _unwrapData(body);
       return LoginResponseModel.fromJson(
-        Map<String, dynamic>.from(data as Map),
-      );
+          Map<String, dynamic>.from(data as Map));
     } on DioException catch (e) {
       throw Exception(_mapDioException(e, "Đăng ký thất bại"));
     }
+  }
+
+  @override
+  Future<void> verifyPhone(String firebaseIdToken) async {
+    await dio.post(
+      'auth/verify-phone',
+      data: {
+        "firebaseIdToken": firebaseIdToken,
+      },
+    );
   }
 
   @override
@@ -167,15 +223,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final body = response.data;
 
       if (body is Map<String, dynamic> && body["success"] == false) {
-        throw Exception(
-          _extractMessage(body, "Làm mới token thất bại"),
-        );
+        throw Exception(_extractMessage(body, "Làm mới token thất bại"));
       }
 
       final data = _unwrapData(body);
       return LoginResponseModel.fromJson(
-        Map<String, dynamic>.from(data as Map),
-      );
+          Map<String, dynamic>.from(data as Map));
     } on DioException catch (e) {
       throw Exception(
         _mapDioException(
@@ -206,6 +259,21 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       });
     } on DioException catch (e) {
       throw Exception(_mapDioException(e, "Gửi OTP thất bại"));
+    }
+  }
+
+  @override
+  Future<void> verifyForgotPasswordOtp(String email, String otp) async {
+    try {
+      await dio.post(
+        'auth/verify-reset-password-otp',
+        data: {
+          "email": email,
+          "otp": otp,
+        },
+      );
+    } on DioException catch (e) {
+      throw Exception(_mapDioException(e, "Xác nhận OTP thất bại"));
     }
   }
 

@@ -12,12 +12,15 @@ import '../features/auth/data/repositories/auth_repository_impl.dart';
 import '../features/auth/domain/repositories/auth_repository.dart';
 import '../features/auth/domain/usecases/login.dart';
 import '../features/auth/domain/usecases/get_profile.dart';
+import '../features/auth/domain/usecases/login_with_firebase.dart';
 import '../features/auth/domain/usecases/register.dart';
 import '../features/auth/domain/usecases/change_password.dart';
 import '../features/auth/domain/usecases/forgot_password.dart';
 import '../features/auth/domain/usecases/reset_password.dart';
 import '../features/auth/domain/usecases/update_profile.dart';
 import '../features/auth/domain/usecases/upload_avatar.dart';
+import '../features/auth/domain/usecases/verify_forgot_password_otp.dart';
+import '../features/auth/domain/usecases/verify_phone.dart';
 import '../features/auth/presentation/bloc/auth_bloc.dart';
 
 // Home feature
@@ -130,24 +133,30 @@ Future<void> init() async {
   );
 
   sl.registerLazySingleton(() => Login(sl<AuthRepository>()));
+  sl.registerLazySingleton(() => LoginWithFirebase(sl<AuthRepository>()));
   sl.registerLazySingleton(() => GetProfile(sl<AuthRepository>()));
   sl.registerLazySingleton(() => Register(sl<AuthRepository>()));
   sl.registerLazySingleton(() => ChangePassword(sl<AuthRepository>()));
   sl.registerLazySingleton(() => ForgotPassword(sl<AuthRepository>()));
+  sl.registerLazySingleton(() => VerifyForgotPasswordOtp(sl<AuthRepository>()));
   sl.registerLazySingleton(() => ResetPassword(sl<AuthRepository>()));
   sl.registerLazySingleton(() => UpdateProfile(sl<AuthRepository>()));
   sl.registerLazySingleton(() => UploadAvatar(sl<AuthRepository>()));
+  sl.registerLazySingleton(() => VerifyPhone(sl<AuthRepository>()));
 
-  sl.registerLazySingleton(
+  sl.registerFactory(
     () => AuthBloc(
       sl<Login>(),
+      sl<LoginWithFirebase>(),
       sl<GetProfile>(),
       sl<Register>(),
       sl<ChangePassword>(),
       sl<ForgotPassword>(),
+      sl<VerifyForgotPasswordOtp>(),
       sl<ResetPassword>(),
       sl<UpdateProfile>(),
       sl<UploadAvatar>(),
+      sl<VerifyPhone>(),
     ),
   );
 

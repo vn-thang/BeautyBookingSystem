@@ -12,7 +12,15 @@ namespace BeautyBookingSystem.Application.Interfaces
         Task<Review?> GetByBookingIdAsync(int bookingId);
         Task<List<Review>> GetByCustomerIdAsync(int customerId);
         Task<List<Review>> GetByStoreIdAsync(int storeId);
-        Task<List<Review>> GetPagedByStoreIdAsync(int storeId, int skip, int take);
-        Task<int> CountByStoreIdAsync(int storeId);
+
+        Task<List<Review>> GetTopByStoreIdAsync(int storeId, int take = 5);
+        Task<List<Review>> GetPagedByStoreIdAsync(
+            int storeId,
+            int? rating,
+            string sortBy,
+            int skip,
+            int take);
+
+        Task<int> CountByStoreIdAsync(int storeId, int? rating = null);
     }
 }

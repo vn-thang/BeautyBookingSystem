@@ -1,15 +1,15 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter/gestures.dart';
 
 import '../../../../core/screens/custom_webview_screen.dart';
-import '../bloc/auth_bloc.dart';
-import '../bloc/auth_event.dart';
-import '../bloc/auth_state.dart';
-
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decorations.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../bloc/auth_bloc.dart';
+import '../bloc/auth_event.dart';
+import '../bloc/auth_state.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -26,8 +26,16 @@ class _RegisterPageState extends State<RegisterPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+
   bool obscure = true;
   bool _isAgreed = false;
+  bool _isSendingOtp = false;
+  bool _isVerifyingOtp = false;
+  bool _phoneVerified = false;
+  String? _verificationId;
+  String? _firebaseIdToken;
+
   late TapGestureRecognizer _termsRecognizer;
 
   @override
@@ -61,8 +69,151 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  String _toE164VN(String raw) {
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('0') && digits.length == 10) {
+      return '+84${digits.substring(1)}';
+    }
+    if (digits.startsWith('84') && digits.length == 11) {
+      return '+$digits';
+    }
+    return '+$digits';
+  }
+
+  String _firebaseOtpErrorToVietnamese(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-verification-code':
+        return 'Mã OTP không đúng';
+      case 'session-expired':
+        return 'Mã OTP đã hết hạn, vui lòng gửi lại mã';
+      case 'too-many-requests':
+        return 'Bạn thao tác quá nhiều lần, vui lòng thử lại sau';
+      default:
+        return 'Xác minh OTP thất bại';
+    }
+  }
+
+  Future<void> _sendOtpToPhone() async {
+    final phone = phoneController.text.trim();
+    final digitsOnly = phone.replaceAll(RegExp(r'\D'), '');
+
+    if (digitsOnly.length != 10 || !digitsOnly.startsWith('0')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Vui lòng nhập số điện thoại hợp lệ trước"),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSendingOtp = true;
+      _phoneVerified = false;
+      _firebaseIdToken = null;
+      _verificationId = null;
+    });
+
+    try {
+      await _firebaseAuth.verifyPhoneNumber(
+        phoneNumber: _toE164VN(phone),
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          try {
+            final userCred =
+                await _firebaseAuth.signInWithCredential(credential);
+            final token = await userCred.user?.getIdToken(true);
+
+            if (!mounted) return;
+            setState(() {
+              _phoneVerified = true;
+              _firebaseIdToken = token;
+              _isSendingOtp = false;
+            });
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Đã xác minh số điện thoại")),
+            );
+          } catch (e) {
+            if (!mounted) return;
+            setState(() => _isSendingOtp = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Xác minh tự động thất bại: $e")),
+            );
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          if (!mounted) return;
+          setState(() => _isSendingOtp = false);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.message ?? "Không gửi được OTP")),
+          );
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          if (!mounted) return;
+          setState(() {
+            _verificationId = verificationId;
+            _isSendingOtp = false;
+          });
+
+          _showOtpDialog();
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          if (!mounted) return;
+          _verificationId = verificationId;
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSendingOtp = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Lỗi gửi OTP: $e")),
+      );
+    }
+  }
+
+  Future<void> _showOtpDialog() async {
+    if (!mounted || _verificationId == null) return;
+
+    setState(() => _isVerifyingOtp = true);
+
+    try {
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return _OtpDialog(
+            firebaseAuth: _firebaseAuth,
+            verificationId: _verificationId!,
+            onVerified: (token) {
+              if (!mounted) return;
+              setState(() {
+                _phoneVerified = true;
+                _firebaseIdToken = token;
+              });
+            },
+          );
+        },
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isVerifyingOtp = false);
+      }
+    }
+  }
+
   void _register() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    if (!_phoneVerified || _firebaseIdToken == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Vui lòng xác minh số điện thoại trước khi đăng ký"),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
 
     if (!_isAgreed) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -80,6 +231,7 @@ class _RegisterPageState extends State<RegisterPage> {
             phone: phoneController.text.trim(),
             email: emailController.text.trim(),
             password: passwordController.text,
+            firebaseIdToken: _firebaseIdToken!,
           ),
         );
   }
@@ -103,7 +255,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Đăng ký thành công")),
                 );
-                Navigator.pop(context);
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
+                });
               }
 
               if (state is AuthError) {
@@ -210,12 +367,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                 icon: Icons.badge_outlined,
                                 validator: (value) {
                                   final v = value?.trim() ?? '';
-                                  if (v.isEmpty) {
-                                    return "Nhập họ tên";
-                                  }
-                                  if (v.length < 2) {
-                                    return "Họ tên quá ngắn";
-                                  }
+                                  if (v.isEmpty) return "Nhập họ tên";
+                                  if (v.length < 2) return "Họ tên quá ngắn";
                                   final nameRegex =
                                       RegExp(r"^[A-Za-zÀ-ỹà-ỹ\s'.-]+$");
                                   if (!nameRegex.hasMatch(v)) {
@@ -225,30 +378,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 },
                               ),
                               const SizedBox(height: 14),
-                              _buildField(
-                                controller: phoneController,
-                                label: "Số điện thoại",
-                                icon: Icons.phone_outlined,
-                                keyboardType: TextInputType.phone,
-                                validator: (value) {
-                                  final v = value?.trim() ?? '';
-                                  if (v.isEmpty) {
-                                    return "Nhập số điện thoại";
-                                  }
-
-                                  final digitsOnly =
-                                      v.replaceAll(RegExp(r'\D'), '');
-                                  if (digitsOnly.length != 10) {
-                                    return "Số điện thoại phải có 10 chữ số";
-                                  }
-
-                                  if (!digitsOnly.startsWith('0')) {
-                                    return "Số điện thoại không hợp lệ";
-                                  }
-
-                                  return null;
-                                },
-                              ),
+                              _buildPhoneWithOtpButton(),
                               const SizedBox(height: 14),
                               _buildField(
                                 controller: emailController,
@@ -257,9 +387,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 keyboardType: TextInputType.emailAddress,
                                 validator: (value) {
                                   final v = value?.trim() ?? '';
-                                  if (v.isEmpty) {
-                                    return "Nhập email";
-                                  }
+                                  if (v.isEmpty) return "Nhập email";
 
                                   final emailRegex = RegExp(
                                     r'^[\w\.-]+@([\w-]+\.)+[A-Za-z]{2,}$',
@@ -290,9 +418,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ),
                                 validator: (value) {
                                   final v = value?.trim() ?? '';
-                                  if (v.isEmpty) {
-                                    return "Nhập mật khẩu";
-                                  }
+                                  if (v.isEmpty) return "Nhập mật khẩu";
                                   if (v.length < 6) {
                                     return "Mật khẩu tối thiểu 6 ký tự";
                                   }
@@ -407,6 +533,66 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  Widget _buildPhoneWithOtpButton() {
+    return _buildField(
+      controller: phoneController,
+      label: "Số điện thoại",
+      icon: Icons.phone_outlined,
+      keyboardType: TextInputType.phone,
+      onChanged: (_) {
+        if (_phoneVerified) {
+          setState(() {
+            _phoneVerified = false;
+            _firebaseIdToken = null;
+          });
+        }
+      },
+      validator: (value) {
+        final v = value?.trim() ?? '';
+        if (v.isEmpty) return "Nhập số điện thoại";
+
+        final digitsOnly = v.replaceAll(RegExp(r'\D'), '');
+        if (digitsOnly.length != 10) {
+          return "Số điện thoại phải có 10 chữ số";
+        }
+
+        if (!digitsOnly.startsWith('0')) {
+          return "Số điện thoại không hợp lệ";
+        }
+
+        return null;
+      },
+      suffixIcon: Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: TextButton(
+          onPressed: (_isSendingOtp || _isVerifyingOtp || _phoneVerified)
+              ? null
+              : _sendOtpToPhone,
+          style: TextButton.styleFrom(
+            foregroundColor: _phoneVerified ? Colors.green : AppColors.primary,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            minimumSize: const Size(0, 36),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: _isSendingOtp
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(
+                  _phoneVerified ? "Đã xác minh" : "Xác minh",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _phoneVerified ? Colors.green : AppColors.primary,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildField({
     required TextEditingController controller,
     required String label,
@@ -415,6 +601,7 @@ class _RegisterPageState extends State<RegisterPage> {
     bool obscureText = false,
     Widget? suffixIcon,
     String? Function(String?)? validator,
+    ValueChanged<String>? onChanged,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -426,6 +613,7 @@ class _RegisterPageState extends State<RegisterPage> {
         keyboardType: keyboardType,
         obscureText: obscureText,
         validator: validator,
+        onChanged: onChanged,
         style: AppTextStyles.body.copyWith(
           color: AppColors.textPrimary,
         ),
@@ -569,6 +757,126 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _OtpDialog extends StatefulWidget {
+  final FirebaseAuth firebaseAuth;
+  final String verificationId;
+  final ValueChanged<String?> onVerified;
+
+  const _OtpDialog({
+    required this.firebaseAuth,
+    required this.verificationId,
+    required this.onVerified,
+  });
+
+  @override
+  State<_OtpDialog> createState() => _OtpDialogState();
+}
+
+class _OtpDialogState extends State<_OtpDialog> {
+  final TextEditingController _otpController = TextEditingController();
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _confirmOtp() async {
+    final otp = _otpController.text.trim();
+
+    if (otp.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("OTP không hợp lệ")),
+      );
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: widget.verificationId,
+        smsCode: otp,
+      );
+
+      final userCred =
+          await widget.firebaseAuth.signInWithCredential(credential);
+      final token = await userCred.user?.getIdToken(true);
+
+      if (!mounted) return;
+
+      widget.onVerified(token);
+
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      final message = _mapFirebaseOtpError(e);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Xác minh thất bại: $e")),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  String _mapFirebaseOtpError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'invalid-verification-code':
+        return 'Mã OTP không đúng';
+      case 'session-expired':
+        return 'Mã OTP đã hết hạn, vui lòng gửi lại mã';
+      case 'too-many-requests':
+        return 'Bạn thao tác quá nhiều lần, vui lòng thử lại sau';
+      default:
+        return 'Xác minh OTP thất bại';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Nhập mã OTP"),
+      content: TextField(
+        controller: _otpController,
+        keyboardType: TextInputType.number,
+        maxLength: 6,
+        decoration: const InputDecoration(
+          hintText: "Nhập 6 chữ số OTP",
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text("Hủy"),
+        ),
+        ElevatedButton(
+          onPressed: _loading ? null : _confirmOtp,
+          child: _loading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text("Xác nhận"),
+        ),
+      ],
     );
   }
 }
