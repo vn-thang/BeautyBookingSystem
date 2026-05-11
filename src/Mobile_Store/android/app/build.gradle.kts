@@ -8,7 +8,7 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-android {
+android { 
     namespace = "com.example.mobile_store"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion

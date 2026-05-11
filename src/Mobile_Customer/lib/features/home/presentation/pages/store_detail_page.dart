@@ -61,7 +61,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
   }
 
   int _apiDayOfWeek(DateTime now) {
-    return now.weekday;
+    return now.weekday == 7 ? 0 : now.weekday;
   }
 
   int _timeToMinutes(String time) {
@@ -96,7 +96,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
         return 'Thứ 6';
       case 6:
         return 'Thứ 7';
-      case 7:
+      case 0:
         return 'Chủ nhật';
       default:
         return 'Không rõ';

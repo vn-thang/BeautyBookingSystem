@@ -4,7 +4,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:mobile_store/core/network/api_client.dart';
 import 'package:mobile_store/features/home/screens/main_screen.dart';
 import 'package:mobile_store/shared/token_storage.dart';
-import 'firebase_options.dart'; 
 import 'core/constant/global_keys.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -12,24 +11,22 @@ import 'package:mobile_store/features/auth/screens/login_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // ✅ bỏ options
+  await Firebase.initializeApp();
   debugPrint("📬 [Background] Nhận thông báo: ${message.notification?.title}");
 }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  await initializeDateFormatting('vi_VN', null); 
 
-  // 3. KHỞI TẠO FIREBASE
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await initializeDateFormatting('vi_VN', null);
 
-  // 4. ĐĂNG KÝ LẮNG NGHE THÔNG BÁO BACKGROUND
+  // ✅ bỏ options
+  await Firebase.initializeApp();
+
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  String firstScreen = '/login'; 
+  String firstScreen = '/login';
 
   final accessToken = await TokenStorage.getAccessToken();
   final refreshToken = await TokenStorage.getRefreshToken();
@@ -40,18 +37,20 @@ Future<void> main() async {
 
       if (!isExpired) {
         debugPrint("✅ Access Token còn hạn, vào Home.");
-        firstScreen = '/home'; 
+        firstScreen = '/home';
       } else {
-        debugPrint("⚠️ Access Token đã hết hạn. Đang kiểm tra Refresh Token...");
+        debugPrint(
+          "⚠️ Access Token đã hết hạn. Đang kiểm tra Refresh Token...",
+        );
 
         if (refreshToken != null && refreshToken.isNotEmpty) {
           bool isRefreshSuccess = await ApiClient.refreshToken();
-          
+
           if (isRefreshSuccess) {
             firstScreen = '/home';
           } else {
             debugPrint("❌ Refresh Token thất bại. Xóa dữ liệu và về Login.");
-            await TokenStorage.clearTokens(); 
+            await TokenStorage.clearTokens();
             firstScreen = '/login';
           }
         } else {
@@ -66,14 +65,13 @@ Future<void> main() async {
     }
   }
 
-  // 6. Khởi chạy App
   runApp(StoreAdminApp(initialRoute: firstScreen));
 }
 
 class StoreAdminApp extends StatelessWidget {
-  final String initialRoute; 
+  final String initialRoute;
 
-  const StoreAdminApp({super.key, required this.initialRoute}); 
+  const StoreAdminApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -81,14 +79,11 @@ class StoreAdminApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       title: 'Beauty Booking',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.pink, 
-        fontFamily: 'Roboto', 
-      ),
+      theme: ThemeData(primarySwatch: Colors.pink, fontFamily: 'Roboto'),
       initialRoute: initialRoute,
       routes: {
         '/login': (context) => const LoginScreen(),
-        '/home': (context) => const MainScreen(), 
+        '/home': (context) => const MainScreen(),
       },
     );
   }

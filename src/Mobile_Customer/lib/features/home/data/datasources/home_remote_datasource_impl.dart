@@ -28,7 +28,7 @@ class HomeRemoteDataSourceImpl implements HomeRemoteDataSource {
 
   @override
   Future<List<GlobalCategoryModel>> getCategories() async {
-    final response = await dio.get('globalcategories');
+    final response = await dio.get('globalcategories/active');
 
     if (response.data is List) {
       return (response.data as List)

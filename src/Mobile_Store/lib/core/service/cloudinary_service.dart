@@ -4,22 +4,27 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
 class BackendUploadService {
-  static const String baseUrl = 'http://localhost:5294'; 
+  static const String baseUrl = 'http://192.168.1.144:5294';
 
-  static Future<String?> uploadImage(File imageFile, {String folderName = 'general'}) async {
+  static Future<String?> uploadImage(
+    File imageFile, {
+    String folderName = 'general',
+  }) async {
     try {
       final Uri url = Uri.parse('$baseUrl/api/media/upload?folder=$folderName');
 
       final request = http.MultipartRequest('POST', url);
-      
-      request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+
+      request.files.add(
+        await http.MultipartFile.fromPath('file', imageFile.path),
+      );
 
       final response = await request.send();
       final responseData = await response.stream.bytesToString();
       final jsonMap = jsonDecode(responseData);
 
       if (response.statusCode == 200) {
-        return jsonMap['url']; 
+        return jsonMap['url'];
       } else {
         debugPrint('Lỗi từ Backend: ${response.statusCode} - $responseData');
         return null;
