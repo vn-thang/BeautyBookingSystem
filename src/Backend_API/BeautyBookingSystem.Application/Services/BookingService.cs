@@ -15,19 +15,19 @@ namespace BeautyBookingSystem.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly INotificationService _notificationService;
         private readonly ISystemConfigService _systemConfigService;
-        private readonly IStoreVnPayService _vnPayService;
+        private readonly ICustomerPaymentService _paymentService;
         private readonly IStoreWalletService _storeWalletService;
 
         public BookingService(IUnitOfWork unitOfWork, 
         INotificationService notificationService, 
         ISystemConfigService systemConfigService,
-        IStoreVnPayService vnPayService,
+        ICustomerPaymentService paymentService,
         IStoreWalletService storeWalletService)
         {
             _unitOfWork = unitOfWork;
             _notificationService = notificationService;
             _systemConfigService = systemConfigService;
-            _vnPayService = vnPayService;
+            _paymentService = paymentService;
             _storeWalletService = storeWalletService;
         }
 
@@ -367,7 +367,7 @@ namespace BeautyBookingSystem.Application.Services
                 throw new InvalidOperationException("Chỉ có thể dời lịch đối với đơn đang chờ xử lý hoặc đã xác nhận.");
 
             if (booking.RescheduleCount >= 2)
-                throw new InvalidOperationException("Bạn đã vượt quá số lần dời lịch cho phép (Tối đa 2 lần). Vui lòng hủy đơn nếu không thể đến.");
+                throw new InvalidOperationException("Bạn đã vượt quá số lần dời lịch cho phép. Vui lòng hủy đơn nếu không thể đến.");
 
             var firstDetail = booking.BookingDetails.OrderBy(d => d.StartTime).First();
             var oldBookingDateTime = firstDetail.AppointmentDate.Date.Add(firstDetail.StartTime);
@@ -622,7 +622,7 @@ namespace BeautyBookingSystem.Application.Services
             {
                 d.Status = BookingDetailStatus.Cancelled;
             }
-            bool hasPaidDeposit = false;
+            bool hasPaid = false;
             bool isRefunded = false;
             bool isPenaltyApplied = false;
 
@@ -631,55 +631,79 @@ namespace BeautyBookingSystem.Application.Services
                 p.Status = PaymentStatus.Refunded;
             }
 
-            var vnPayDeposit = booking.Payments.FirstOrDefault(p =>
-                p.PaymentType == PaymentType.Deposit &&
-                p.Status == PaymentStatus.Success);
+var vnPayPayment = booking.Payments.FirstOrDefault(p =>
+    p.PaymentMethod == PaymentMethod.VNPAY &&
+    p.Status == PaymentStatus.Success);
 
-            if (vnPayDeposit != null && booking.DepositAmount > 0)
-            {
-                hasPaidDeposit = true;
-
-            if (!isLateCancel)
+// Có giao dịch VNPay thành công
+if (vnPayPayment != null)
 {
-    if (string.IsNullOrEmpty(vnPayDeposit.TransactionId) || string.IsNullOrEmpty(vnPayDeposit.VnpPayDate))
+    hasPaid = true;
+
+   if (!isLateCancel)
+{
+    // ===== FAKE REFUND =====
+
+    // 1. Cập nhật payment
+    vnPayPayment.Status = PaymentStatus.Refunded;
+
+    // 2. Trừ lại ví store
+    var store = await _unitOfWork.StoreRepository
+        .GetByIdAsync(booking.StoreId);
+
+    if (store != null)
     {
-        throw new BadRequestException("Giao dịch thiếu TransactionId hoặc VnpPayDate, không thể tự động hoàn tiền VNPay!");
+        decimal balanceBefore = store.WalletBalance;
+
+        store.WalletBalance -= vnPayPayment.Amount;
+
+        // Không cho âm ví
+        if (store.WalletBalance < 0)
+        {
+            store.WalletBalance = 0;
+        }
+
+        _unitOfWork.StoreRepository.Update(store);
+
+        // 3. Ghi lịch sử ví
+        await _unitOfWork.WalletTransactionRepository.AddAsync(
+            new WalletTransaction
+            {
+                StoreId = store.Id,
+                BookingId = booking.Id,
+                Type = TransactionType.ClawbackDeposit,
+                Amount = vnPayPayment.Amount,
+                BalanceBefore = balanceBefore,
+                BalanceAfter = store.WalletBalance,
+                Status = TransactionStatus.Completed,
+                Description = $"Hoàn tiền booking #{booking.Id}",
+                CreatedAt = DateTime.UtcNow
+            }
+        );
     }
 
-    var refundResult = await _vnPayService.RefundAsync(
-        vnp_TxnRef: vnPayDeposit.TransactionId,
-        vnp_TransactionDate: vnPayDeposit.VnpPayDate, 
-        amount: vnPayDeposit.Amount,
-        createBy: $"Customer_{customerId}",
-        vnp_TransactionNo: vnPayDeposit.VnpTransactionNo ?? "" 
-    );
-        Console.WriteLine($"VNPay Refund - Success: {refundResult.IsSuccess}, Code: {refundResult.ResponseCode}, Msg: {refundResult.Message}");
-    if (!refundResult.IsSuccess)
-    {
-        throw new BadRequestException($"Hệ thống VNPay từ chối hoàn tiền: {refundResult.Message}");
-    }
-
-    vnPayDeposit.Status = PaymentStatus.Refunded;
     isRefunded = true;
-
-    await _storeWalletService.ClawbackDepositAsync(booking.Id);
 }
 else
 {
     isPenaltyApplied = true;
-    await _storeWalletService.ProcessBookingPenaltyAsync(booking.Id);
 }
-            }
+}
+    _unitOfWork.BookingRepository.Update(booking);
 
-            _unitOfWork.BookingRepository.Update(booking);
-            await _unitOfWork.SaveChangesAsync();
+    await _unitOfWork.SaveChangesAsync();
 
-            string customerMsg = $"Bạn đã tự hủy lịch hẹn #{booking.Id}.";
-            string storeMsg = $"Lịch hẹn #{booking.Id} vừa bị khách hàng hủy. Lý do: {reason ?? "Không có lý do"}.";
 
-            if (hasPaidDeposit)
-            {
-                if (isRefunded)
+    string customerMsg =
+        $"Bạn đã tự hủy lịch hẹn #{booking.Id}.";
+
+    string storeMsg =
+        $"Lịch hẹn #{booking.Id} vừa bị khách hàng hủy. " +
+        $"Lý do: {reason ?? "Không có lý do"}.";
+
+    if (hasPaid)
+    {
+         if (isRefunded)
                 {
                     customerMsg += $" Hủy đúng quy định (trước {cancelBeforeHours} giờ). Số tiền cọc {booking.DepositAmount:N0}đ đang được xử lý hoàn về thẻ/tài khoản của bạn.";
                     storeMsg += $" Khách hủy đúng quy định, hệ thống đã tự động thu hồi lại tiền cọc từ ví cửa hàng.";
@@ -689,31 +713,35 @@ else
                     customerMsg += $" Hủy quá sát giờ (quy định phải hủy trước {cancelBeforeHours} giờ). Theo chính sách, bạn không được hoàn lại tiền cọc {booking.DepositAmount:N0}đ.";
                     storeMsg += $" Khách hủy sát giờ, cửa hàng được nhận bồi thường tiền cọc vào ví.";
                 }
-            }
+    }
 
-            await _notificationService.CreateAndSendNotificationAsync(
-                customerId,
-                "Hủy lịch thành công",
-                customerMsg,
-                NotificationType.BookingUpdate
-            );
+    await _notificationService.CreateAndSendNotificationAsync(
+        customerId,
+        "Hủy lịch thành công",
+        customerMsg,
+        NotificationType.BookingUpdate
+    );
 
-            var store = await _unitOfWork.StoreRepository.GetByIdAsync(booking.StoreId);
-            if (store != null)
-            {
-                await _notificationService.CreateAndSendNotificationAsync(
-                    store.OwnerId,
-                    "⚠️ Khách hàng tự hủy lịch",
-                    storeMsg,
-                    NotificationType.BookingUpdate
-                );
-            }
+    var storeInfo = await _unitOfWork.StoreRepository
+        .GetByIdAsync(booking.StoreId);
 
-            var result = await GetBookingByIdAsync(customerId, bookingId);
-            if (result == null) throw new Exception("Cannot load updated booking");
+    if (storeInfo != null)
+    {
+        await _notificationService.CreateAndSendNotificationAsync(
+            storeInfo.OwnerId,
+            "⚠️ Khách hàng tự hủy lịch",
+            storeMsg,
+            NotificationType.BookingUpdate
+        );
+    }
 
-            return result;
-        }
+    var result = await GetBookingByIdAsync(customerId, bookingId);
+
+    if (result == null)
+        throw new Exception("Cannot load updated booking");
+
+    return result;
+}
 
         public async Task<List<AvailableStaffDto>> GetAvailableStaffAsync(GetAvailableStaffRequest request)
         {

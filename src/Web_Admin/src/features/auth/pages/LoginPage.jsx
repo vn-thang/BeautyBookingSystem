@@ -11,13 +11,14 @@ const PageContainer = styled.div`
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #74EBD5 0%, #9FACE6 100%);
+  background: linear-gradient(135deg, #c1eae3 0%, #b4bcdb 100%);
 `;
 
 const StyledCard = styled.div`
   display: flex;
-  width: 840px;
-  background: #ffffff;
+  width: 1040px;  
+  max-width: 95%;  
+  background: #e9cdd5;
   box-shadow: 0 20px 40px rgba(0,0,0,0.12);
   border-radius: 24px;
   overflow: hidden;
@@ -153,8 +154,8 @@ const LoginPage = () => {
               </Title>
             </div>
             
-            <Text style={{ color: '#E2E8F0', fontSize: '13.5px', textAlign: 'center', maxWidth: '300px', lineHeight: '1.6', zIndex: 10 }}>
-              Chào mừng bạn đến với hệ thống Quản lý Bảng điều khiển Quản trị viên của chúng tôi.
+            <Text style={{ color: '#E2E8F0', fontSize: '18px', textAlign: 'center', maxWidth: '300px', lineHeight: '1.6', zIndex: 10 }}>
+              Chào mừng bạn đến với hệ thống Quản trị của chúng tôi.
             </Text>
           </SiderPanel>
 
@@ -169,7 +170,7 @@ const LoginPage = () => {
               }}>
                 Welcome Back!
               </Title>
-              <Text type="secondary" style={{ fontSize: '15px', color: '#64748b', fontWeight: 500 }}>
+              <Text type="secondary" style={{ fontSize: '18px', color: '#64748b', fontWeight: 500 }}>
                 Sign in to continue
               </Text>
               
@@ -187,8 +188,8 @@ const LoginPage = () => {
             >
               <Form.Item 
                 name="username" 
-                rules={[{ required: true, message: 'Nhập Email hoặc Số điện thoại!' }]}
-                style={{ marginBottom: 24 }}
+                rules={[{ required: true, fontSize: '18px', message: 'Nhập Email hoặc Số điện thoại!' }]}
+                style={{ marginBottom: 44 }}
               >
                 <Input 
                   prefix={<MailOutlined style={{ color: '#94A3B8', marginRight: 12, fontSize: '18px' }} />} 
@@ -199,8 +200,8 @@ const LoginPage = () => {
 
               <Form.Item 
                 name="password" 
-                rules={[{ required: true, message: 'Nhập mật khẩu!' }]}
-                style={{ marginBottom: 20 }}
+                rules={[{ required: true,fontSize: '18px', message: 'Nhập mật khẩu!' }]}
+                style={{ marginBottom: 40 }}
               >
                 <Input.Password 
                   prefix={<LockOutlined style={{ color: '#94A3B8', marginRight: 12, fontSize: '18px' }} />} 
@@ -218,12 +219,12 @@ const LoginPage = () => {
               }}>
                 <Form.Item name="remember" valuePropName="checked" noStyle>
                   <Checkbox>
-                    <Text style={{ color: '#1E293B', fontSize: '13.5px', fontWeight: 600 }}>Remember me</Text>
+                    <Text style={{ color: '#1E293B', fontSize: '18px', fontWeight: 600 }}>Remember me</Text>
                   </Checkbox>
                 </Form.Item>
                 <a 
                   href="#" 
-                  style={{ color: '#94A3B8', fontSize: '13.5px', fontWeight: 500 }}
+                  style={{ color: '#94A3B8', fontSize: '18px', fontWeight: 500 }}
                   onClick={(e) => { e.preventDefault(); message.info("Quên mật khẩu?"); }}
                 >
                   Forgot Password?
@@ -237,7 +238,7 @@ const LoginPage = () => {
                 block
                 style={{ borderRadius: 50 }} 
               >
-                Login
+                LOGIN
               </GradientButton>
             </Form>
             

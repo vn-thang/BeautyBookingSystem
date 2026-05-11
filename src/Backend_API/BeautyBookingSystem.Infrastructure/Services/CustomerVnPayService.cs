@@ -71,6 +71,7 @@ namespace BeautyBookingSystem.Infrastructure.Services
             string vnp_TransactionStatus = vnpay.GetResponseData("vnp_TransactionStatus");
             string vnp_SecureHash = query["vnp_SecureHash"].ToString();
             string transactionId = vnpay.GetResponseData("vnp_TransactionNo"); 
+            string payDate = vnpay.GetResponseData("vnp_PayDate");
 
             bool isValidSignature = vnpay.ValidateSignature(vnp_SecureHash, _config["Vnpay:HashSecret"]!);
 
@@ -81,6 +82,7 @@ namespace BeautyBookingSystem.Infrastructure.Services
                 ResponseCode = vnp_ResponseCode,
                 TransactionStatus = vnp_TransactionStatus,
                 TransactionId = transactionId,
+                PayDate = payDate,
                 Message = isValidSignature ? "Success" : "Invalid signature"
             };
         }
@@ -91,6 +93,12 @@ namespace BeautyBookingSystem.Infrastructure.Services
             string createBy, 
             string vnp_TransactionNo = "") 
         {
+            // --- LOG REQUEST ---
+    Console.WriteLine("--- VNPAY REFUND REQUEST ---");
+    Console.WriteLine($"vnp_TxnRef (Mã đơn): {vnp_TxnRef}");
+    Console.WriteLine($"vnp_TransactionNo (Mã VNPay): {vnp_TransactionNo}");
+    Console.WriteLine($"vnp_TransactionDate: {vnp_TransactionDate}");
+    Console.WriteLine($"Amount: {amount}");
             var context = _httpContextAccessor.HttpContext;
             var ipAddress = context?.Connection?.RemoteIpAddress?.ToString() ?? "127.0.0.1";
             
@@ -109,7 +117,8 @@ namespace BeautyBookingSystem.Infrastructure.Services
             var payLib = new VnPayLibrary();
             
             var signData = $"{vnp_RequestId}|{vnp_Version}|{vnp_Command}|{tmnCode}|{vnp_TransactionType}|{vnp_TxnRef}|{vnp_Amount}|{vnp_TransactionNo}|{vnp_TransactionDate}|{createBy}|{vnp_CreateDate}|{ipAddress}|{vnp_OrderInfo}";
-            
+            Console.WriteLine($"--- [VNPAY REFUND] SIGN DATA ---");
+            Console.WriteLine(signData);
             var vnp_SecureHash = payLib.HmacSHA512(hashSecret, signData);
             
             var requestData = new
@@ -133,11 +142,21 @@ namespace BeautyBookingSystem.Infrastructure.Services
             try 
             {
                 var client = _httpClientFactory.CreateClient();
+                Console.WriteLine($"--- [VNPAY REFUND] CALLING API: {refundUrl} ---");
                 var response = await client.PostAsJsonAsync(refundUrl, requestData);
-
+                
+                 
                 if (response.IsSuccessStatusCode)
                 {
                     var responseContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine("===== VNPAY REFUND RESPONSE =====");
+Console.WriteLine(responseContent);
+Console.WriteLine("=================================");
+
+                    // 3. LOG FULL RESPONSE (Đây là nơi VNPay trả về mã lỗi 91, 94, 99...)
+        Console.WriteLine($"--- [VNPAY REFUND] RESPONSE RECEIVED ---");
+        Console.WriteLine($"HTTP Status: {response.StatusCode}");
+        Console.WriteLine($"Raw Content: {responseContent}");
                     _logger.LogInformation($"VNPay Refund Response: {responseContent}");
 
                     using JsonDocument doc = JsonDocument.Parse(responseContent);
@@ -145,7 +164,8 @@ namespace BeautyBookingSystem.Infrastructure.Services
                     
                     string vnp_ResponseCode = root.GetProperty("vnp_ResponseCode").GetString() ?? string.Empty;
                     string vnp_Message = root.GetProperty("vnp_Message").GetString() ?? string.Empty;
-
+Console.WriteLine($"Parsed Code: {vnp_ResponseCode}");
+            Console.WriteLine($"Parsed Message: {vnp_Message}");
                     if (vnp_ResponseCode == "00") 
                     {
                         return (true, "00", "Hoàn tiền thành công"); 
@@ -154,11 +174,27 @@ namespace BeautyBookingSystem.Infrastructure.Services
                     return (false, vnp_ResponseCode, vnp_Message);
                 }
 
-                _logger.LogError($"VNPay Refund API failed: {response.StatusCode}");
-                return (false, "HTTP_ERROR", "Lỗi kết nối đến cổng VNPay");
+                // _logger.LogError($"VNPay Refund API failed: {response.StatusCode}");
+                // return (false, "HTTP_ERROR", "Lỗi kết nối đến cổng VNPay");
+                var errorContent = await response.Content.ReadAsStringAsync();
+
+Console.WriteLine("===== VNPAY ERROR RESPONSE =====");
+Console.WriteLine(errorContent);
+Console.WriteLine("================================");
+
+_logger.LogError(
+    $"VNPay Refund API failed: {response.StatusCode} | {errorContent}"
+);
+
+return (
+    false,
+    "HTTP_ERROR",
+    $"VNPay trả về lỗi: {errorContent}"
+);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"!!! [VNPAY REFUND] EXCEPTION: {ex.Message}");
                 _logger.LogError(ex, "Exception in VNPay Refund API");
                 return (false, "EXCEPTION", "Có lỗi xảy ra khi gọi API VNPay");
             }

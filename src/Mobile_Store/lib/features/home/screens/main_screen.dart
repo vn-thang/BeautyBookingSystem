@@ -94,80 +94,97 @@ class _MainScreenState extends State<MainScreen> {
     _fetchUnreadCount(); 
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background, 
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens, 
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed, 
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        
-        backgroundColor: AppColors.white,
-        selectedItemColor: AppColors.primary, 
-        unselectedItemColor: AppColors.textSub, 
-        selectedLabelStyle: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.bold),
-        unselectedLabelStyle: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w500),
-        elevation: 10,
-        items: [
-  const BottomNavigationBarItem(
-    icon: Icon(Icons.space_dashboard_outlined), 
-    activeIcon: Icon(Icons.space_dashboard_rounded),
-    label: 'Trang chủ',
-  ),
-  
-  BottomNavigationBarItem(
-    icon: Badge(
-      isLabelVisible: _unreadCount > 0, 
-      backgroundColor: AppColors.error,
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), 
-      offset: const Offset(4, -4), 
-      label: Text(
-        _unreadCount > 99 ? '99+' : '$_unreadCount', 
-        style: AppTextStyles.labelSmall.copyWith(
-          color: AppColors.white, 
-          fontSize: 10, 
-          fontWeight: FontWeight.bold,
-          height: 1.2, 
-        ), 
-      ),
-      child: const Icon(Icons.notifications_outlined), 
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: AppColors.background,
+    extendBody: false, 
+    body: IndexedStack(
+      index: _selectedIndex,
+      children: _screens,
     ),
-    activeIcon: Badge( 
-      isLabelVisible: _unreadCount > 0,
-      backgroundColor: AppColors.error,
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      offset: const Offset(4, -4),
-      label: Text(
-        _unreadCount > 99 ? '99+' : '$_unreadCount', 
-        style: AppTextStyles.labelSmall.copyWith(
-          color: AppColors.white, 
-          fontSize: 10, 
-          fontWeight: FontWeight.bold,
-          height: 1.2,
-        ), 
+    bottomNavigationBar: Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20), 
+          topRight: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2), 
+          ),
+        ],
       ),
-      child: const Icon(Icons.notifications_rounded),
+      child: SafeArea(
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            backgroundColor: AppColors.white,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: AppColors.textSub.withOpacity(0.6),
+            elevation: 0, 
+            selectedLabelStyle: AppTextStyles.labelSmall.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+            unselectedLabelStyle: AppTextStyles.labelSmall.copyWith(
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+            ),
+            items: [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.space_dashboard_outlined),
+                activeIcon: Icon(Icons.space_dashboard_rounded),
+                label: 'Trang chủ',
+              ),
+              BottomNavigationBarItem(
+                icon: _buildNotificationIcon(false),
+                activeIcon: _buildNotificationIcon(true),
+                label: 'Thông báo',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.calendar_today_outlined),
+                activeIcon: Icon(Icons.calendar_today_rounded),
+                label: 'Lịch hẹn',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.storefront_outlined),
+                activeIcon: Icon(Icons.storefront_rounded),
+                label: 'Cửa hàng',
+              ),
+            ],
+          ),
+        ),
+      ),
     ),
-    label: 'Thông báo',
-  ),
-  
-  const BottomNavigationBarItem(
-    icon: Icon(Icons.calendar_today_outlined),
-    activeIcon: Icon(Icons.calendar_today_rounded),
-    label: 'Lịch hẹn',
-  ),
-  const BottomNavigationBarItem(
-    icon: Icon(Icons.storefront_outlined), 
-    activeIcon: Icon(Icons.storefront_rounded),
-    label: 'Cửa hàng',
-  ),
-],
+  );
+}
+
+Widget _buildNotificationIcon(bool isActive) {
+  return Badge(
+    isLabelVisible: _unreadCount > 0,
+    backgroundColor: AppColors.error,
+    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+    offset: const Offset(6, -6),
+    label: Text(
+      _unreadCount > 99 ? '99+' : '$_unreadCount',
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
       ),
-    );
-  }
+    ),
+    child: Icon(isActive ? Icons.notifications_rounded : Icons.notifications_outlined),
+  );
+}
+ 
 }

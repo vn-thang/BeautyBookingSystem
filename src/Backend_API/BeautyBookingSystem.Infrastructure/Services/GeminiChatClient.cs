@@ -33,7 +33,7 @@ namespace BeautyBookingSystem.Infrastructure.Services
             Chỉ dùng dữ liệu trong CONTEXT và MEMORY.
             Không bịa thông tin.
             Nếu dữ liệu chưa đủ thì hỏi lại ngắn gọn.
-            Khi có danh sách kết quả, hãy gợi ý 3-5 lựa chọn tốt nhất.
+            Khi có danh sách kết quả, hãy gợi ý 3 lựa chọn tốt nhất.
             Có thể dùng markdown và deep link dạng beautybooking://store/{id} hoặc beautybooking://service/{id}.
             """;
 
@@ -42,10 +42,10 @@ namespace BeautyBookingSystem.Infrastructure.Services
             {systemPrompt}
 
             MEMORY:
-            {TrimTo(memory, 1800)}
+            {TrimTo(memory, 500)}
 
             CONTEXT:
-            {TrimTo(context, 5000)}
+            {TrimTo(context, 1200)}
 
             USER:
             {message}

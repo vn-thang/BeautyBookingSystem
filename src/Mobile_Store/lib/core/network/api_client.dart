@@ -92,7 +92,6 @@ static Future<List<int>> downloadFile(String endpoint) async {
 
   static Future<http.Response> _makeHttpCall(String method, String endpoint, Map<String, dynamic>? body) async {
     final token = await TokenStorage.getAccessToken();
-    debugPrint("🔑 Token đang gửi đi: $token");
     final headers = {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
@@ -137,10 +136,8 @@ static Future<List<int>> downloadFile(String endpoint) async {
         
         await TokenStorage.saveTokens(newAccess, newRefresh);
         
-        debugPrint("✅ Làm mới Token thành công!");
         return true;
       }
-      debugPrint("❌ C# Backend từ chối Refresh Token. Mã lỗi: ${response.statusCode}, Nội dung: ${response.body}");
       return false; 
     } catch (e) {
      debugPrint ("❌ Lỗi mạng khi Refresh Token: $e");
@@ -169,7 +166,6 @@ static Future<List<int>> downloadFile(String endpoint) async {
     try {
       json = response.body.isNotEmpty ? jsonDecode(response.body) : {};
     } catch (e) {
-      debugPrint("⚠️ Lỗi Parse JSON: $e");
       if (response.body.toLowerCase() == 'true') return true;
       if (response.body.toLowerCase() == 'false') return false;
       json = {'message': response.body}; 
@@ -182,7 +178,6 @@ static Future<List<int>> downloadFile(String endpoint) async {
         return json; 
         
       case 400: 
-        debugPrint("❌ LỖI 400 RAW: ${response.body}");
         if (json is Map) {
           if (json.containsKey('errors') && json['errors'] is Map) {
             final errors = json['errors'] as Map;

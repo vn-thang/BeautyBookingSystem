@@ -71,7 +71,7 @@ class WalletTransactionModel {
 
   final String? receiptImageUrl;
   final String? adminNote;
-
+final DateTime? updatedAt;
   WalletTransactionModel({
     required this.id,
     this.bookingId,
@@ -84,6 +84,7 @@ class WalletTransactionModel {
     this.status = 'Completed',
     this.receiptImageUrl,
     this.adminNote,
+     this.updatedAt,
   });
 
   factory WalletTransactionModel.fromJson(Map<String, dynamic> json) {
@@ -99,6 +100,9 @@ class WalletTransactionModel {
       status: _parseStatus(json['status']),
       receiptImageUrl: json['receiptImageUrl'] as String?,
       adminNote: json['adminNote'] as String?,
+      updatedAt: json['updatedAt'] != null 
+    ? DateTime.tryParse(json['updatedAt']) 
+    : null,
     );
   }
 

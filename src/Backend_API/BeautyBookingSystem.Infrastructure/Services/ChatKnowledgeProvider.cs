@@ -72,11 +72,11 @@ namespace BeautyBookingSystem.Infrastructure.Services
                     AppendJsonSection(sb, "HOME_SUMMARY", new
                     {
                         Categories = home.Categories
-                            .Take(6)
+                            .Take(4)
                             .Select(x => new { x.Id, x.Name, x.IconUrl })
                             .ToList(),
                         ServiceGroups = home.ServiceGroups
-                            .Take(6)
+                            .Take(4)
                             .Select(x => new { x.Id, x.Name })
                             .ToList(),
                         TopRatedStores = home.TopRatedStores?
@@ -131,7 +131,7 @@ namespace BeautyBookingSystem.Infrastructure.Services
                     var vouchers = await _voucherRepository.GetAllActiveAsync();
 
                     AppendJsonSection(sb, "ACTIVE_VOUCHERS", vouchers
-                        .Take(8)
+                        .Take(5)
                         .Select(x => new
                         {
                             x.Id,
@@ -191,7 +191,7 @@ namespace BeautyBookingSystem.Infrastructure.Services
                     var searchResults = await SearchStoresAsync(effectiveKeyword, lat, lon, cancellationToken);
 
                     AppendJsonSection(sb, "SEARCH_STORES", searchResults
-                        .Take(6)
+                        .Take(5)
                         .Select(x => new
                         {
                             x.Id,
@@ -219,16 +219,16 @@ namespace BeautyBookingSystem.Infrastructure.Services
                 AppendTextSection(sb, "CONTEXT_ERROR", "Không thể lấy đầy đủ dữ liệu hệ thống lúc này.");
             }
 
-            AppendJsonSection(sb, "INPUT_INFO", new
-            {
-                RawMessage = rawMessage,
-                NormalizedMessage = normalizedMessage,
-                SearchKeyword = searchKeyword,
-                EffectiveKeyword = effectiveKeyword,
-                Intent = intent.ToString(),
-                Lat = lat,
-                Lon = lon
-            });
+            // AppendJsonSection(sb, "INPUT_INFO", new
+            // {
+            //     RawMessage = rawMessage,
+            //     NormalizedMessage = normalizedMessage,
+            //     SearchKeyword = searchKeyword,
+            //     EffectiveKeyword = effectiveKeyword,
+            //     Intent = intent.ToString(),
+            //     Lat = lat,
+            //     Lon = lon
+            // });
 
             return sb.ToString().Trim();
         }

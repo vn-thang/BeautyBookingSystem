@@ -202,66 +202,78 @@ namespace BeautyBookingSystem.Application.Services
         switch (newStatus)
         {
             case BookingStatus.Cancelled:
-                booking.CancelledBy = CancelledByType.Store;
-                booking.CancelReason = request.CancelReason;
-                foreach (var detail in booking.BookingDetails)
+
+    booking.CancelledBy = CancelledByType.Store;
+    booking.CancelReason = request.CancelReason;
+
+    foreach (var detail in booking.BookingDetails)
+    {
+        detail.Status = BookingDetailStatus.Cancelled;
+    }
+
+    bool isRefunded = false;
+
+    var vnPayDeposit = booking.Payments.FirstOrDefault(p =>
+        p.PaymentMethod == PaymentMethod.VNPAY &&
+        p.Status == PaymentStatus.Success);
+
+    if (vnPayDeposit != null)
+    {
+        // ===== FAKE REFUND SANDBOX =====
+
+        vnPayDeposit.Status = PaymentStatus.Refunded;
+
+        _unitOfWork.PaymentRepository.Update(vnPayDeposit);
+
+        var store = await _unitOfWork.StoreRepository
+            .GetByIdAsync(booking.StoreId);
+
+        if (store != null)
+        {
+            decimal balanceBefore = store.WalletBalance;
+
+            store.WalletBalance -= vnPayDeposit.Amount;
+
+            _unitOfWork.StoreRepository.Update(store);
+
+            await _unitOfWork.WalletTransactionRepository.AddAsync(
+                new WalletTransaction
                 {
-                    detail.Status = BookingDetailStatus.Cancelled;
+                    StoreId = store.Id,
+                    BookingId = booking.Id,
+                    Type = TransactionType.ClawbackDeposit,
+                    Amount = vnPayDeposit.Amount,
+                    BalanceBefore = balanceBefore,
+                    BalanceAfter = store.WalletBalance,
+                    Status = TransactionStatus.Completed,
+                    Description = $"Hoàn tiền booking #{booking.Id}",
+                    CreatedAt = DateTime.UtcNow
                 }
+            );
+        }
 
-                bool isRefunded = false;
+        isRefunded = true;
+    }
 
-                var vnPayDeposit = booking.Payments.FirstOrDefault(p => 
-                    p.PaymentMethod == PaymentMethod.VNPAY && 
-                    p.PaymentType == PaymentType.Deposit && 
-                    p.Status == PaymentStatus.Success);   
+    if (isRefunded)
+    {
+        customerNotificationTitle =
+            "Lịch hẹn đã hủy & Hoàn tiền";
 
-                if (vnPayDeposit != null && booking.DepositAmount > 0)
-                {
-                    if (string.IsNullOrEmpty(vnPayDeposit.TransactionId) || !vnPayDeposit.PaidAt.HasValue)
-                    {
-                        throw new BadRequestException("Giao dịch thiếu TransactionId hoặc PaidAt, không thể hoàn tiền VNPay!");
-                    }
+        customerNotificationMessage =
+            $"Cửa hàng đã hủy lịch hẹn #{booking.Id}. " +
+            $"Số tiền {vnPayDeposit?.Amount:N0}đ đã được hoàn về ví/thẻ của bạn trong vài giờ tới.";
+    }
+    else
+    {
+        customerNotificationTitle = "Lịch hẹn đã bị hủy";
 
-                    string vnpPayDateStr = vnPayDeposit.PaidAt.Value.ToString("yyyyMMddHHmmss");
-                    var refundResult = await _vnPayService.RefundAsync(
-                        vnPayDeposit.TransactionId,
-                        vnpPayDateStr,
-                        booking.DepositAmount, 
-                        $"Store_{storeId}" 
-                    );
+        customerNotificationMessage =
+            $"Rất tiếc, lịch hẹn #{booking.Id} đã bị hủy bởi cửa hàng. " +
+            $"Lý do: {request.CancelReason}";
+    }
 
-                    if (!refundResult.IsSuccess)
-                    {
-                        string errorMessage = refundResult.ResponseCode switch
-                        {
-                            "94" => "Giao dịch này đã được hoàn tiền trước đó trên hệ thống VNPay.",
-                            "91" => "Không tìm thấy giao dịch gốc trên VNPay.",
-                            "93" => "Số tiền hoàn lớn hơn số tiền giao dịch gốc.",
-                            "98" => "Giao dịch không hợp lệ.",
-                            _ => $"Lỗi VNPay ({refundResult.ResponseCode}): {refundResult.Message}"
-                        };
-
-                        throw new BadRequestException($"Không thể hoàn tiền: {errorMessage}");
-                    }
-
-                    isRefunded = true;
-                    vnPayDeposit.Status = PaymentStatus.Refunded;
-                    
-                    await _storeWalletService.ClawbackDepositAsync(booking.Id);
-                }
-
-                if (isRefunded)
-                {
-                    customerNotificationTitle = "Lịch hẹn đã hủy & Hoàn tiền cọc";
-                    customerNotificationMessage = $"Cửa hàng đã hủy lịch hẹn #{booking.Id}. Lý do: {request.CancelReason}. Số tiền cọc {booking.DepositAmount:N0}đ đang được xử lý hoàn về thẻ/tài khoản của bạn.";
-                }
-                else
-                {
-                    customerNotificationTitle = "Lịch hẹn đã bị hủy";
-                    customerNotificationMessage = $"Rất tiếc, lịch hẹn #{booking.Id} đã bị hủy bởi cửa hàng. Lý do: {request.CancelReason}";
-                }
-                break;
+    break;
 
             case BookingStatus.Completed:
                 foreach (var detail in booking.BookingDetails)

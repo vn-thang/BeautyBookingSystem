@@ -164,7 +164,7 @@ class _BookingCancelPageState extends State<BookingCancelPage> {
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text(
-                'Có, hủy booking',
+                'Hủy booking',
                 style: TextStyle(color: Colors.white),
               ),
             ),
@@ -537,7 +537,7 @@ final dateLabel = exactDateTime != null
               elevation: 0,
             ),
             child: const Text(
-              'Xác nhận hủy booking',
+              'Xác nhận hủy',
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
           ),

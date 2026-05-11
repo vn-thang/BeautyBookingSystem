@@ -47,7 +47,7 @@ Widget build(BuildContext context) {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Lưu ý: Xác nhận hoàn thành sẽ đồng thời ghi nhận bạn đã thu đủ số tiền trên (tiền mặt).', 
+            'Lưu ý: Xác nhận hoàn thành sẽ đồng thời ghi nhận bạn đã thu đủ số tiền trên.', 
             style: AppTextStyles.labelSmall.copyWith(fontStyle: FontStyle.italic)
           ),
           

@@ -111,11 +111,23 @@ namespace BeautyBookingSystem.Application.Services
             int totalCount = await query.CountAsync();
 
             var items = await query
-                .OrderByDescending(t => t.CreatedAt)
-                .Skip((pageIndex - 1) * pageSize)
-                .Take(pageSize)
-                .ProjectTo<WalletTransactionDto>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+    .OrderByDescending(t => t.CreatedAt)
+    .Skip((pageIndex - 1) * pageSize)
+    .Take(pageSize)
+    .Select(t => new WalletTransactionDto
+    {
+        Id = t.Id,
+        BookingId = t.BookingId,
+        Amount = t.Amount,
+        Type = t.Type,
+        BalanceBefore = t.BalanceBefore,
+        BalanceAfter = t.BalanceAfter,
+        Description = t.Description,
+        Status = t.Status.ToString(),
+        CreatedAt = t.CreatedAt,
+        UpdatedAt = t.UpdatedAt
+    })
+    .ToListAsync();
 
             return new PagedResponse<WalletTransactionDto>
             {

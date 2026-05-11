@@ -107,9 +107,9 @@ class BookingStatusBanner extends StatelessWidget {
         bgColor = AppColors.warning;
         statusText = 'Đang chờ duyệt';
         break;
-      case 'depositpaid':
-        bgColor = const Color.fromARGB(255, 13, 141, 135);
-        statusText = 'Đã đặt cọc';
+         case 'depositpaid':
+        bgColor = const Color(0xFF9C27B0);
+        statusText = 'Đã cọc';
         break;
       case 'confirmed':
         bgColor = const Color(0xFF0068FF);

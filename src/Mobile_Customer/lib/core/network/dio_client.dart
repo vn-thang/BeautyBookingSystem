@@ -27,8 +27,24 @@ class ApiConfig {
   }
 
   // static String get baseUrl {
-  //   return "https://doreatha-absolvable-astrid.ngrok-free.dev/api/";
+  //   if (kIsWeb) {
+  //     return "http://localhost:5294/api/";
+  //   }
+
+  //   if (Platform.isAndroid) {
+  //     if (_isEmulator) {
+  //       return "http://10.0.2.2:5294/api/";
+  //     } else {
+  //       return "http://192.168.1.10:5294/api/";
+  //     }
+  //   }
+
+  //   return "http://localhost:5294/api/";
   // }
+
+  static String get baseUrl {
+    return "https://doreatha-absolvable-astrid.ngrok-free.dev/api/";
+  }
 }
 
 class DioClient {
