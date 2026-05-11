@@ -3,7 +3,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/utils/formatters.dart'; // Sử dụng Formatters chung
+import '../../../core/utils/formatters.dart'; 
 import '../models/customer_list_model.dart';
 
 class CustomerCard extends StatelessWidget {
@@ -16,7 +16,7 @@ class CustomerCard extends StatelessWidget {
     required this.onTap,
   });
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 1,
@@ -50,15 +50,19 @@ class CustomerCard extends StatelessWidget {
                       children: [
                         const Icon(Icons.phone, size: 14, color: AppColors.textSub),
                         const SizedBox(width: AppSpacing.xs),
-                        Text(
-                          customer.phone, 
-                          style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSub),
+                        Expanded(
+                          child: Text(
+                            customer.phone, 
+                            style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSub),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Đã đến: ${customer.totalVisits} lần', 
@@ -67,13 +71,18 @@ class CustomerCard extends StatelessWidget {
                             fontWeight: FontWeight.w500, 
                             fontSize: 13,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 4), 
                         Text(
-                          Formatters.formatCurrency(customer.totalSpent), 
+                          'Tổng chi: ${Formatters.formatCurrency(customer.totalSpent)}', 
                           style: AppTextStyles.bodyText.copyWith(
                             color: AppColors.error, 
                             fontWeight: FontWeight.w600,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),

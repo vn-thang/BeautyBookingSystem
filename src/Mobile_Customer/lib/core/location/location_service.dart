@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
@@ -20,7 +21,7 @@ class LocationService {
 
       return await Geolocator.getCurrentPosition();
     } catch (e) {
-      print("LOCATION ERROR: $e");
+      debugPrint("LOCATION ERROR: $e");
       return null;
     }
   }
@@ -45,7 +46,7 @@ class LocationService {
       return "Unknown location";
 
     } catch (e) {
-      print("GEOCODING ERROR: $e");
+      debugPrint("GEOCODING ERROR: $e");
       return "Unknown location";
     }
   }

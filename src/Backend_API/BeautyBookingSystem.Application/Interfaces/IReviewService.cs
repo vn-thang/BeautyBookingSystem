@@ -8,7 +8,6 @@ namespace BeautyBookingSystem.Application.Interfaces
     {
         Task<ReviewResponseDto> CreateAsync(int customerId, CreateReviewRequestDto request);
         Task<List<ReviewResponseDto>> GetMyReviewsAsync(int customerId);
-        Task ReplyAsync(int reviewId, string reply);
         Task<List<StoreReviewResponseDto>> GetTopByStoreIdAsync(int storeId, int take = 5);
 
         Task<List<StoreReviewResponseDto>> GetPagedByStoreIdAsync(

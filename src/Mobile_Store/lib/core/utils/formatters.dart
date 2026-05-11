@@ -9,11 +9,36 @@ class Formatters {
 
   static String formatDateTime(DateTime? date) {
     if (date == null) return '';
-    return DateFormat('dd/MM/yyyy HH:mm').format(date);
+
+    DateTime localDate;
+    if (!date.isUtc) {
+      DateTime forcedUtc = DateTime.utc(
+        date.year, date.month, date.day, 
+        date.hour, date.minute, date.second, 
+        date.millisecond, date.microsecond
+      );
+      localDate = forcedUtc.toLocal(); 
+    } else {
+      localDate = date.toLocal();
+    }
+
+    return DateFormat('HH:mm dd/MM/yyyy').format(localDate);
   }
 
   static String formatDateOnly(DateTime? date) {
     if (date == null) return '';
-    return DateFormat('dd/MM/yyyy').format(date);
+
+    DateTime localDate;
+    if (!date.isUtc) {
+      DateTime forcedUtc = DateTime.utc(
+        date.year, date.month, date.day, 
+        date.hour, date.minute, date.second
+      );
+      localDate = forcedUtc.toLocal();
+    } else {
+      localDate = date.toLocal();
+    }
+    
+    return DateFormat('dd/MM/yyyy').format(localDate);
   }
 }

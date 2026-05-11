@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_store/core/theme/app_spacing.dart';
 import 'package:mobile_store/core/theme/app_text_styles.dart';
 import 'package:mobile_store/features/auth/utils/social_auth_helper.dart';
+import 'package:mobile_store/features/auth/utils/social_phone_helper.dart';
 import '../../../shared/widgets/inputs/app_text_field.dart'; 
 import '../widgets/auth_components.dart'; 
 import 'register_screen.dart';
@@ -103,7 +104,16 @@ void _handleSocialLogin(String provider) {
         if (!mounted) return;
         
         if (error.contains("REQUIRE_PHONE_VERIFICATION")) {
-          setState(() => _serverErrorMessage = "Tài khoản chưa hoàn tất đăng ký. Vui lòng chuyển qua màn hình Đăng ký để xác thực số điện thoại.");
+          // GỌI HELPER Ở ĐÂY
+          SocialPhoneHelper.showPhoneInputDialog(
+            context: context,
+            onLoading: (loading) {
+              if (mounted) setState(() => _isLoading = loading);
+            },
+            onError: (errMsg) {
+              if (mounted) setState(() => _serverErrorMessage = errMsg);
+            },
+          );
         } else {
           setState(() => _serverErrorMessage = error);
         }

@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../../core/screens/custom_webview_screen.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -35,6 +37,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _phoneVerified = false;
   String? _verificationId;
   String? _firebaseIdToken;
+    String? _pendingFirebaseIdToken;
 
   late TapGestureRecognizer _termsRecognizer;
 
@@ -235,6 +238,57 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         );
   }
+   Future<void> _loginWithGoogle() async {
+    try {
+      final googleSignIn = GoogleSignIn(
+        serverClientId:
+            '334394781529-p9mug7mcegasdavsjgmo3mft9jqqagvh.apps.googleusercontent.com',
+      );
+
+      await googleSignIn.signOut();
+
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) return;
+
+      final googleAuth = await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+        accessToken: googleAuth.accessToken,
+      );
+
+      final userCredential =
+          await fb_auth.FirebaseAuth.instance.signInWithCredential(credential);
+
+      final firebaseIdToken = await userCredential.user?.getIdToken();
+
+      if (firebaseIdToken == null || firebaseIdToken.isEmpty) {
+        throw Exception("Không lấy được Firebase ID token");
+      }
+
+      _pendingFirebaseIdToken = firebaseIdToken;
+
+      if (!mounted) return;
+      context.read<AuthBloc>().add(
+            LoginWithFirebaseEvent(
+              idToken: firebaseIdToken,
+              isStoreOwnerApp: false,
+            ),
+          );
+    } catch (e, stacktrace) {
+      if (!mounted) return;
+debugPrint("========== GOOGLE LOGIN ERROR ==========");
+  debugPrint("Error: $e");
+  debugPrint("Stacktrace: $stacktrace");
+  debugPrint("========================================");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Đăng nhập Google thất bại: $e"),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -283,7 +337,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       vertical: 22,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.surface.withOpacity(0.88),
+                      color: AppColors.surface.withValues(alpha: 0.88),
                       borderRadius: BorderRadius.circular(30),
                       border: Border.all(color: AppColors.borderSoft),
                       boxShadow: AppDecorations.cardShadow,
@@ -327,9 +381,9 @@ class _RegisterPageState extends State<RegisterPage> {
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                         colors: [
-                                          AppColors.surface.withOpacity(0.03),
+                                          AppColors.surface.withValues(alpha: 0.03),
                                           AppColors.placeholderEnd
-                                              .withOpacity(0.25),
+                                              .withValues(alpha: 0.25),
                                         ],
                                       ),
                                     ),
@@ -492,17 +546,49 @@ class _RegisterPageState extends State<RegisterPage> {
                                   );
                                 },
                               ),
-                              const SizedBox(height: 14),
-                              SizedBox(
-                                width: double.infinity,
-                                child: _secondaryButton(
-                                  text: "Đã có tài khoản? Đăng nhập",
-                                  icon: Icons.login_rounded,
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                  },
-                                ),
+                            const SizedBox(height: 24), 
+                              const SizedBox(height: 16),
+                          _rowOrDivider(),
+                          const SizedBox(height: 24),
+                          
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _facebookButton(
+                                onTap: () {
+                                  // TODO: Thêm hàm xử lý đăng nhập Facebook ở đây
+                                },
                               ),
+                              const SizedBox(width: 32),
+                              _googleButton(
+                                onTap: _loginWithGoogle,
+                              ),
+                            ],
+                          ),
+                          
+                          const SizedBox(height: 32),
+                        
+                          Center(
+                            child: Text(
+                              "Đã có tài khoản?",
+                              style: AppTextStyles.bodyMuted.copyWith(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12), 
+                          
+                          SizedBox(
+                            width: double.infinity,
+                            child: _secondaryButton(
+                              text: "Đăng nhập ngay",
+                              icon: Icons.login_rounded,
+                              onTap: () {
+                                Navigator.pop(context); 
+                              },
+                            ),
+                          ),
                             ],
                           ),
                         ),
@@ -588,6 +674,103 @@ class _RegisterPageState extends State<RegisterPage> {
                     color: _phoneVerified ? Colors.green : AppColors.primary,
                   ),
                 ),
+        ),
+      ),
+    );
+  }
+   
+   Widget _rowOrDivider() {
+    return Row(
+      children: [
+        const Expanded(
+          child: Divider(
+            thickness: 1,
+            color: AppColors.borderSoft,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            "Hoặc tiếp tục với",
+            style: AppTextStyles.bodyMuted.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const Expanded(
+          child: Divider(
+            thickness: 1,
+            color: AppColors.borderSoft,
+          ),
+        ),
+      ],
+    );
+  }
+   Widget _facebookButton({required VoidCallback onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(30),
+        child: Container(
+          width: 55,
+          height: 55,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05), 
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.facebook,
+              color: Color(0xFF1877F2), 
+              size: 48, 
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  Widget _googleButton({required VoidCallback onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(30),
+        child: Container(
+          width: 55,
+          height: 55,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            border: Border.all(color: Colors.grey.shade300, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Image.network(
+              'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/120px-Google_%22G%22_logo.svg.png',
+              width: 26,
+              height: 26,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.g_mobiledata_rounded,
+                size: 32,
+                color: AppColors.primary,
+              ),
+            ),
+          ),
         ),
       ),
     );

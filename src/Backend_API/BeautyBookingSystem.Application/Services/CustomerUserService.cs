@@ -31,7 +31,7 @@ namespace BeautyBookingSystem.Application.Services
             {
                 Id = user.Id,
                 FullName = user.FullName,
-                Phone = user.Phone,
+                Phone = user.Phone??"",
                 Email = user.Email,
                 AvatarUrl = user.AvatarUrl,
                 Role = user.Role.ToString(),

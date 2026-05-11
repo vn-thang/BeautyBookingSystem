@@ -203,7 +203,7 @@ class StoreManagementScreen extends StatelessWidget {
                   _buildListTile(
                       context,
                       Icons.description_outlined,
-                      ' Điều khoản sử dụng và Chính sách bảo mật',
+                      ' Điều khoản và Chính sách',
                       onTap: () { 
                         Navigator.push(
                           context,

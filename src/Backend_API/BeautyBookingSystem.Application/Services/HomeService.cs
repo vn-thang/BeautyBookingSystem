@@ -129,7 +129,8 @@ namespace BeautyBookingSystem.Application.Services
             var vouchers = await _unitOfWork
                 .VoucherRepository
                 .GetQueryable()
-                .Where(v => v.Service != null) 
+                .Include(v => v.Store)
+                .Where(v => v.Service != null && v.Store!.ApprovalStatus == ApprovalStatus.Approved)
                 .OrderByDescending(v => v.StartDate)
                 .Take(8)
                 .Select(v => new ServiceVoucherHomeDto

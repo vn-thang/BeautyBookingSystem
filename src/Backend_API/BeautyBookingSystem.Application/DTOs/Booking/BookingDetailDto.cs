@@ -23,6 +23,7 @@ namespace BeautyBookingSystem.Application.DTOs.Booking
         public string? CustomerNote { get; set; }
         public int StoreId { get; set; }
         public string StoreName { get; set; } = string.Empty;
+        public string? CancelReason { get; set; }
 
         public List<BookingServiceDetailDto> Services { get; set; } = new();
         public List<PaymentDto> Payments { get; set; } = new();
@@ -30,10 +31,11 @@ namespace BeautyBookingSystem.Application.DTOs.Booking
 
     public class BookingServiceDetailDto
     {
-        public int Id { get; set; } // bookingDetail id
+        public int Id { get; set; } 
         public int ServiceId { get; set; }
         public string ServiceName { get; set; } = string.Empty;
         public int? StaffId { get; set; }
+        public string? StaffName { get; set; }
         public DateTime AppointmentDate { get; set; }
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }

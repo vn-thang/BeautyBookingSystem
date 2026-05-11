@@ -22,7 +22,8 @@ class WalletWarningBanner extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              'Cửa hàng đang bị TẠM ẨN do số dư nhỏ hơn hạn mức tối thiểu (${Formatters.formatCurrency(minimumBalance)}). Vui lòng nạp thêm tiền!',
+              'Cửa hàng đang bị TẠM ẨN do số dư nhỏ hơn hạn mức tối thiểu (${Formatters.formatCurrency(minimumBalance)}).'
+              +'Vui lòng nạp thêm tiền để tiếp tục sử dụng!',
               style: AppTextStyles.bodyText.copyWith(
                 color: AppColors.error, 
                 fontWeight: FontWeight.bold, 

@@ -161,8 +161,7 @@ namespace BeautyBookingSystem.Application.Services
                 .Include(s => s.Services)
                 .Include(s => s.OperatingHours)
                 .Include(s => s.Banners)
-                .FirstOrDefaultAsync(s => s.Id == storeId);
-
+                .FirstOrDefaultAsync(s => s.Id == storeId && s.ApprovalStatus == ApprovalStatus.Approved);
             if (store == null) return null;
 
             var isFavorite = false;

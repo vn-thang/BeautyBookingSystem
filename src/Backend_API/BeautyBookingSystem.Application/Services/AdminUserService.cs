@@ -35,13 +35,17 @@ namespace BeautyBookingSystem.Application.Services
 
         public async Task<PagedResponse<UserDto>> GetUsersAsync(UserFilterRequest request)
         {
-            var query = _unitOfWork.UserRepository.GetQueryable();
+           var query = _unitOfWork.UserRepository.GetQueryable();
+
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             {
-                string search = request.SearchTerm.ToLower();
-                query = query.Where(u => u.FullName.ToLower().Contains(search)
-                                      || u.Phone.Contains(search)
-                                      || u.Email.ToLower().Contains(search));
+                string search = request.SearchTerm.Trim().ToLower();
+
+                query = query.Where(u => 
+                    (u.FullName != null && u.FullName!.ToLower().Contains(search)) ||
+                    (u.Phone != null && u.Phone!.Contains(search)) ||
+                    (u.Email != null && u.Email!.ToLower().Contains(search))
+                );
             }
 
             if (request.Role.HasValue)

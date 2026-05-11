@@ -44,9 +44,9 @@ namespace BeautyBookingSystem.Infrastructure.Services
 
             try
             {
-                await smtp.ConnectAsync(emailHost, emailPort, SecureSocketOptions.StartTls);
+                await smtp.ConnectAsync(emailHost!, emailPort, SecureSocketOptions.StartTls);
 
-                await smtp.AuthenticateAsync(fromEmail, appPassword);
+                await smtp.AuthenticateAsync(fromEmail, appPassword!);
 
                 await smtp.SendAsync(email);
             }

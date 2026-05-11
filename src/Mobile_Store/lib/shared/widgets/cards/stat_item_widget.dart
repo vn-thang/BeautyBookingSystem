@@ -21,18 +21,26 @@ class StatItemWidget extends StatelessWidget {
       children: [
         Icon(icon, size: 40, color: iconColor),
         const SizedBox(height: 8),
-       Text(
-  value,
-  style: AppTextStyles.bodyText.copyWith(
-    fontWeight: FontWeight.bold,
-    fontSize: 18,
-  ),
-),
+      FittedBox(
+          fit: BoxFit.scaleDown, 
+          alignment: Alignment.center,
+          child: Text(
+            value,
+            style: AppTextStyles.bodyText.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 14, 
+            ),
+          ),
+        ),
         const SizedBox(height: 4),
      Text(
   label,
-  style: AppTextStyles.labelSmall,
-),
+  textAlign: TextAlign.center, 
+  style: AppTextStyles.labelSmall.copyWith(
+    fontSize: 11, 
+    height: 1.3, 
+  ),
+)
       ],
     );
   }

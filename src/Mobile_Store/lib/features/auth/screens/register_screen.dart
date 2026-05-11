@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mobile_store/core/screens/custom_webview_screen.dart';
 import 'package:mobile_store/features/auth/utils/social_auth_helper.dart';
+import 'package:mobile_store/features/auth/utils/social_phone_helper.dart';
 import 'package:mobile_store/features/home/screens/main_screen.dart';
 import 'package:mobile_store/features/store/screens/store_setup_screen.dart';
 import '../../../shared/widgets/inputs/app_text_field.dart';
@@ -173,10 +174,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         
                       } on FirebaseAuthException catch (_) {
                         setDialogState(() => isVerifying = false);
+                        if (ctx.mounted) {
                         SnackBarHelper.showError(ctx, 'Mã OTP không hợp lệ hoặc đã hết hạn.');
+                        }
                       } catch (e) {
                         setDialogState(() => isVerifying = false);
+                        if (ctx.mounted) {
                         SnackBarHelper.showError(ctx, 'Có lỗi xảy ra: $e');
+                        }
                       }
                     },
                   ),
@@ -251,175 +256,67 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       },
       onError: (String error) {
+        if (!mounted) return;
+
         if (error.contains("REQUIRE_PHONE_VERIFICATION")) {
-          _showPhoneInputDialogForSocial();
+          // GỌI HELPER Ở ĐÂY
+          SocialPhoneHelper.showPhoneInputDialog(
+            context: context,
+            onLoading: (loading) {
+              if (mounted) setState(() => _isLoading = loading);
+            },
+            onError: (errMsg) {
+              if (mounted) setState(() => _serverErrorMessage = errMsg);
+            },
+          );
         } else {
           setState(() => _serverErrorMessage = error);
         }
       }
     );
   }
-
-  void _showPhoneInputDialogForSocial() {
-    final socialPhoneController = TextEditingController();
-    showDialog(
+  void _handleSocialLogin(String provider) {
+    _clearError();
+    SocialAuthHelper.processSocialAuth(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Bổ sung Số điện thoại', style: AppTextStyles.heading1.copyWith(fontSize: 20)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Để mở cửa hàng, bạn cần cung cấp số điện thoại liên lạc.', textAlign: TextAlign.center),
-              const SizedBox(height: 15),
-              AppTextField(
-                hint: 'Nhập số điện thoại',
-                icon: Icons.phone_outlined,
-                controller: socialPhoneController,
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 15),
-              AppPrimaryButton(
-                text: 'NHẬN MÃ OTP',
-                onPressed: () {
-                  final phone = socialPhoneController.text.trim();
-                  if (phone.isEmpty) return;
-                  Navigator.pop(ctx);
-                  _verifyPhoneForSocial(phone);
-                },
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Hủy bỏ', style: TextStyle(color: Colors.grey)),
-              ),
-            ],
-          ),
-        );
+      provider: provider,
+      onLoading: (loading) {
+        if (mounted) setState(() => _isLoading = loading);
       },
-    );
-  }
+      onSuccess: (loginData) {
+        if (!mounted) return;
+  
+        if (loginData.role != 'StoreOwner') {
+          setState(() => _serverErrorMessage = "Tài khoản không có quyền truy cập. Ứng dụng này chỉ dành cho cửa hàng!");
+          return; 
+        }
 
-  Future<void> _verifyPhoneForSocial(String phone) async {
-    setState(() => _isLoading = true);
-    String phoneStr = phone.startsWith('0') ? '+84${phone.substring(1)}' : phone;
-
-    try {
-      await FirebaseAuth.instance.setSettings(appVerificationDisabledForTesting: true);
-      await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: phoneStr,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          await _linkPhoneAndCallBackend(credential);
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          setState(() { _isLoading = false; _serverErrorMessage = e.message; });
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          setState(() => _isLoading = false);
-          _showOtpDialogForSocial(verificationId, phoneStr);
-        },
-        codeAutoRetrievalTimeout: (_) {},
-      );
-    } catch (e) {
-      setState(() { _isLoading = false; _serverErrorMessage = 'Lỗi gửi SMS: $e'; });
-    }
-  }
-
-  void _showOtpDialogForSocial(String verificationId, String phoneStr) {
-    final otpController = TextEditingController();
-    bool isVerifying = false;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: Colors.white,
-              title: Text('Xác thực OTP', textAlign: TextAlign.center, style: AppTextStyles.heading1.copyWith(fontSize: 20)),
-              content: SingleChildScrollView(
-                child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Mã 6 số đã được gửi đến $phoneStr'),
-                  const SizedBox(height: 15),
-                  AppTextField(
-                    hint: 'Nhập mã OTP',
-                    icon: Icons.security_outlined,
-                    controller: otpController,
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 15),
-                  AppPrimaryButton(
-                    text: 'XÁC NHẬN & TẠO CỬA HÀNG',
-                    isLoading: isVerifying,
-                    onPressed: () async {
-                      if (otpController.text.length < 6) return;
-                      setDialogState(() => isVerifying = true);
-                      
-                      try {
-                        final credential = PhoneAuthProvider.credential(
-                          verificationId: verificationId,
-                          smsCode: otpController.text.trim(),
-                        );
-                        
-                        Navigator.pop(ctx);
-                        
-                        if (!mounted) return;
-                        await _linkPhoneAndCallBackend(credential);
-                        
-                      } catch (e) {
-                        setDialogState(() => isVerifying = false);
-                        if (!mounted) return;
-                        SnackBarHelper.showError(context, 'Mã OTP không hợp lệ.');
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _linkPhoneAndCallBackend(PhoneAuthCredential credential) async {
-    try {
-      setState(() => _isLoading = true);
-
-      await FirebaseAuth.instance.currentUser?.linkWithCredential(credential);
-      final newToken = await FirebaseAuth.instance.currentUser?.getIdToken(true);
-      
-      if (newToken == null) throw Exception("Không lấy được mã xác thực mới.");
-
-      final result = await AuthService.loginWithFirebase(
-        idToken: newToken, 
-        isStoreOwnerApp: true
-      );
-
-      if (!mounted) return;
-
-      if (result.isSuccess) {
-        SnackBarHelper.showSuccess(context, 'Tạo tài khoản cửa hàng thành công!');
-        final status = result.data?.storeStatus ?? 'Incomplete';
+        final status = loginData.storeStatus ?? 'Incomplete';
         if (status == 'Incomplete') {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const StoreSetupScreen()));
         } else {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainScreen()));
         }
-      } else {
-        setState(() => _serverErrorMessage = result.errorMessage);
-      }
-    } catch (e) {
-      setState(() => _serverErrorMessage = "Lỗi tạo tài khoản: $e");
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+      },
+      onError: (String error) {
+        if (!mounted) return;
+        
+        if (error.contains("REQUIRE_PHONE_VERIFICATION")) {
+          // GỌI HELPER Ở ĐÂY
+          SocialPhoneHelper.showPhoneInputDialog(
+            context: context,
+            onLoading: (loading) {
+              if (mounted) setState(() => _isLoading = loading);
+            },
+            onError: (errMsg) {
+              if (mounted) setState(() => _serverErrorMessage = errMsg);
+            },
+          );
+        } else {
+          setState(() => _serverErrorMessage = error);
+        }
+      },
+    );
   }
 
   @override
@@ -559,53 +456,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
               ),
               const SizedBox(height: 15),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black87,
-                  minimumSize: const Size(double.infinity, 50),
-                  elevation: 0, 
-                  side: BorderSide(color: Colors.grey.shade300, width: 1), 
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
+          
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SocialIconButton(
+                  icon: Image.asset(
+                    'assets/images/facebook_logo.png', 
+                    width: 45, 
+                    height: 45,
+                    fit: BoxFit.contain,
                   ),
+                  onTap: () => _handleSocialLogin('Facebook'),
                 ),
+                  const SizedBox(width: 25), 
+               SocialIconButton(
                 icon: Image.asset(
                   'assets/images/google_logo.png',
-                  width: 22, 
+                  width: 45, 
+                  height: 45,
+                  fit: BoxFit.contain,
                 ),
-                label: const Text(
-                  'Tiếp tục với Google', 
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600), 
-                ),
-                onPressed: () => _handleSocialRegister('Google'),
+                onTap: () => _handleSocialLogin('Google'),
               ),
-              const SizedBox(height: 15),
-
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white, 
-                  foregroundColor: Colors.black87, 
-                  minimumSize: const Size(double.infinity, 50),
-                  elevation: 0, 
-                  side: BorderSide(color: Colors.grey.shade300, width: 1), 
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-                icon: Image.asset(
-                  'assets/images/facebook_logo.png', 
-                  width: 22,
-                ),
-                label: const Text(
-                  'Tiếp tục với Facebook',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-                onPressed: () => _handleSocialRegister('Facebook'),
+                ],
               ),
-
-              const SizedBox(height: 15),
-
+            
+const SizedBox(height: 20),
               Text(
                 'Đã có tài khoản đối tác?',
                 style: AppTextStyles.bodyText.copyWith(color: AppColors.authTextBody, fontSize: 13),

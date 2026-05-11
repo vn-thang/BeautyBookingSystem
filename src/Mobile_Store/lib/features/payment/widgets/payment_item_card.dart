@@ -23,7 +23,7 @@ class PaymentItemCard extends StatelessWidget {
     this.onRefund,
   });
 
-  @override
+@override
   Widget build(BuildContext context) {
     final isOnline = payment.paymentMethod.toLowerCase().contains('vnpay') || 
                      payment.paymentMethod.toLowerCase().contains('bank');
@@ -48,13 +48,17 @@ class PaymentItemCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Mã đơn: #${payment.bookingId}', 
-                style: AppTextStyles.bodyText.copyWith(
-                  fontWeight: FontWeight.bold, 
-                  color: AppColors.textSub,
-                )
+              Expanded(
+                child: Text(
+                  'Mã đơn: #${payment.bookingId}', 
+                  style: AppTextStyles.bodyText.copyWith(
+                    fontWeight: FontWeight.bold, 
+                    color: AppColors.textSub,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8), 
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
@@ -109,24 +113,38 @@ class PaymentItemCard extends StatelessWidget {
                 children: [
                   if (payment.paidAt != null)
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start, 
                       children: [
-                        Icon(Icons.access_time, size: 14, color: AppColors.textSub),
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2), 
+                          child: Icon(Icons.access_time, size: 14, color: AppColors.textSub),
+                        ),
                         const SizedBox(width: 4),
-                        Text(
-                          'Đã thanh toán: ${Formatters.formatDateTime(payment.paidAt!)}', 
-                          style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSub)
+                       
+                        Expanded(
+                          child: Text(
+                            'Đã thanh toán: ${Formatters.formatDateTime(payment.paidAt!)}', 
+                            style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSub)
+                          ),
                         ),
                       ],
                     ),
                   if (payment.transactionId != null && payment.transactionId!.isNotEmpty) ...[
                     if (payment.paidAt != null) const SizedBox(height: 4),
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start, // 🎯 Căn trên
                       children: [
-                        Icon(Icons.receipt_long, size: 14, color: AppColors.textSub),
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2),
+                          child: Icon(Icons.receipt_long, size: 14, color: AppColors.textSub),
+                        ),
                         const SizedBox(width: 4),
-                        Text(
-                          'Mã GD: ${payment.transactionId}', 
-                          style: AppTextStyles.labelSmall.copyWith(color: AppColors.textMain, fontWeight: FontWeight.bold)
+                       
+                        Expanded(
+                          child: Text(
+                            'Mã GD: ${payment.transactionId}', 
+                            style: AppTextStyles.labelSmall.copyWith(color: AppColors.textMain, fontWeight: FontWeight.bold)
+                          ),
                         ),
                       ],
                     ),

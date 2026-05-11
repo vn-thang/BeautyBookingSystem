@@ -132,7 +132,7 @@ namespace BeautyBookingSystem.Application.Services
             if (firstDetail == null) return;
 
             string title = "⏰ Nhắc nhở lịch làm đẹp";
-            string message = $"Bạn có lịch hẹn tại cửa hàng {booking.Store.Name} vào lúc {firstDetail.StartTime:hh\\:mm} hôm nay. Vui lòng đến đúng giờ nhé!";
+            string message = $"Bạn có lịch hẹn #{booking.Id} tại cửa hàng {booking.Store.Name} vào lúc {firstDetail.StartTime:hh\\:mm} hôm nay. Vui lòng đến đúng giờ nhé!";
             if (booking.CustomerId.HasValue)
     {
             await CreateAndSendNotificationAsync(booking.CustomerId.Value, title, message, NotificationType.BookingUpdate); 

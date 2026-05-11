@@ -15,14 +15,20 @@ namespace BeautyBookingSystem.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly INotificationService _notificationService;
         private readonly ISystemConfigService _systemConfigService;
-        IStoreVnPayService _vnPayService;
-        IStoreWalletService _storeWalletService;
+        private readonly IStoreVnPayService _vnPayService;
+        private readonly IStoreWalletService _storeWalletService;
 
-        public BookingService(IUnitOfWork unitOfWork, INotificationService notificationService, ISystemConfigService systemConfigService)
+        public BookingService(IUnitOfWork unitOfWork, 
+        INotificationService notificationService, 
+        ISystemConfigService systemConfigService,
+        IStoreVnPayService vnPayService,
+        IStoreWalletService storeWalletService)
         {
             _unitOfWork = unitOfWork;
             _notificationService = notificationService;
             _systemConfigService = systemConfigService;
+            _vnPayService = vnPayService;
+            _storeWalletService = storeWalletService;
         }
 
         public async Task<BookingResponseDto> CreateBookingAsync(
@@ -37,7 +43,6 @@ namespace BeautyBookingSystem.Application.Services
             {
                 throw new BadRequestException("REQUIRE_PHONE_VERIFICATION: Vui lòng bổ sung và xác thực số điện thoại để cửa hàng có thể liên hệ với bạn nhé!");
             } 
-    //======================================== đoạn này mới thêm xác thực sdt nếu chưa nhé ===
 
             bool blockUserIfNoShow = await _systemConfigService.GetValueAsync<bool>(SystemConfigKeys.BlockUserIfNoShow);
 
@@ -255,7 +260,7 @@ namespace BeautyBookingSystem.Application.Services
 
             await _unitOfWork.BookingRepository.AddAsync(booking);
 
-            if (request.PaymentMethod == PaymentMethod.COD)
+           if (request.PaymentMethod == PaymentMethod.COD)
             {
                 var payment = new Payment
                 {
@@ -265,8 +270,44 @@ namespace BeautyBookingSystem.Application.Services
                     Amount = finalPrice,
                     Status = PaymentStatus.Pending
                 };
-
                 await _unitOfWork.PaymentRepository.AddAsync(payment);
+            }
+            else if (request.PaymentMethod == PaymentMethod.VNPAY)
+            {
+                if (request.DepositAmount > 0 && request.DepositAmount < finalPrice)
+                {
+                    var depositPayment = new Payment
+                    {
+                        Booking = booking,
+                        PaymentMethod = PaymentMethod.VNPAY,
+                        PaymentType = PaymentType.Deposit,
+                        Amount = request.DepositAmount,
+                        Status = PaymentStatus.Pending
+                    };
+                    await _unitOfWork.PaymentRepository.AddAsync(depositPayment);
+
+                    var remainingPayment = new Payment
+                    {
+                        Booking = booking,
+                        PaymentMethod = PaymentMethod.COD,
+                        PaymentType = PaymentType.Remaining,
+                        Amount = finalPrice - request.DepositAmount,
+                        Status = PaymentStatus.Pending
+                    };
+                    await _unitOfWork.PaymentRepository.AddAsync(remainingPayment);
+                }
+                else
+                {
+                    var fullPayment = new Payment
+                    {
+                        Booking = booking,
+                        PaymentMethod = PaymentMethod.VNPAY,
+                        PaymentType = PaymentType.Full,
+                        Amount = finalPrice,
+                        Status = PaymentStatus.Pending
+                    };
+                    await _unitOfWork.PaymentRepository.AddAsync(fullPayment);
+                }
             }
 
             await _unitOfWork.SaveChangesAsync();
@@ -366,11 +407,11 @@ namespace BeautyBookingSystem.Application.Services
                 detail.EndTime = currentStartTime.Add(duration);
                 detail.StaffId = assignedStaffId;
 
-                _unitOfWork.BookingDetailRepository.Update(detail);
+                // _unitOfWork.BookingDetailRepository.Update(detail);
                 currentStartTime = detail.EndTime;
             }
 
-            _unitOfWork.BookingRepository.Update(booking);
+            // _unitOfWork.BookingRepository.Update(booking);
 
             if (!string.IsNullOrEmpty(booking.HangfireJobId))
             {
@@ -465,8 +506,8 @@ namespace BeautyBookingSystem.Application.Services
                         FinalPrice = b.FinalPrice,
                         PaidAmount = paidAmount,
                         RemainingAmount = remainingAmount,
-
-                        Status = b.Status
+                        Status = b.Status,
+                        CancelReason = b.CancelReason
                     };
                 })
                 .ToList();
@@ -504,6 +545,7 @@ namespace BeautyBookingSystem.Application.Services
                 DepositAmount = booking.DepositAmount,
                 FinalPrice = booking.FinalPrice,
                 Status = booking.Status,
+                CancelReason = booking.CancelReason,
                 CustomerNote = booking.CustomerNote,
                 StoreId = booking.StoreId,
                 StoreName = booking.Store?.Name ?? "",
@@ -516,6 +558,7 @@ namespace BeautyBookingSystem.Application.Services
                     ServiceId = d.ServiceId,
                     ServiceName = d.Service?.Name ?? "",
                     StaffId = d.StaffId,
+                    StaffName = d.Staff?.FullName,
                     AppointmentDate = d.AppointmentDate,
                     StartTime = d.StartTime,
                     EndTime = d.EndTime,
@@ -596,40 +639,36 @@ namespace BeautyBookingSystem.Application.Services
             {
                 hasPaidDeposit = true;
 
-                if (!isLateCancel)
-                {
-                    //TRƯỜNG HỢP 1: HỦY SỚM (HOÀN TIỀN VNPAY & THU HỒI VÍ STORE)
-                    if (string.IsNullOrEmpty(vnPayDeposit.TransactionId) || !vnPayDeposit.PaidAt.HasValue)
-                    {
-                        throw new BadRequestException("Giao dịch thiếu TransactionId hoặc PaidAt, không thể hoàn tiền VNPay!");
-                    }
+            if (!isLateCancel)
+{
+    if (string.IsNullOrEmpty(vnPayDeposit.TransactionId) || string.IsNullOrEmpty(vnPayDeposit.VnpPayDate))
+    {
+        throw new BadRequestException("Giao dịch thiếu TransactionId hoặc VnpPayDate, không thể tự động hoàn tiền VNPay!");
+    }
 
-                    string vnpPayDateStr = vnPayDeposit.PaidAt.Value.ToString("yyyyMMddHHmmss");
+    var refundResult = await _vnPayService.RefundAsync(
+        vnp_TxnRef: vnPayDeposit.TransactionId,
+        vnp_TransactionDate: vnPayDeposit.VnpPayDate, 
+        amount: vnPayDeposit.Amount,
+        createBy: $"Customer_{customerId}",
+        vnp_TransactionNo: vnPayDeposit.VnpTransactionNo ?? "" 
+    );
+        Console.WriteLine($"VNPay Refund - Success: {refundResult.IsSuccess}, Code: {refundResult.ResponseCode}, Msg: {refundResult.Message}");
+    if (!refundResult.IsSuccess)
+    {
+        throw new BadRequestException($"Hệ thống VNPay từ chối hoàn tiền: {refundResult.Message}");
+    }
 
-                    var refundResult = await _vnPayService.RefundAsync(
-                        vnPayDeposit.TransactionId,
-                        vnpPayDateStr,
-                        booking.DepositAmount,
-                        $"Customer_{customerId}"
-                    );
+    vnPayDeposit.Status = PaymentStatus.Refunded;
+    isRefunded = true;
 
-                    if (!refundResult.IsSuccess)
-                    {
-                        throw new BadRequestException($"Hệ thống VNPay từ chối hoàn tiền: {refundResult.Message}");
-                    }
-
-                    vnPayDeposit.Status = PaymentStatus.Refunded;
-                    isRefunded = true;
-
-                    await _storeWalletService.ClawbackDepositAsync(booking.Id);
-                }
-                else
-                {
-                    // TRƯỜNG HỢP 2: HỦY MUỘN (PHẠT CỌC & CỘNG TIỀN CHO STORE/ADMIN)
-                    isPenaltyApplied = true;
-
-                    await _storeWalletService.ProcessBookingPenaltyAsync(booking.Id);
-                }
+    await _storeWalletService.ClawbackDepositAsync(booking.Id);
+}
+else
+{
+    isPenaltyApplied = true;
+    await _storeWalletService.ProcessBookingPenaltyAsync(booking.Id);
+}
             }
 
             _unitOfWork.BookingRepository.Update(booking);
@@ -642,12 +681,12 @@ namespace BeautyBookingSystem.Application.Services
             {
                 if (isRefunded)
                 {
-                    customerMsg += $" Hủy đúng quy định (trước {cancelBeforeHours}h). Số tiền cọc {booking.DepositAmount:N0}đ đang được xử lý hoàn về thẻ/tài khoản của bạn.";
+                    customerMsg += $" Hủy đúng quy định (trước {cancelBeforeHours} giờ). Số tiền cọc {booking.DepositAmount:N0}đ đang được xử lý hoàn về thẻ/tài khoản của bạn.";
                     storeMsg += $" Khách hủy đúng quy định, hệ thống đã tự động thu hồi lại tiền cọc từ ví cửa hàng.";
                 }
                 else if (isPenaltyApplied)
                 {
-                    customerMsg += $" Hủy quá sát giờ (quy định phải hủy trước {cancelBeforeHours}h). Theo chính sách, bạn không được hoàn lại tiền cọc {booking.DepositAmount:N0}đ.";
+                    customerMsg += $" Hủy quá sát giờ (quy định phải hủy trước {cancelBeforeHours} giờ). Theo chính sách, bạn không được hoàn lại tiền cọc {booking.DepositAmount:N0}đ.";
                     storeMsg += $" Khách hủy sát giờ, cửa hàng được nhận bồi thường tiền cọc vào ví.";
                 }
             }
@@ -694,7 +733,6 @@ namespace BeautyBookingSystem.Application.Services
             var totalDurationMinutes = services.Sum(s => s.DurationMinutes);
             var endTime = request.StartTime.Add(TimeSpan.FromMinutes(totalDurationMinutes));
 
-            // Tính toán mốc thời gian DateTime cụ thể để so sánh với Lịch nghỉ phép
             var appointmentDayOfWeek = request.AppointmentDate.DayOfWeek;
             var bookingStartDateTime = request.AppointmentDate.Date.Add(request.StartTime);
             var bookingEndDateTime = request.AppointmentDate.Date.Add(endTime);

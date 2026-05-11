@@ -79,7 +79,7 @@ namespace BeautyBookingSystem.Infrastructure.Services
                             .Take(6)
                             .Select(x => new { x.Id, x.Name })
                             .ToList(),
-                        TopRatedStores = home.TopRatedStores
+                        TopRatedStores = home.TopRatedStores?
                             .Take(4)
                             .Select(x => new
                             {

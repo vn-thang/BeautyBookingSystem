@@ -204,7 +204,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   vertical: 24,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.surface.withOpacity(0.88),
+                  color: AppColors.surface.withValues(alpha: 0.88),
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(color: AppColors.borderSoft),
                   boxShadow: AppDecorations.cardShadow,

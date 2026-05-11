@@ -2,6 +2,7 @@ class StoreBookingListModel {
   final int id;
   final String customerName;
   final String customerPhone;
+    final String? avatarUrl;
   final double finalPrice;
   final String status;
   final DateTime createdAt;
@@ -10,6 +11,7 @@ class StoreBookingListModel {
     required this.id,
     required this.customerName,
     required this.customerPhone,
+        this.avatarUrl,
     required this.finalPrice,
     required this.status,
     required this.createdAt,
@@ -20,6 +22,7 @@ class StoreBookingListModel {
       id: json['id'] ?? 0,
       customerName: json['customerName'] ?? '',
       customerPhone: json['customerPhone'] ?? '',
+       avatarUrl: json['avatarUrl'],
       finalPrice: (json['finalPrice'] ?? 0).toDouble(),
       status: json['status'] ?? '',
       createdAt: DateTime.parse(json['createdAt']),
@@ -43,6 +46,7 @@ class StoreBookingDetailModel extends StoreBookingListModel {
     required super.id,
     required super.customerName,
     required super.customerPhone,
+    super.avatarUrl,
     required super.finalPrice,
     required super.status,
     required super.createdAt,
@@ -64,6 +68,7 @@ class StoreBookingDetailModel extends StoreBookingListModel {
       id: json['id'] ?? 0,
       customerName: json['customerName'] ?? '',
       customerPhone: json['customerPhone'] ?? '',
+      avatarUrl: json['avatarUrl'],
       finalPrice: (json['finalPrice'] ?? 0).toDouble(),
       status: json['status'] ?? '',
       createdAt: DateTime.parse(json['createdAt']),

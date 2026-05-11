@@ -64,8 +64,7 @@ class _BookingListTabState extends State<BookingListTab> with AutomaticKeepAlive
         
         data = [...results[0], ...results[1]];
         data.sort((a, b) {
-          if (a.createdAt == null || b.createdAt == null) return 0;
-          return b.createdAt!.compareTo(a.createdAt!);
+        return b.createdAt.compareTo(a.createdAt);
         });
         
       } else {

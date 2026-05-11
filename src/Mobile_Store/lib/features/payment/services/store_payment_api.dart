@@ -9,18 +9,22 @@ class StorePaymentApi {
   }
 
   static Future<bool> confirmPayment(int id, {String? transactionId}) async {
-    final bodyData = {
-      if (transactionId != null && transactionId.isNotEmpty) "transactionId": transactionId
+    final Map<String, dynamic> bodyData = {
+      "transactionId": transactionId ?? "" 
     };
+    
     await ApiClient.put(
       '/api/StorePayments/$id/confirm', 
-      body: bodyData.isNotEmpty ? bodyData : null,
+      body: bodyData, 
     );
     return true;
   }
 
   static Future<bool> refundPayment(int id) async {
-    await ApiClient.put('/api/StorePayments/$id/refund');
+    await ApiClient.put(
+      '/api/StorePayments/$id/refund',
+      body: {}, 
+    );
     return true;
   }
 }

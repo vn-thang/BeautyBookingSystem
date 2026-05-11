@@ -25,7 +25,7 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
 
         public async Task<IEnumerable<T>> GetAllAsync() => await dbSet.ToListAsync();
 
-        public async Task<T?> GetByIdAsync(int id) => await dbSet.FindAsync(id);
+        public virtual async Task<T?> GetByIdAsync(int id) => await dbSet.FindAsync(id);
 
         public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> expression)
             => await dbSet.Where(expression).ToListAsync();

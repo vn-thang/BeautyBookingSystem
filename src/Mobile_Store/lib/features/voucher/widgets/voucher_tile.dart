@@ -3,7 +3,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/utils/formatters.dart'; // Sử dụng hàm format tiền tệ chung
+import '../../../core/utils/formatters.dart'; 
 import '../models/voucher_model.dart';
 
 class VoucherTile extends StatelessWidget {
@@ -39,8 +39,8 @@ class VoucherTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -50,9 +50,11 @@ class VoucherTile extends StatelessWidget {
                   ),
                   child: Text(
                     voucher.code, 
-                    style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, color: AppColors.error, fontSize: 16)
+                    style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, color: AppColors.error, fontSize: 16),
+                  
                   ),
                 ),
+                const SizedBox(height: AppSpacing.sm),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -66,7 +68,9 @@ class VoucherTile extends StatelessWidget {
                 ),
               ],
             ),
+            
             const SizedBox(height: AppSpacing.md),
+            
             Text(
               'Giảm $discountText (Tối đa ${Formatters.formatCurrency(voucher.maxDiscount)})', 
               style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.w600, fontSize: 15)
@@ -78,21 +82,26 @@ class VoucherTile extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'HSD: ${Formatters.formatDateTime(voucher.endDate)}', // Dùng hàm format ngày
+              'HSD: ${Formatters.formatDateTime(voucher.endDate)}',
               style: AppTextStyles.labelSmall
             ),
             const SizedBox(height: AppSpacing.sm),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Đã dùng: ${voucher.usedCount} / ${voucher.usageLimit}', 
-                  style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.w500)
+                Expanded(
+                  child: Text(
+                    'Đã dùng: ${voucher.usedCount} / ${voucher.usageLimit}', 
+                    style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.w500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.edit, color: Color(0xFF0068FF), size: 20), // Xanh dương
+                      icon: const Icon(Icons.edit, color: Color(0xFF0068FF), size: 20),
                       onPressed: onEdit, 
                       constraints: const BoxConstraints()
                     ),

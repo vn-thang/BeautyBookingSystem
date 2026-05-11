@@ -8,10 +8,9 @@ using Microsoft.EntityFrameworkCore;
 public class BookingRepository
     : GenericRepository<Booking>, IBookingRepository
 {
-    private readonly AppDbContext _context;
+
     public BookingRepository(AppDbContext context) : base(context)
     {
-        _context = context;
     }
 
     public async Task<List<Booking>> GetByCustomerAsync(int customerId)

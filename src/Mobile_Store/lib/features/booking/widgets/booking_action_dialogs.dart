@@ -12,14 +12,14 @@ class CompleteAndPayDialog extends StatelessWidget {
   final VoidCallback onConfirm;
 
   const CompleteAndPayDialog({super.key, required this.detail, required this.onConfirm});
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: AppColors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMedium)),
-      title: Text('Xác nhận hoàn thành', style: AppTextStyles.heading1.copyWith(fontSize: 20, color: AppColors.success)),
-      content: Column(
+@override
+Widget build(BuildContext context) {
+  return AlertDialog(
+    backgroundColor: AppColors.white,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMedium)),
+    title: Text('Xác nhận hoàn thành', style: AppTextStyles.heading1.copyWith(fontSize: 20, color: AppColors.success)),
+    content: SingleChildScrollView( 
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -36,7 +36,7 @@ class CompleteAndPayDialog extends StatelessWidget {
               children: [
                 const Icon(Icons.payments_outlined, color: AppColors.warning),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(
+                Expanded( 
                   child: Text(
                     'Số tiền cần thu: ${Formatters.formatCurrency(detail.remainingAmount)}',
                     style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, color: AppColors.warning),
@@ -46,35 +46,40 @@ class CompleteAndPayDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text('Lưu ý: Xác nhận hoàn thành sẽ đồng thời ghi nhận bạn đã thu đủ số tiền trên (tiền mặt).', style: AppTextStyles.labelSmall.copyWith(fontStyle: FontStyle.italic)),
+          Text(
+            'Lưu ý: Xác nhận hoàn thành sẽ đồng thời ghi nhận bạn đã thu đủ số tiền trên (tiền mặt).', 
+            style: AppTextStyles.labelSmall.copyWith(fontStyle: FontStyle.italic)
+          ),
+          
+          const SizedBox(height: AppSpacing.xl),
+          
+          Row(
+            children: [
+              Expanded(
+                child: AppOutlineButton(
+                  text: 'HỦY', 
+                  color: AppColors.textSub,
+                  onTap: () => Navigator.pop(context)
+                )
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: AppPrimaryButton(
+                  text: 'HOÀN TẤT',
+                  color: AppColors.success, 
+                  onPressed: () {
+                    Navigator.pop(context); 
+                    onConfirm(); 
+                  },
+                )
+              ),
+            ],
+          ),
         ],
       ),
-      actions: [
-        Row(
-          children: [
-            Expanded(
-              child: AppOutlineButton(
-                text: 'HỦY', 
-                color: AppColors.textSub,
-                onTap: () => Navigator.pop(context)
-              )
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: AppPrimaryButton(
-                text: 'HOÀN TẤT',
-                color: AppColors.success, 
-                onPressed: () {
-                  Navigator.pop(context); 
-                  onConfirm(); 
-                },
-              )
-            ),
-          ],
-        )
-      ],
-    );
-  }
+    ),
+  );
+}
 }
 
 class CancelBookingDialog extends StatefulWidget {
@@ -96,85 +101,86 @@ class _CancelBookingDialogState extends State<CancelBookingDialog> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      scrollable: true,
-      backgroundColor: AppColors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMedium)),
-      title: Text('Lý do hủy đơn', style: AppTextStyles.heading1.copyWith(fontSize: 20, color: AppColors.error)),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Vui lòng nhập lý do từ chối/hủy đơn này để thông báo cho khách hàng:', style: AppTextStyles.bodyText),
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              controller: _reasonController,
-              maxLines: 3,
-              autofocus: true, 
-              style: AppTextStyles.bodyText,
-              cursorColor: AppColors.primary,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: AppColors.white,
-                hintText: 'VD: Cửa hàng mất điện đột xuất, Không sắp xếp được thợ...',
-                hintStyle: AppTextStyles.labelSmall,
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
-                  borderSide: BorderSide(color: AppColors.surface, width: 1.5)
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppDimens.radiusSmall), 
-                  borderSide: const BorderSide(color: AppColors.error, width: 1.5)
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppDimens.radiusSmall), 
-                  borderSide: const BorderSide(color: AppColors.error)
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppDimens.radiusSmall), 
-                  borderSide: const BorderSide(color: AppColors.error, width: 2)
-                ),
-                contentPadding: const EdgeInsets.all(AppSpacing.md),
+ @override
+Widget build(BuildContext context) {
+  return AlertDialog(
+    scrollable: true,
+    backgroundColor: AppColors.white,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMedium)),
+    title: Text('Lý do hủy đơn', style: AppTextStyles.heading1.copyWith(fontSize: 20, color: AppColors.error)),
+    content: Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Vui lòng nhập lý do từ chối/hủy đơn này để thông báo cho khách hàng:', style: AppTextStyles.bodyText),
+          const SizedBox(height: AppSpacing.md),
+          TextFormField(
+            controller: _reasonController,
+            maxLines: 3,
+            autofocus: true, 
+            style: AppTextStyles.bodyText,
+            cursorColor: AppColors.primary,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: AppColors.white,
+              hintText: 'VD: Cửa hàng mất điện đột xuất, Không sắp xếp được thợ...',
+              hintStyle: AppTextStyles.labelSmall,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
+                borderSide: BorderSide(color: AppColors.surface, width: 1.5)
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) return 'Vui lòng không để trống lý do';
-                if (value.trim().length < 5) return 'Lý do quá ngắn';
-                return null;
-              },
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppDimens.radiusSmall), 
+                borderSide: const BorderSide(color: AppColors.error, width: 1.5)
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppDimens.radiusSmall), 
+                borderSide: const BorderSide(color: AppColors.error)
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppDimens.radiusSmall), 
+                borderSide: const BorderSide(color: AppColors.error, width: 2)
+              ),
+              contentPadding: const EdgeInsets.all(AppSpacing.md),
             ),
-          ],
-        ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) return 'Vui lòng không để trống lý do';
+              if (value.trim().length < 5) return 'Lý do quá ngắn';
+              return null;
+            },
+          ),
+          
+          const SizedBox(height: AppSpacing.xl), 
+          
+          Row(
+            children: [
+              Expanded(
+                child: AppOutlineButton(
+                  text: 'ĐÓNG', 
+                  color: AppColors.textSub,
+                  onTap: () => Navigator.pop(context)
+                )
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: AppPrimaryButton(
+                  text: 'XÁC NHẬN',
+                  color: AppColors.error, 
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      Navigator.pop(context); 
+                      widget.onConfirmCancel(_reasonController.text.trim());
+                    }
+                  },
+                )
+              ),
+            ],
+          ),
+        ],
       ),
-      actions: [
-        Row(
-          children: [
-            Expanded(
-              child: AppOutlineButton(
-                text: 'ĐÓNG', 
-                color: AppColors.textSub,
-                onTap: () => Navigator.pop(context)
-              )
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: AppPrimaryButton(
-                text: 'XÁC NHẬN',
-                color: AppColors.error, 
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.pop(context); 
-                    widget.onConfirmCancel(_reasonController.text.trim());
-                  }
-                },
-              )
-            ),
-          ],
-        )
-      ],
-    );
-  }
+    ),
+  );
+}
 }

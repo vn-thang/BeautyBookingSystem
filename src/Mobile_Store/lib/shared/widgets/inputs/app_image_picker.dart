@@ -36,6 +36,16 @@ class _AppImagePickerState extends State<AppImagePicker> {
     super.initState();
     _currentImageUrl = widget.initialImageUrl;
   }
+@override
+void didUpdateWidget(AppImagePicker oldWidget) {
+  super.didUpdateWidget(oldWidget);
+
+  if (oldWidget.initialImageUrl != widget.initialImageUrl) {
+    setState(() {
+      _currentImageUrl = widget.initialImageUrl;
+    });
+  }
+}
 
   Future<void> _handlePickAndUpload() async {
     final File? file = await MediaService.pickImage(ImageSource.gallery);
@@ -88,7 +98,25 @@ class _AppImagePickerState extends State<AppImagePicker> {
         child: _isUploading
             ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
             : _currentImageUrl == null
-                ? const Center(child: Icon(Icons.camera_alt, color: AppColors.surface, size: 30))
+               ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // ← Sửa màu icon
+                      Icon(
+                        Icons.camera_alt_outlined,
+                        color: Colors.grey[400],
+                        size: 30,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Thêm ảnh',
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  )
                 : null,
       ),
     );

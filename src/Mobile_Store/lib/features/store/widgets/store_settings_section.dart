@@ -102,14 +102,7 @@ class StoreSettingsSection extends StatelessWidget {
                   color: AppColors.surface,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimens.radiusMedium)),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("Normal", style: AppTextStyles.labelSmall), const Icon(Icons.arrow_drop_down, color: AppColors.textSub),
-                    Text("Sans Serif", style: AppTextStyles.labelSmall), const Icon(Icons.arrow_drop_down, color: AppColors.textSub),
-                    Text("12 pt", style: AppTextStyles.labelSmall),
-                  ],
-                ),
+               
               ),
               TextFormField(
                 controller: descController,

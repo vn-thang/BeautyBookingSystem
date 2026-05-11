@@ -113,45 +113,60 @@ class _MainScreenState extends State<MainScreen> {
         selectedLabelStyle: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.bold),
         unselectedLabelStyle: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w500),
         elevation: 10,
-        
         items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: 'Trang chủ',
-          ),
-          
-          BottomNavigationBarItem(
-            icon: Badge(
-              isLabelVisible: _unreadCount > 0, 
-              label: Text(
-                _unreadCount > 99 ? '99+' : '$_unreadCount', 
-                style: AppTextStyles.labelSmall.copyWith(color: AppColors.white, fontSize: 11), 
-              ),
-              child: const Icon(Icons.notifications_none_outlined), 
-            ),
-            activeIcon: Badge( 
-              isLabelVisible: _unreadCount > 0,
-              label: Text(
-                _unreadCount > 99 ? '99+' : '$_unreadCount', 
-                style: AppTextStyles.labelSmall.copyWith(color: AppColors.white, fontSize: 11), 
-              ),
-              child: const Icon(Icons.notifications),
-            ),
-            label: 'Thông báo',
-          ),
-          
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month_outlined),
-            activeIcon: Icon(Icons.calendar_month),
-            label: 'Lịch hẹn',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.storefront_outlined), 
-            activeIcon: Icon(Icons.storefront),
-            label: 'Cửa hàng',
-          ),
-        ],
+  const BottomNavigationBarItem(
+    icon: Icon(Icons.space_dashboard_outlined), 
+    activeIcon: Icon(Icons.space_dashboard_rounded),
+    label: 'Trang chủ',
+  ),
+  
+  BottomNavigationBarItem(
+    icon: Badge(
+      isLabelVisible: _unreadCount > 0, 
+      backgroundColor: AppColors.error,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), 
+      offset: const Offset(4, -4), 
+      label: Text(
+        _unreadCount > 99 ? '99+' : '$_unreadCount', 
+        style: AppTextStyles.labelSmall.copyWith(
+          color: AppColors.white, 
+          fontSize: 10, 
+          fontWeight: FontWeight.bold,
+          height: 1.2, 
+        ), 
+      ),
+      child: const Icon(Icons.notifications_outlined), 
+    ),
+    activeIcon: Badge( 
+      isLabelVisible: _unreadCount > 0,
+      backgroundColor: AppColors.error,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      offset: const Offset(4, -4),
+      label: Text(
+        _unreadCount > 99 ? '99+' : '$_unreadCount', 
+        style: AppTextStyles.labelSmall.copyWith(
+          color: AppColors.white, 
+          fontSize: 10, 
+          fontWeight: FontWeight.bold,
+          height: 1.2,
+        ), 
+      ),
+      child: const Icon(Icons.notifications_rounded),
+    ),
+    label: 'Thông báo',
+  ),
+  
+  const BottomNavigationBarItem(
+    icon: Icon(Icons.calendar_today_outlined),
+    activeIcon: Icon(Icons.calendar_today_rounded),
+    label: 'Lịch hẹn',
+  ),
+  const BottomNavigationBarItem(
+    icon: Icon(Icons.storefront_outlined), 
+    activeIcon: Icon(Icons.storefront_rounded),
+    label: 'Cửa hàng',
+  ),
+],
       ),
     );
   }

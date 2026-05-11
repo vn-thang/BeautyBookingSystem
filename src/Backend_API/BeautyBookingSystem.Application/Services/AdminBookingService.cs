@@ -27,14 +27,16 @@ namespace BeautyBookingSystem.Application.Services
 
         public async Task<PagedResponse<AdminBookingListDto>> GetBookingsAsync(AdminBookingFilterRequest request)
         {
-            var query = _unitOfWork.BookingRepository.GetQueryable();
-            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-            {
-                var search = request.SearchTerm.ToLower();
-                query = query.Where(b => b.Id.ToString().Contains(search) || 
-                                         b.Customer.FullName.ToLower().Contains(search) ||
-                                         b.Customer.Phone.Contains(search));
-            }
+           var query = _unitOfWork.BookingRepository.GetQueryable();
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            var search = request.SearchTerm.Trim().ToLower();
+            query = query.Where(b => 
+                b.Id.ToString().Contains(search) || 
+                (b.Customer != null && b.Customer!.FullName.ToLower().Contains(search)) ||
+                (b.Customer != null && b.Customer!.Phone != null && b.Customer!.Phone!.Contains(search))
+            );
+        }
 
             if (request.StoreId.HasValue)
             {

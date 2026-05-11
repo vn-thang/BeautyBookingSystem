@@ -284,7 +284,7 @@ namespace BeautyBookingSystem.Application.Services
                         pendingPayment.PaidAt = DateTime.UtcNow;
                         pendingPayment.TransactionId = $"STORE_RECV_{DateTime.UtcNow.Ticks}"; 
                     }
-                    else if (booking.DepositAmount > 0 && successfulPayments.Any(p => p.PaymentType == PaymentType.Deposit))
+                    else
                     {
                         decimal remainingAmount = booking.FinalPrice - totalPaidAmount;
                         
@@ -294,7 +294,7 @@ namespace BeautyBookingSystem.Application.Services
                             {
                                 BookingId = booking.Id, 
                                 PaymentMethod = PaymentMethod.COD, 
-                                PaymentType = PaymentType.Remaining, 
+                                PaymentType = booking.DepositAmount > 0 ? PaymentType.Remaining : PaymentType.Full, 
                                 Amount = remainingAmount,
                                 Status = PaymentStatus.Success, 
                                 PaidAt = DateTime.UtcNow,
@@ -307,7 +307,7 @@ namespace BeautyBookingSystem.Application.Services
                 }
 
                 customerNotificationTitle = "Dịch vụ hoàn tất";
-                customerNotificationMessage = "Cảm ơn bạn đã sử dụng dịch vụ tại cửa hàng! Hy vọng bạn hài lòng với trải nghiệm vừa rồi.";
+                customerNotificationMessage = $"Đơn hàng #{booking.Id} đã hoàn thành. Cảm ơn bạn đã sử dụng dịch vụ tại cửa hàng! Hãy đánh giá trải nghiệm dịch vụ của bạn ngay nào.";
                 break;
         }
         _unitOfWork.BookingRepository.Update(booking);
@@ -323,6 +323,26 @@ namespace BeautyBookingSystem.Application.Services
                 NotificationType.BookingUpdate
             );
         }
+
+        if (newStatus == BookingStatus.Completed)
+    {
+        decimal feeAmount = await _storeWalletService.ProcessBookingCommissionAsync(booking.Id);
+
+        if (feeAmount > 0)
+        {
+            var storeEntity = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
+            
+            if (storeEntity != null)
+            {
+                await _notificationService.CreateAndSendNotificationAsync(
+                    storeEntity.OwnerId, 
+                    "💸 Trừ phí hoa hồng",
+                    $"Hệ thống đã tự động trừ {feeAmount:N0}đ phí hoa hồng từ ví của bạn cho đơn hàng hoàn thành #{booking.Id}.",
+                    NotificationType.BookingUpdate
+                );
+            }
+        }
+    }
     }
         return true; 
         }

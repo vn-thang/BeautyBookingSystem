@@ -29,7 +29,7 @@ class ReviewStatisticsCard extends StatelessWidget {
                 const Icon(Icons.star_rounded, color: AppColors.warning),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  'Đánh giá của khách hàng',
+                  'Đánh giá của khách',
                   style: AppTextStyles.bodyText.copyWith(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

@@ -36,9 +36,13 @@ class TopPerformanceCard extends StatelessWidget {
               children: [
                 Icon(icon, color: AppColors.primary),
                 const SizedBox(width: AppSpacing.sm),
-                Text(
-                  title, 
-                  style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.w600)
+                Expanded(
+                  child: Text(
+                    title, 
+                    style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -72,7 +76,7 @@ class TopPerformanceCard extends StatelessWidget {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(), 
                   itemCount: items.length,
-                  separatorBuilder: (context, index) => const Divider(height: 16, color: AppColors.surface), // Đã đồng bộ màu
+                  separatorBuilder: (context, index) => const Divider(height: 16, color: AppColors.surface), 
                   itemBuilder: (context, index) {
                     final item = items[index];
                     
@@ -86,6 +90,7 @@ class TopPerformanceCard extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs), 
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center, 
                           children: [
                             CircleAvatar(
                               radius: 14,
@@ -96,6 +101,7 @@ class TopPerformanceCard extends StatelessWidget {
                               )),
                             ),
                             const SizedBox(width: AppSpacing.md),
+                            
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,21 +112,40 @@ class TopPerformanceCard extends StatelessWidget {
                                     maxLines: 1, 
                                     overflow: TextOverflow.ellipsis
                                   ),
-                                  Text(
-                                    '${item.count} lượt', 
-                                    style: AppTextStyles.labelSmall
+                                  const SizedBox(height: 4),
+                                  
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Flexible(
+                                        flex: 1,
+                                        child: Text(
+                                          '${item.count} lượt', 
+                                          style: AppTextStyles.labelSmall,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8), 
+                                      Flexible(
+                                        flex: 2,
+                                        child: Text(
+                                          Formatters.formatCurrency(item.revenue),
+                                          style: AppTextStyles.bodyText.copyWith(
+                                            fontWeight: FontWeight.w600, 
+                                            color: AppColors.success, 
+                                            fontSize: 14
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
                             ),
-                            Text(
-                              Formatters.formatCurrency(item.revenue),
-                              style: AppTextStyles.bodyText.copyWith(
-                                fontWeight: FontWeight.w600, 
-                                color: AppColors.success, 
-                                fontSize: 14
-                              ),
-                            ),
+                            
                             if (onItemTap != null) 
                               const Padding(
                                 padding: EdgeInsets.only(left: AppSpacing.sm),
