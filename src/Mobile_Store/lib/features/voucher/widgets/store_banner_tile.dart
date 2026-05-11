@@ -70,7 +70,7 @@ class StoreBannerTile extends StatelessWidget {
                         Switch(
                           value: banner.isActive,
                           onChanged: onToggleStatus,
-                          activeColor: AppColors.primary,
+                          activeThumbColor: AppColors.primary,
                         ),
                         const SizedBox(width: AppSpacing.xs),
                         Text(

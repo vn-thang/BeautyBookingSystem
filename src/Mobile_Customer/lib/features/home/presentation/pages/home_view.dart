@@ -117,80 +117,149 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildContent(BuildContext context, HomeLoaded state) {
+Widget _buildContent(BuildContext context, HomeLoaded state) {
     final data = state.data;
 
     return Container(
       decoration: const BoxDecoration(
         gradient: AppDecorations.pageGradient,
       ),
-      child: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: _buildHeader(context, state.locationName)),
-          const SliverToBoxAdapter(child: SizedBox(height: 10)),
-          SliverToBoxAdapter(
-            child: _buildBanners(context, data.systemContents),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 14)),
-          SliverToBoxAdapter(child: _buildSearchBar(context)),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          SliverToBoxAdapter(child: _sectionHeader(context, 'Danh mục')),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          SliverToBoxAdapter(child: _buildCategories(context, data.categories)),
-          const SliverToBoxAdapter(child: SizedBox(height: 18)),
-          SliverToBoxAdapter(child: _sectionHeader(context, 'Dịch vụ')),
-          const SliverToBoxAdapter(child: SizedBox(height: 10)),
-          SliverToBoxAdapter(
-            child: _buildServiceScroller(context, data.serviceGroups),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 18)),
-          SliverToBoxAdapter(
-            child: _buildStoreHorizontalSection(
-              context,
-              title: 'Cửa hàng yêu thích',
-              stores: data.favoriteStores,
-              showViewAll: false,
+      child: RefreshIndicator(
+        color: AppColors.primary, 
+        backgroundColor: Colors.white,
+        onRefresh: () async {
+          context.read<HomeBloc>().add(LoadHomeEvent(forceRefresh: true));
+          await Future.delayed(const Duration(seconds: 1));
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(), 
+          slivers: [
+            SliverToBoxAdapter(child: _buildHeader(context, state.locationName)),
+            const SliverToBoxAdapter(child: SizedBox(height: 10)),
+            SliverToBoxAdapter(
+              child: _buildBanners(context, data.systemContents),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: _buildServiceHorizontalSection(
-              context,
-              title: 'Dịch vụ yêu thích',
-              services: data.favoriteServices,
+            const SliverToBoxAdapter(child: SizedBox(height: 14)),
+            SliverToBoxAdapter(child: _buildSearchBar(context, state.lat, state.lon)),
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            SliverToBoxAdapter(child: _sectionHeader(context, 'Danh mục')),
+            const SliverToBoxAdapter(child: SizedBox(height: 12)),
+            SliverToBoxAdapter(child: _buildCategories(context, data.categories)),
+            const SliverToBoxAdapter(child: SizedBox(height: 18)),
+            SliverToBoxAdapter(child: _sectionHeader(context, 'Dịch vụ')),
+            const SliverToBoxAdapter(child: SizedBox(height: 10)),
+            SliverToBoxAdapter(
+              child: _buildServiceScroller(context, data.serviceGroups),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: _buildStoreHorizontalSection(
-              context,
-              title: 'Cửa hàng gần bạn',
-              stores: data.nearbyStores,
-              onViewAll: () {
-                context.push(
-                  '/search',
-                  extra: {'sortMode': 'nearest'},
-                );
-              },
+            const SliverToBoxAdapter(child: SizedBox(height: 18)),
+            SliverToBoxAdapter(
+              child: _buildStoreHorizontalSection(
+                context,
+                title: 'Cửa hàng yêu thích',
+                stores: data.favoriteStores,
+                showViewAll: false,
+              ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: _buildStoreHorizontalSection(
-              context,
-              title: 'Cửa hàng được đánh giá cao',
-              stores: data.topRatedStores,
-              onViewAll: () {
-                context.push(
-                  '/search',
-                  extra: {'sortMode': 'topRated'},
-                );
-              },
+            SliverToBoxAdapter(
+              child: _buildServiceHorizontalSection(
+                context,
+                title: 'Dịch vụ yêu thích',
+                services: data.favoriteServices,
+              ),
             ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 18)),
-          SliverToBoxAdapter(child: _sectionHeader(context, 'Khuyến mãi')),
-          const SliverToBoxAdapter(child: SizedBox(height: 14)),
-          SliverToBoxAdapter(child: _buildVouchers(context, data.vouchers)),
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
-        ],
+            SliverToBoxAdapter(
+              child: _buildStoreHorizontalSection(
+                context,
+                title: 'Cửa hàng gần bạn',
+                stores: data.nearbyStores,
+                onViewAll: () {
+                if (state.lat == 0 && state.lon == 0) {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Vui lòng cấp quyền vị trí để xem cửa hàng quanh bạn!'),
+                      backgroundColor: AppColors.warning, 
+                      duration: const Duration(seconds: 3), 
+                      action: SnackBarAction(
+                        label: 'Tải lại',
+                        textColor: Colors.white,
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          context.read<HomeBloc>().add(LoadHomeEvent(forceRefresh: true));
+                        },
+                      ),
+                    ),
+                  );
+
+                  Future.delayed(const Duration(seconds: 5), () {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    }
+                  });
+
+                  context.push('/search');
+                } else {
+                    context.push(
+                      '/search',
+                      extra: {
+                        'sortMode': 'nearest',
+                        'lat': state.lat,
+                        'lon': state.lon,
+                      },
+                    );
+                  }
+                },
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: _buildStoreHorizontalSection(
+                context,
+                title: 'Cửa hàng được đánh giá cao',
+                stores: data.topRatedStores,
+               
+                 onViewAll: () {
+                if (state.lat == 0 && state.lon == 0) {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Vui lòng cấp quyền vị trí để xem cửa hàng quanh bạn!'),
+                      backgroundColor: AppColors.warning, 
+                      duration: const Duration(seconds: 5), 
+                      action: SnackBarAction(
+                        label: 'Tải lại',
+                        textColor: Colors.white,
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          context.read<HomeBloc>().add(LoadHomeEvent(forceRefresh: true));
+                        },
+                      ),
+                    ),
+                  );
+
+                  Future.delayed(const Duration(seconds: 5), () {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    }
+                  });
+                  context.push('/search');
+                } else {
+                    context.push(
+                      '/search',
+                      extra: {'sortMode': 'topRated'},
+                    );
+                  }
+                },
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 18)),
+            SliverToBoxAdapter(child: _sectionHeader(context, 'Khuyến mãi')),
+            const SliverToBoxAdapter(child: SizedBox(height: 14)),
+            SliverToBoxAdapter(child: _buildVouchers(context, data.vouchers)),
+            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+          ],
+        ),
       ),
     );
   }
@@ -258,11 +327,45 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildSearchBar(BuildContext context) {
+Widget _buildSearchBar(BuildContext context, double lat, double lon) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GestureDetector(
-        onTap: () => context.push('/search'),
+        onTap: () {
+          if (lat == 0 && lon == 0) {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Vui lòng cấp quyền vị trí để xem cửa hàng quanh bạn!'),
+                      backgroundColor: AppColors.warning, 
+                      duration: const Duration(seconds: 3), 
+                      action: SnackBarAction(
+                        label: 'Tải lại',
+                        textColor: Colors.white,
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          context.read<HomeBloc>().add(LoadHomeEvent(forceRefresh: true));
+                        },
+                      ),
+                    ),
+                  );
+                  Future.delayed(const Duration(seconds: 5), () {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    }
+                  });
+                  context.push('/search');
+                } else {
+            context.push(
+              '/search',
+              extra: {
+                'lat': lat,
+                'lon': lon,
+              },
+            );
+          }
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           decoration: BoxDecoration(
@@ -273,31 +376,19 @@ class _HomeViewState extends State<HomeView> {
           ),
           child: Row(
             children: [
-              const Icon(
-                Icons.search_rounded,
-                color: AppColors.textSecondary,
-                size: 22,
-              ),
+              const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 22),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Tìm theo tên cửa hàng, dịch vụ...',
-                  style: AppTextStyles.bodyMuted,
-                ),
+                child: Text('Tìm theo tên cửa hàng, dịch vụ...', style: AppTextStyles.bodyMuted),
               ),
               Container(
-                width: 32,
-                height: 32,
+                width: 32, height: 32,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSoft,
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AppColors.borderSoft),
                 ),
-                child: const Icon(
-                  Icons.mic_none_rounded,
-                  color: AppColors.primary,
-                  size: 18,
-                ),
+                child: const Icon(Icons.mic_none_rounded, color: AppColors.primary, size: 18),
               ),
             ],
           ),
@@ -584,13 +675,14 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildHorizontalSection({
+Widget _buildHorizontalSection({
     required BuildContext context,
     required String title,
     required List items,
     required Widget Function(BuildContext context, dynamic item) itemBuilder,
     bool showViewAll = false,
     VoidCallback? onViewAll,
+    double listHeight = 225, 
   }) {
     if (items.isEmpty) return const SizedBox.shrink();
 
@@ -602,7 +694,7 @@ class _HomeViewState extends State<HomeView> {
       decoration: BoxDecoration(
         color: AppColors.surfaceSoft.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(24),
-        boxShadow: AppDecorations.softShadow, // làm mềm đường ngang nền
+        boxShadow: AppDecorations.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -635,7 +727,7 @@ class _HomeViewState extends State<HomeView> {
           ),
           const SizedBox(height: 10),
           SizedBox(
-            height: 225,
+            height: listHeight, 
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
@@ -667,6 +759,7 @@ class _HomeViewState extends State<HomeView> {
       items: stores,
       showViewAll: showViewAll,
       onViewAll: onViewAll,
+      listHeight: 230, 
       itemBuilder: (context, s) => _storeCardHorizontal(context, s),
     );
   }
@@ -680,6 +773,7 @@ class _HomeViewState extends State<HomeView> {
       context: context,
       title: title,
       items: services,
+      listHeight: 215, 
       itemBuilder: (context, s) {
         return GestureDetector(
           onTap: () async {
@@ -688,6 +782,7 @@ class _HomeViewState extends State<HomeView> {
           },
           child: Container(
             width: 180,
+            height: 200, 
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(18),
@@ -791,9 +886,8 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _storeCardHorizontal(BuildContext context, dynamic s) {
+Widget _storeCardHorizontal(BuildContext context, dynamic s) {
     final coverUrl = _resolveImage(s.coverImageUrl ?? s.logoUrl);
-
     final double rating = (s.averageRating ?? 0).toDouble();
     final int reviewCount = (s.totalReviews ?? 0);
     final double? distanceKm = (s.distanceKm as num?)?.toDouble();
@@ -804,81 +898,84 @@ class _HomeViewState extends State<HomeView> {
         await _refreshHomeIfNeeded(changed);
       },
       child: Container(
-        width: 180,
-        height: 207,
+        width: 160, 
+        height: 210, 
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 12,
-              spreadRadius: 1,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.06), 
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.max,
             children: [
               SizedBox(
-                height: 94,
+                height: 105, 
                 width: double.infinity,
                 child: NetworkImageWidget(imageUrl: coverUrl),
               ),
-              Expanded(
+              
+              Expanded( 
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                  padding: const EdgeInsets.all(10), 
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.start, 
                     children: [
                       Text(
                         s.name ?? '',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.body.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontSize: 14, 
+                          fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      
+                      const SizedBox(height: 2), 
+                      
                       Row(
                         children: [
                           const Icon(
                             Icons.star_rounded,
-                            size: 15,
+                            size: 14,
                             color: AppColors.warning,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 2),
                           Text(
                             rating.toStringAsFixed(1),
                             style: AppTextStyles.caption.copyWith(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                               color: AppColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(width: 4),
                           Text(
-                            '($reviewCount)',
-                            style: AppTextStyles.caption,
+                            ' ($reviewCount)',
+                            style: AppTextStyles.caption.copyWith(fontSize: 11),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            distanceKm != null
-                                ? '${s.address ?? ''} • ${distanceKm.toStringAsFixed(1)} km'
-                                : (s.address ?? ''),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.bodyMuted,
-                          ),
+                      
+                      const SizedBox(height: 6), 
+                      
+                      Text(
+                        distanceKm != null
+                            ? '${s.address ?? ''} • ${distanceKm.toStringAsFixed(1)} km'
+                            : (s.address ?? ''),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.bodyMuted.copyWith(
+                          fontSize: 11, 
+                          height: 1.3, 
                         ),
                       ),
                     ],
@@ -890,23 +987,23 @@ class _HomeViewState extends State<HomeView> {
         ),
       ),
     );
-  }
+}
 
-  Widget _buildVouchers(
+ Widget _buildVouchers(
     BuildContext context,
     List vouchers,
   ) {
     if (vouchers.isEmpty) return const SizedBox.shrink();
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(vertical: 12), 
       decoration: BoxDecoration(
         color: AppColors.surfaceSoft.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(24),
         boxShadow: AppDecorations.softShadow,
       ),
       child: SizedBox(
-        height: 220,
+        height: 250, 
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -939,7 +1036,7 @@ class _HomeViewState extends State<HomeView> {
             return GestureDetector(
               onTap: () => context.push('/service-detail/${v.serviceId}'),
               child: Container(
-                width: 220,
+                width: 170, 
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(16),
@@ -986,12 +1083,12 @@ class _HomeViewState extends State<HomeView> {
                                   ),
                             if (discountPercent > 0)
                               Positioned(
-                                top: 10,
-                                right: 10,
+                                top: 8,
+                                right: 8,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
+                                    horizontal: 8,
+                                    vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
                                     color: AppColors.danger
@@ -1012,45 +1109,46 @@ class _HomeViewState extends State<HomeView> {
                           ],
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              serviceName.isNotEmpty ? serviceName : v.code,
-                              style: AppTextStyles.body.copyWith(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
-                                color: AppColors.textPrimary,
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(10), 
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                serviceName.isNotEmpty ? serviceName : v.code,
+                                style: AppTextStyles.body.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                  color: AppColors.textPrimary,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _vndFormat.format(originalPrice),
-                              style: AppTextStyles.caption.copyWith(
-                                color: AppColors.textSecondary,
-                                decoration: TextDecoration.lineThrough,
-                                decorationThickness: 1.5,
+                              const Spacer(), 
+                              Text(
+                                _vndFormat.format(originalPrice),
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textSecondary,
+                                  decoration: TextDecoration.lineThrough,
+                                  decorationThickness: 1.5,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _vndFormat.format(finalPrice),
-                              style: AppTextStyles.body.copyWith(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.danger,
+                              const SizedBox(height: 2), 
+                              Text(
+                                _vndFormat.format(finalPrice),
+                                style: AppTextStyles.body.copyWith(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.danger,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ],

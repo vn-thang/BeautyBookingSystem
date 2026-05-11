@@ -20,6 +20,7 @@ class BookingItem {
   final String? mainServiceName;
   final int extraServiceCount;
   final String? serviceSummary;
+  final String? cancelReason;
   final List<BookingServiceItem> services;
   final List<BookingPaymentItem> payments;
 
@@ -43,14 +44,20 @@ class BookingItem {
     this.mainServiceName,
     this.extraServiceCount = 0,
     this.serviceSummary,
+    this.cancelReason,
     required this.services,
     required this.payments,
   });
 
   factory BookingItem.fromJson(Map<String, dynamic> json) {
-    DateTime? parseDate(dynamic v) {
+   DateTime? parseDate(dynamic v) {
       if (v == null) return null;
-      if (v is String) return DateTime.tryParse(v);
+      if (v is String) {
+        if (!v.endsWith('Z')) {
+          v = '${v}Z'; 
+        }
+        return DateTime.tryParse(v);
+      }
       if (v is DateTime) return v;
       return null;
     }
@@ -94,6 +101,7 @@ class BookingItem {
       remainingAmountFromApi: parseDouble(json['remainingAmount']),
       status: parseInt(json['status']),
       customerNote: json['customerNote'] as String?,
+      cancelReason: json['cancelReason'] as String?,
       storeId: parseInt(json['storeId']),
       storeName: json['storeName'] as String?,
       storeAvatarUrl:
@@ -191,9 +199,14 @@ class BookingServiceItem {
   });
 
   factory BookingServiceItem.fromJson(Map<String, dynamic> json) {
-    DateTime parseDate(dynamic v) {
+   DateTime parseDate(dynamic v) {
       if (v == null) return DateTime.now();
-      if (v is String) return DateTime.tryParse(v) ?? DateTime.now();
+      if (v is String) {
+        if (!v.endsWith('Z')) {
+          v = '${v}Z';
+        }
+        return DateTime.tryParse(v) ?? DateTime.now();
+      }
       if (v is DateTime) return v;
       return DateTime.now();
     }
@@ -273,13 +286,19 @@ class BookingPaymentItem {
     this.paidAt,
   });
 
-  factory BookingPaymentItem.fromJson(Map<String, dynamic> json) {
-    DateTime? parseDate(dynamic v) {
-      if (v == null) return null;
-      if (v is String) return DateTime.tryParse(v);
-      if (v is DateTime) return v;
-      return null;
+ factory BookingPaymentItem.fromJson(Map<String, dynamic> json) {
+  DateTime? parseDate(dynamic v) {
+    if (v == null) return null;
+    
+    if (v is String) {
+      if (!v.endsWith('Z')) {
+        v = '${v}Z';
+      }
+      return DateTime.tryParse(v)?.toLocal();
     }
+    if (v is DateTime) return v.toLocal();
+    return null;
+  }
 
     int parseInt(dynamic v, [int fallback = 0]) {
       if (v is int) return v;

@@ -28,49 +28,91 @@ class _ReplyDialogWidgetState extends State<ReplyDialogWidget> {
     super.dispose();
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: AppColors.white,
       surfaceTintColor: Colors.transparent,
-      title: Text('Phản hồi đánh giá', style: AppTextStyles.heading1.copyWith(fontSize: 18)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMedium)),
-      content: TextField(
-        controller: _controller,
-        maxLines: 4,
-        maxLength: 500,
-        style: AppTextStyles.bodyText,
-        decoration: InputDecoration(
-          hintText: 'Nhập nội dung trả lời...',
-          hintStyle: AppTextStyles.labelSmall,
-          filled: true,
-          fillColor: AppColors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
-            borderSide: const BorderSide(color: AppColors.textSub, width: 0.5),
+      scrollable: true,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusLarge)),
+      
+      titlePadding: const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 8),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+      actionsPadding: const EdgeInsets.all(24),
+
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Phản hồi đánh giá', style: AppTextStyles.heading1.copyWith(fontSize: 20)),
+          const SizedBox(height: 4),
+          Text(
+            'Khách hàng sẽ nhận được thông báo khi bạn trả lời.', 
+            style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSub, fontWeight: FontWeight.normal),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1.5), 
+        ],
+      ),
+      
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.9, 
+        child: TextField(
+          controller: _controller,
+          maxLines: 4,
+          maxLength: 500,
+          style: AppTextStyles.bodyText,
+          decoration: InputDecoration(
+            hintText: 'Nhập nội dung trả lời...',
+            hintStyle: AppTextStyles.labelSmall.copyWith(color: AppColors.textSub.withValues(alpha: 0.7)),
+            filled: true,
+            fillColor: const Color(0xFFF8F9FA), 
+            contentPadding: const EdgeInsets.all(16), 
+            
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+              borderSide: const BorderSide(color: Color(0xFFEAEAEA), width: 1), 
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.5), 
+            ),
           ),
         ),
       ),
+      
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('Hủy', style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub, fontWeight: FontWeight.bold)),
-        ),
-        SizedBox(
-          width: 100,
-          height: 40,
-          child: AppPrimaryButton(
-            text: 'GỬI',
-            onPressed: () {
-              if (_controller.text.trim().isEmpty) return;
-              Navigator.pop(context, _controller.text.trim());
-            },
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
+                  backgroundColor: AppColors.surface, 
+                ),
+                onPressed: () => Navigator.pop(context),
+                child: Text('HỦY', style: AppTextStyles.bodyText.copyWith(color: AppColors.textSub, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: AppPrimaryButton(
+                  text: 'GỬI',
+                  onPressed: () {
+                    if (_controller.text.trim().isEmpty) {
+                      
+                      return;
+                    }
+                    Navigator.pop(context, _controller.text.trim());
+                  },
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

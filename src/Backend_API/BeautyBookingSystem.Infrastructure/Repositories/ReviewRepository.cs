@@ -8,11 +8,9 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
 {
     public class ReviewRepository : GenericRepository<Review>, IReviewRepository
     {
-        private readonly AppDbContext _context;
 
         public ReviewRepository(AppDbContext context) : base(context)
         {
-            _context = context;
         }
 
         public async Task<Review?> GetByBookingIdAsync(int bookingId)

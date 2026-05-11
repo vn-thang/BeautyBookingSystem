@@ -277,20 +277,18 @@ class _LoginPageState extends State<LoginPage> {
         child: SafeArea(
           child: BlocListener<AuthBloc, AuthState>(
             listener: (context, state) {
-              if (state is AuthAuthenticated) {
-                final needPhone = _needsPhoneVerification(state.user);
-
-                if (needPhone) {
-                  if (!_phoneDialogShown) {
-                    _phoneDialogShown = true;
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (!mounted) return;
-                      _showVerifyPhoneDialog();
-                    });
-                  }
-                  return;
+              if (state is AuthPhoneVerificationRequired) {
+                if (!_phoneDialogShown) {
+                  _phoneDialogShown = true;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    _showVerifyPhoneDialog();
+                  });
                 }
+                return;
+              }
 
+              if (state is AuthAuthenticated) {
                 _phoneDialogShown = false;
 
                 if (widget.redirectPath != null) {
@@ -520,7 +518,7 @@ class _LoginPageState extends State<LoginPage> {
                               return SizedBox(
                                 width: double.infinity,
                                 child: _primaryButton(
-                                  text: "Đăng nhập",
+                                  text: "ĐĂNG NHẬP",
                                   onTap: _login,
                                 ),
                               );
@@ -528,18 +526,36 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 16),
                           _rowOrDivider(),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: _googleButton(
-                              onTap: _loginWithGoogle,
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _facebookButton(
+                                onTap: () {
+                                  // TODO: Thêm hàm xử lý đăng nhập Facebook ở đây
+                                },
+                              ),
+                              const SizedBox(width: 32),
+                              _googleButton(
+                                onTap: _loginWithGoogle,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 32),
+                          Center(
+                            child: Text(
+                              "Chưa có tài khoản?",
+                              style: AppTextStyles.bodyMuted.copyWith(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
                           SizedBox(
                             width: double.infinity,
                             child: _secondaryButton(
-                              text: "Đăng ký",
+                              text: "ĐĂNG KÝ NGAY",
                               onTap: () {
                                 Navigator.push(
                                   context,
@@ -593,7 +609,7 @@ class _LoginPageState extends State<LoginPage> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
-            "hoặc",
+            "Hoặc đăng nhập bằng",
             style: AppTextStyles.bodyMuted.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -609,44 +625,70 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _googleButton({
-    required VoidCallback onTap,
-  }) {
+  Widget _facebookButton({required VoidCallback onTap}) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
+        borderRadius: BorderRadius.circular(30),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          width: 55,
+          height: 55,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            color: AppColors.surface,
-            border: Border.all(color: AppColors.borderSoft),
-            boxShadow: AppDecorations.softShadow,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.network(
-                'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                width: 20,
-                height: 20,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.g_mobiledata_rounded,
-                  size: 24,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                "Google",
-                style: AppTextStyles.bodyMuted.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w700,
-                ),
+            shape: BoxShape.circle,
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                offset: const Offset(0, 3),
               ),
             ],
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.facebook,
+              color: Color(0xFF1877F2),
+              size: 48,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _googleButton({required VoidCallback onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(30),
+        child: Container(
+          width: 55,
+          height: 55,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            border: Border.all(color: Colors.grey.shade300, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Image.network(
+              'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/120px-Google_%22G%22_logo.svg.png',
+              width: 26,
+              height: 26,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(
+                Icons.g_mobiledata_rounded,
+                size: 32,
+                color: AppColors.primary,
+              ),
+            ),
           ),
         ),
       ),

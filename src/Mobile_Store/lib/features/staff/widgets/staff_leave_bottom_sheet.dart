@@ -244,7 +244,7 @@ class _StaffLeaveBottomSheetState extends State<StaffLeaveBottomSheet> {
                   return Card(
                     elevation: 0,
                     margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    color: AppColors.surface.withOpacity(0.3),
+                    color: AppColors.surface.withValues(alpha: 0.3),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),

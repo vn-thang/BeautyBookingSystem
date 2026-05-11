@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BeautyBookingSystem.Domain.Enums
 {
-    public enum Role { Customer, StoreOwner, Admin }
+    public enum Role { Customer, StoreOwner, Admin } 
     public enum UserStatus { Active, Locked }
     
     public enum ApprovalStatus { Incomplete = -1, Pending, Approved, Locked }

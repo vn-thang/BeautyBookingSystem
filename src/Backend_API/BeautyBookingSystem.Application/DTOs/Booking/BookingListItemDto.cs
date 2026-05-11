@@ -25,6 +25,7 @@ namespace BeautyBookingSystem.Application.DTOs.Booking
         public decimal FinalPrice { get; set; }
         public decimal PaidAmount { get; set; }
         public decimal RemainingAmount { get; set; }
+        public string? CancelReason { get; set; }
 
         public BookingStatus Status { get; set; }
     }

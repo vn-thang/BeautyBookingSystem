@@ -27,7 +27,7 @@ class BookingDetailBottomActions extends StatelessWidget {
   Widget build(BuildContext context) {
     bool needsStaffAssignment = detail.services.any((s) => s.staffId == null);
 
-    if (detail.status.toLowerCase() == 'pending') {
+   if (detail.status.toLowerCase() == 'pending' || detail.status.toLowerCase() == 'depositpaid') {
       return Container(
         padding: const EdgeInsets.all(AppDimens.paddingMedium),
         decoration: BoxDecoration(

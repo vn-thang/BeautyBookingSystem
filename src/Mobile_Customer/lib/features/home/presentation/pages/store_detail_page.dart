@@ -258,13 +258,13 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: isOpenNow
-                          ? AppColors.success.withOpacity(0.12)
-                          : AppColors.danger.withOpacity(0.10),
+                          ? AppColors.success.withValues(alpha: 0.12)
+                          : AppColors.danger.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
                         color: isOpenNow
-                            ? AppColors.success.withOpacity(0.22)
-                            : AppColors.danger.withOpacity(0.22),
+                            ? AppColors.success.withValues(alpha: 0.22)
+                            : AppColors.danger.withValues(alpha: 0.22),
                       ),
                     ),
                     child: Row(
@@ -339,7 +339,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                                       height: 40,
                                       decoration: BoxDecoration(
                                         color: AppColors.placeholderStart
-                                            .withOpacity(0.28),
+                                            .withValues(alpha: 0.28),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: const Icon(
@@ -494,7 +494,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                                                   colors: [
                                                     Colors.transparent,
                                                     AppColors.overlay
-                                                        .withOpacity(0.30),
+                                                        .withValues(alpha: 0.30),
                                                   ],
                                                 ),
                                               ),
@@ -529,7 +529,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: AppColors.surface.withOpacity(0.92),
+                              color: AppColors.surface.withValues(alpha: 0.92),
                               borderRadius: BorderRadius.circular(28),
                               border: Border.all(color: AppColors.borderSoft),
                               boxShadow: AppDecorations.cardShadow,
@@ -864,7 +864,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                                                               backgroundColor:
                                                                   AppColors
                                                                       .placeholderStart
-                                                                      .withOpacity(
+                                                                      .withValues(alpha:
                                                                 0.35,
                                                               ),
                                                               backgroundImage: (r
@@ -1029,7 +1029,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
           decoration: BoxDecoration(
             color: active
                 ? AppColors.surface
-                : AppColors.surface.withOpacity(0.45),
+                : AppColors.surface.withValues(alpha: 0.45),
             borderRadius: BorderRadius.circular(999),
           ),
         );
@@ -1201,7 +1201,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: AppColors.surface.withOpacity(0.9),
+          color: AppColors.surface.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.borderSoft),
           boxShadow: AppDecorations.topBarShadow,

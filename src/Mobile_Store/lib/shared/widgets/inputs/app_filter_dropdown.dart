@@ -11,6 +11,9 @@ class AppFilterDropdown<T> extends StatelessWidget {
   final void Function(T?) onChanged;
   final bool isLoading;
   final double height;
+  final DropdownButtonBuilder? selectedItemBuilder;
+  final AlignmentGeometry alignment;
+  final double? menuWidth;
 
   const AppFilterDropdown({
     super.key,
@@ -21,6 +24,9 @@ class AppFilterDropdown<T> extends StatelessWidget {
     required this.onChanged,
     this.isLoading = false,
     this.height = 36, 
+    this.selectedItemBuilder,
+    this.alignment = Alignment.centerLeft,
+    this.menuWidth,
   });
 
   @override
@@ -63,6 +69,12 @@ class AppFilterDropdown<T> extends StatelessWidget {
                     child: DropdownButton<T>(
                       value: value,
                       isExpanded: true,
+                      isDense: true,
+                      alignment: alignment,
+                      menuWidth: menuWidth,
+                      itemHeight: 50, 
+                      menuMaxHeight: 400,
+                      selectedItemBuilder: selectedItemBuilder,
                       focusColor: Colors.transparent, 
                       dropdownColor: AppColors.white,
                       icon: const Icon(Icons.arrow_drop_down, color: AppColors.primary),

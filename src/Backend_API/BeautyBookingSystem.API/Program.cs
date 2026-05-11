@@ -14,13 +14,19 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using System.IO;
 using Hangfire;
+using AutoMapper;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), 
+        sqlOptions => 
+        {
+            sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+        });
+        
     options.ConfigureWarnings(warnings => 
         warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
 });
@@ -31,7 +37,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddAutoMapper(typeof(MappingProfile).Assembly);
+builder.Services.AddAutoMapper(config => config.AddMaps(typeof(MappingProfile).Assembly));
 
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -129,7 +135,11 @@ builder.Services.AddHangfire(configuration => configuration
     .UseSimpleAssemblyNameTypeSerializer()
     .UseRecommendedSerializerSettings()
     .UseSqlServerStorage(connectionStrings));
-builder.Services.AddHangfireServer();
+builder.Services.AddHangfireServer(options => 
+{
+    options.WorkerCount = 10; 
+    options.SchedulePollingInterval = TimeSpan.FromSeconds(15); 
+});
 
 var firebaseKeyPath = Path.Combine(Directory.GetCurrentDirectory(), "firebase-key.json"); 
 if (File.Exists(firebaseKeyPath))
@@ -159,7 +169,7 @@ builder.Services.AddCors(options =>
               .SetIsOriginAllowed(origin => true); 
     });
 });
-
+builder.WebHost.UseUrls("http://0.0.0.0:5294");
 var app = builder.Build();
 
 app.UseMiddleware<BeautyBookingSystem.API.Middleware.ExceptionMiddleware>();

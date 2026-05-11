@@ -25,6 +25,10 @@ class ApiConfig {
 
     return "http://localhost:5294/api/";
   }
+
+  // static String get baseUrl {
+  //   return "https://doreatha-absolvable-astrid.ngrok-free.dev/api/";
+  // }
 }
 
 class DioClient {
@@ -177,3 +181,9 @@ class DioClient {
     });
   }
 }
+
+/*
+	9704198526191432198
+  	NGUYEN VAN A
+    07/15
+    */

@@ -109,7 +109,7 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
     }
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -129,7 +129,12 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
             onRefresh: () async => _loadData(),
             color: AppColors.primary,
             child: ListView.builder(
-              padding: const EdgeInsets.all(AppDimens.paddingLarge),
+              padding: const EdgeInsets.only(
+                left: AppDimens.paddingLarge,
+                right: AppDimens.paddingLarge,
+                top: AppDimens.paddingLarge,
+                bottom: 100,
+              ),
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 final voucher = snapshot.data![index];
@@ -143,7 +148,7 @@ class _VoucherManagementScreenState extends State<VoucherManagementScreen> {
           );
         },
       ),
-    floatingActionButton: SizedBox(
+      floatingActionButton: SizedBox(
         height: 44, 
         child: FloatingActionButton.extended(
           onPressed: () => _openFormBottomSheet(),

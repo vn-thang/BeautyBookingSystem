@@ -110,5 +110,28 @@ namespace BeautyBookingSystem.API.Controllers
                     </html>
                     ", "text/html; charset=utf-8"); 
         }
+        [HttpPost("vnpay/refund/{paymentId}")]
+public async Task<IActionResult> RefundVnpay(int paymentId, [FromQuery] int storeId)
+{
+    try
+    {
+        var result = await _paymentService.RefundPaymentAsync(paymentId, storeId, "Admin_API");
+        
+        if (result)
+        {
+            return Ok(new 
+            { 
+                Success = true,
+                Message = "Hoàn tiền VNPay thành công. Số dư ví cửa hàng đã được cập nhật." 
+            });
+        }
+        
+        return BadRequest(new { Success = false, Message = "Xử lý hoàn tiền thất bại." });
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { Success = false, Message = ex.Message });
+    }
+}
     }
 }

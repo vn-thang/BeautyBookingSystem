@@ -8,5 +8,6 @@ namespace BeautyBookingSystem.Application.Interfaces
     {
         Task<PaymentCreationResult> CreatePaymentAsync(CreatePaymentRequest req, string ipAddress);
         Task<(bool Success, string Message)> ProcessVnpayCallbackAsync(IQueryCollection query);
+        Task<bool> RefundPaymentAsync(int paymentId, int storeId, string cancelBy = "System");
     }
 }

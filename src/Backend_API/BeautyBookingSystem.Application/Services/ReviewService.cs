@@ -18,68 +18,76 @@ namespace BeautyBookingSystem.Application.Services
             _notificationService = notificationService;
         }
 
-        public async Task<ReviewResponseDto> CreateAsync(int customerId, CreateReviewRequestDto request)
-        {
-            if (request.Rating < 1 || request.Rating > 5)
-                throw new InvalidOperationException("Rating phải từ 1 đến 5.");
+    public async Task<ReviewResponseDto> CreateAsync(int customerId, CreateReviewRequestDto request)
+{
+    if (request.Rating < 1 || request.Rating > 5)
+        throw new InvalidOperationException("Rating phải từ 1 đến 5.");
 
-            var booking = await _unitOfWork.BookingRepository.GetByIdWithDetailsAsync(request.BookingId);
-            if (booking == null)
-                throw new InvalidOperationException("Không tìm thấy booking.");
+    var booking = await _unitOfWork.BookingRepository.GetByIdWithDetailsAsync(request.BookingId);
+    if (booking == null)
+        throw new InvalidOperationException("Không tìm thấy booking.");
 
-            if (booking.CustomerId != customerId)
-                throw new UnauthorizedAccessException("Bạn không có quyền đánh giá booking này.");
+    if (booking.CustomerId != customerId)
+        throw new UnauthorizedAccessException("Bạn không có quyền đánh giá booking này.");
 
-            if (booking.Status != BookingStatus.Completed)
-                throw new InvalidOperationException("Chỉ được đánh giá booking đã hoàn thành.");
+    if (booking.Status != BookingStatus.Completed)
+        throw new InvalidOperationException("Chỉ được đánh giá booking đã hoàn thành.");
 
-            var existedReview = await _unitOfWork.ReviewRepository.GetByBookingIdAsync(request.BookingId);
-            if (existedReview != null)
-                throw new InvalidOperationException("Booking này đã được đánh giá trước đó.");
+    var existedReview = await _unitOfWork.ReviewRepository.GetByBookingIdAsync(request.BookingId);
+    if (existedReview != null)
+        throw new InvalidOperationException("Booking này đã được đánh giá trước đó.");
 
-            var review = new Review
-            {
-                BookingId = booking.Id,
-                CustomerId = customerId,
-                StoreId = booking.StoreId,
-                Rating = request.Rating,
-                Comment = request.Comment,
-                IsHidden = false
-            };
+    var review = new Review
+    {
+        BookingId = booking.Id,
+        CustomerId = customerId,
+        StoreId = booking.StoreId,
+        Rating = request.Rating,
+        Comment = request.Comment,
+        IsHidden = false
+    };
 
-            await _unitOfWork.ReviewRepository.AddAsync(review);
+    await _unitOfWork.ReviewRepository.AddAsync(review);
+    await _unitOfWork.SaveChangesAsync();
 
 
             await RecalculateStoreRatingAsync(review.StoreId);
             await _unitOfWork.SaveChangesAsync();
 
-            if (booking.Store != null)
-            {
-                string customerName = booking.Customer?.FullName ?? "Một khách hàng";
-                string message = $"{customerName} vừa để lại đánh giá {request.Rating} sao cho đơn đặt lịch #{booking.Id}.";
-                _ = _notificationService.CreateAndSendNotificationAsync(
-                    booking.Store.OwnerId,
-                    "⭐ Có đánh giá mới",
-                    message,
-                    NotificationType.SystemAlert
-                );
-            }
-
-            return new ReviewResponseDto
-            {
-                Id = review.Id,
-                BookingId = review.BookingId,
-                CustomerId = review.CustomerId,
-                StoreId = review.StoreId,
-                StoreName = booking.Store?.Name ?? string.Empty,
-                Rating = review.Rating,
-                Comment = review.Comment,
-                Reply = review.Reply,
-                IsHidden = review.IsHidden,
-                CreatedAt = review.CreatedAt
-            };
+    if (booking.Store != null)
+    {
+        try
+        {
+            string customerName = booking.Customer?.FullName ?? "Một khách hàng";
+            string message = $"{customerName} vừa để lại đánh giá {request.Rating} sao cho đơn đặt lịch #{booking.Id}.";
+            
+            await _notificationService.CreateAndSendNotificationAsync(
+                booking.Store.OwnerId,
+                "⭐ Có đánh giá mới",
+                message,
+                NotificationType.SystemAlert
+            );
         }
+        catch (Exception ex)
+        {
+        }
+    }
 
+    // 6. Trả kết quả về cho Client
+    return new ReviewResponseDto
+    {
+        Id = review.Id,
+        BookingId = review.BookingId,
+        CustomerId = review.CustomerId,
+        StoreId = review.StoreId,
+        StoreName = booking.Store?.Name ?? string.Empty,
+        Rating = review.Rating,
+        Comment = review.Comment,
+        Reply = review.Reply,
+        IsHidden = review.IsHidden,
+        CreatedAt = review.CreatedAt
+    };
+}
         public async Task<List<ReviewResponseDto>> GetMyReviewsAsync(int customerId)
         {
             var reviews = await _unitOfWork.ReviewRepository.GetByCustomerIdAsync(customerId);
@@ -99,16 +107,6 @@ namespace BeautyBookingSystem.Application.Services
             }).ToList();
         }
 
-        public async Task ReplyAsync(int reviewId, string reply)
-        {
-            var review = await _unitOfWork.ReviewRepository.GetByIdAsync(reviewId);
-            if (review == null)
-                throw new InvalidOperationException("Không tìm thấy review.");
-
-            review.Reply = reply;
-            _unitOfWork.ReviewRepository.Update(review);
-            await _unitOfWork.SaveChangesAsync();
-        }
 
         public async Task<List<StoreReviewResponseDto>> GetTopByStoreIdAsync(int storeId, int take = 5)
         {

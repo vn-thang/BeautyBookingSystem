@@ -323,12 +323,30 @@ class _BookingCancelPageState extends State<BookingCancelPage> {
       _ => AppColors.textSecondary,
     };
 
-    final dateLabel = widget.booking.services.isNotEmpty
-        ? DateFormat('dd/MM/yyyy')
-            .format(widget.booking.services.first.appointmentDate)
-        : widget.booking.createdAt != null
-            ? DateFormat('dd/MM/yyyy').format(widget.booking.createdAt!)
-            : '-';
+DateTime? exactDateTime;
+
+if (widget.booking.services.isNotEmpty) {
+  final s = widget.booking.services.first;
+  final parts = s.startTime.split(':');
+  
+  if (parts.length >= 2) {
+    exactDateTime = DateTime(
+      s.appointmentDate.year,
+      s.appointmentDate.month,
+      s.appointmentDate.day,
+      int.tryParse(parts[0]) ?? 0,
+      int.tryParse(parts[1]) ?? 0,
+    );
+  } else {
+    exactDateTime = s.appointmentDate;
+  }
+} else {
+  exactDateTime = widget.booking.createdAt;
+}
+
+final dateLabel = exactDateTime != null
+    ? DateFormat('HH:mm - dd/MM/yyyy').format(exactDateTime)
+    : '-';
 
     return Container(
       width: double.infinity,
@@ -356,19 +374,27 @@ class _BookingCancelPageState extends State<BookingCancelPage> {
             ],
           ),
           const SizedBox(height: 10),
-          _simpleInfoRow('Mã booking', '#${widget.booking.id}'),
+        _simpleInfoRow('Mã booking', '#${widget.booking.id}'),
+        
+        const SizedBox(height: 6),
+        _simpleInfoRow('Lịch hẹn', dateLabel),
+        
+        if (widget.booking.depositAmount > 0) ...[
           const SizedBox(height: 6),
-          _simpleInfoRow('Ngày đặt', dateLabel),
+          _simpleInfoRow('Cọc yêu cầu', _formatVnd(widget.booking.depositAmount)),
+        ],
+        
+        if (widget.booking.depositPaidAmount > 0) ...[
           const SizedBox(height: 6),
-          _simpleInfoRow(
-              'Cọc yêu cầu', _formatVnd(widget.booking.depositAmount)),
-          const SizedBox(height: 6),
-          _simpleInfoRow(
-              'Đã cọc', _formatVnd(widget.booking.depositPaidAmount)),
+          _simpleInfoRow('Đã cọc', _formatVnd(widget.booking.depositPaidAmount)),
+        ],
+        
+        
           const SizedBox(height: 6),
           _simpleInfoRow('Đã thanh toán', _formatVnd(_successfulPaidAmount)),
-        ],
-      ),
+       
+      ],
+    ),
     );
   }
 

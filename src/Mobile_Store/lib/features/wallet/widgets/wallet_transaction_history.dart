@@ -27,7 +27,7 @@ class WalletTransactionHistory extends StatelessWidget {
   });
 
   final List<Map<String, dynamic>> _transactionTypes = const [
-    {'label': 'Tất cả loại', 'value': null},
+    {'label': 'Tất cả', 'value': null},
     {'label': 'Nạp tiền', 'value': 1},
     {'label': 'Hoa hồng', 'value': 2},
     {'label': 'Phí duy trì', 'value': 3},
@@ -104,20 +104,43 @@ class WalletTransactionHistory extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
 
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
+          // 🎯 Đã bỏ SingleChildScrollView ngang đi vì không cần thiết nữa
+          Row(
               children: [
-                SizedBox(
-                  width: 110, 
+                // 🎯 1. Bọc Expanded cho Dropdown Tháng
+                Expanded(
                   child: AppFilterDropdown<int?>(
                     hint: 'Tháng',
                     value: selectedMonth, 
+                    
+                    // 🎯 GIAO DIỆN HIỂN THỊ TRÊN NÚT (CĂN CHỈNH ĐẸP MẮT)
+                    selectedItemBuilder: (BuildContext context) {
+                      // Tạo danh sách nhãn giống hệt với items bên dưới
+                      final labels = ['Tháng', ...List.generate(12, (index) => 'Tháng ${index + 1}')];
+                      return labels.map((label) {
+                        return Container(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            label,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }).toList();
+                    },
+
+                    // 🎯 GIAO DIỆN KHI MENU XỔ XUỐNG
                     items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text('Tháng')),
+                      DropdownMenuItem<int?>(
+                        value: null, 
+                        child: Text('Tháng', style: AppTextStyles.bodyText)
+                      ),
                       ...List.generate(12, (index) => DropdownMenuItem<int?>(
                             value: index + 1, 
-                            child: Text('Tháng ${index + 1}')
+                            child: Text('Tháng ${index + 1}', style: AppTextStyles.bodyText)
                           )),
                     ],
                     onChanged: (val) {
@@ -125,19 +148,44 @@ class WalletTransactionHistory extends StatelessWidget {
                     },
                   ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
+                
+                const SizedBox(width: AppSpacing.sm), // Giữ lại khoảng cách giữa các khối
 
-                SizedBox(
-                  width: 110,
+                // 🎯 2. Bọc Expanded cho Dropdown Năm
+                Expanded(
                   child: AppFilterDropdown<int?>(
                     hint: 'Năm',
                     value: selectedYear, 
+                    
+                    // 🎯 GIAO DIỆN HIỂN THỊ TRÊN NÚT (CĂN CHỈNH ĐẸP MẮT)
+                    selectedItemBuilder: (BuildContext context) {
+                      // Tạo danh sách nhãn năm
+                      final labels = ['Năm', ..._generateYears().map((y) => 'Năm $y')];
+                      return labels.map((label) {
+                        return Container(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            label,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }).toList();
+                    },
+
+                    // 🎯 GIAO DIỆN KHI MENU XỔ XUỐNG
                     items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text('Năm')),
+                      DropdownMenuItem<int?>(
+                        value: null, 
+                        child: Text('Năm', style: AppTextStyles.bodyText)
+                      ),
                       ..._generateYears().map((year) {
                         return DropdownMenuItem<int?>(
                           value: year, 
-                          child: Text('Năm $year')
+                          child: Text('Năm $year', style: AppTextStyles.bodyText)
                         );
                       }),
                     ],
@@ -146,26 +194,43 @@ class WalletTransactionHistory extends StatelessWidget {
                     },
                   ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: AppSpacing.sm),
 
-                SizedBox(
-                  width: 120,
-                  child: AppFilterDropdown<int?>(
-                    hint: 'Loại GD',
-                    value: selectedType, 
-                    items: _transactionTypes.map((type) {
-                      return DropdownMenuItem<int?>(
-                        value: type['value'] as int?, 
-                        child: Text(type['label'] as String)
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      onFilterChanged(selectedMonth, selectedYear, val);
-                    },
-                  ),
-                ),
-              ],
-            ),
+Expanded(
+  child: AppFilterDropdown<int?>(
+    hint: 'Loại GD',
+    value: selectedType,
+    alignment: Alignment.centerRight, // 🎯 Neo vào mép phải
+    menuWidth: 220, // 🎯 ÉP MENU RỘNG 220px (Nó sẽ tự tràn sang trái vì neo phải)
+
+    selectedItemBuilder: (BuildContext context) {
+      return _transactionTypes.map((type) {
+        return Container(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            type['label'] as String,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary),
+          ),
+        );
+      }).toList();
+    },
+
+    items: _transactionTypes.map((type) {
+      return DropdownMenuItem<int?>(
+        value: type['value'] as int?, 
+        child: Text(
+          type['label'] as String,
+          style: AppTextStyles.bodyText,
+          maxLines: 1,
+          // 🎯 Không cần SizedBox ở đây nữa, menuWidth đã lo rồi
+        ),
+      );
+    }).toList(),
+    onChanged: (val) => onFilterChanged(selectedMonth, selectedYear, val),
+  ),
+),
+            ],
           ),
           const SizedBox(height: AppSpacing.lg),
 
@@ -210,36 +275,52 @@ class WalletTransactionHistory extends StatelessWidget {
 
                 String cleanDescription = tx.description.replaceAll(RegExp(r'\[Biên lai:.*?\]'), '').trim();
 
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4), 
-                  onTap: () => onTransactionTap(tx), 
-                  leading: CircleAvatar(
-                    backgroundColor: statusColor.withValues(alpha: 0.1),
-                    child: Icon(txIcon, color: statusColor, size: 20),
-                  ),
-                  title: Text(
-                    cleanDescription, 
-                    style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.w600), 
-                    maxLines: 2, 
-                    overflow: TextOverflow.ellipsis
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 2),
-                      Text(
-                        tx.createdAt != null ? '${tx.createdAt!.day}/${tx.createdAt!.month}/${tx.createdAt!.year} ${tx.createdAt!.hour}:${tx.createdAt!.minute.toString().padLeft(2, '0')} • Số dư: ${Formatters.formatCurrency(tx.balanceAfter)}' : '',
-                        style: AppTextStyles.labelSmall,
-                      ),
-                      _buildStatusBadge(tx.status),
-                    ],
-                  ),
-                  trailing: Text(
-                    '$sign${Formatters.formatCurrency(tx.amount.abs())}',
-                    // CẬP NHẬT MÀU SỐ TIỀN Ở ĐÂY
-                    style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, fontSize: 15, color: amountColor),
-                  ),
-                );
+               return ListTile(
+  contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4), 
+  onTap: () => onTransactionTap(tx), 
+  leading: CircleAvatar(
+    backgroundColor: statusColor.withValues(alpha: 0.1),
+    child: Icon(txIcon, color: statusColor, size: 20),
+  ),
+  title: Text(
+    cleanDescription, 
+    style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.w600), 
+    maxLines: 2, 
+    overflow: TextOverflow.ellipsis
+  ),
+  subtitle: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 4), // Khoảng cách giữa title và subtitle
+      
+      // 1. Hiển thị ngày tháng chuẩn giờ VN
+      if (tx.createdAt != null)
+        Text(
+          Formatters.formatDateTime(tx.createdAt), 
+          style: AppTextStyles.labelSmall,
+        ),
+      
+      const SizedBox(height: 2), // Khoảng cách nhỏ để dễ nhìn
+      
+      // 2. Đưa số dư xuống dòng dưới
+      Text(
+        'Số dư: ${Formatters.formatCurrency(tx.balanceAfter)}',
+        style: AppTextStyles.labelSmall,
+      ),
+      
+      const SizedBox(height: 4), // Khoảng cách trước badge
+      _buildStatusBadge(tx.status),
+    ],
+  ),
+  trailing: Text(
+    '$sign${Formatters.formatCurrency(tx.amount.abs())}',
+    style: AppTextStyles.bodyText.copyWith(
+      fontWeight: FontWeight.bold, 
+      fontSize: 15, 
+      color: amountColor
+    ),
+  ),
+);
               },
             ),
           const SizedBox(height: AppSpacing.xl),

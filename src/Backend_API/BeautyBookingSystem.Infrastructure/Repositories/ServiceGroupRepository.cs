@@ -8,11 +8,9 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
     public class ServiceGroupRepository
         : GenericRepository<ServiceGroup>, IServiceGroupRepository
     {
-        private readonly AppDbContext _context;
 
         public ServiceGroupRepository(AppDbContext context) : base(context)
         {
-            _context = context;
         }
 
         public async Task<List<ServiceGroup>> GetAllOrderedAsync()

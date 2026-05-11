@@ -143,6 +143,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     try {
       final user = await getProfile();
+
+      final phone = user.phone?.trim() ?? '';
+      final verified = user.isPhoneVerified == true;
+
+      if (phone.isEmpty || !verified) {
+        emit(AuthPhoneVerificationRequired());
+        return;
+      }
+
       emit(AuthAuthenticated(user));
       await _syncFcmToken();
     } catch (_) {
@@ -161,6 +170,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       final user = await login(event.email, event.password);
+
+      final phone = user.phone?.trim() ?? '';
+      final verified = user.isPhoneVerified == true;
+
+      if (phone.isEmpty || !verified) {
+        emit(AuthPhoneVerificationRequired());
+        return;
+      }
+
       emit(AuthAuthenticated(user));
       await _syncFcmToken();
     } catch (e) {
@@ -180,6 +198,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         linkToExistingAccount: event.linkToExistingAccount,
         isStoreOwnerApp: event.isStoreOwnerApp,
       );
+
+      final phone = user.phone?.trim() ?? '';
+      final verified = user.isPhoneVerified == true;
+
+      if (phone.isEmpty || !verified) {
+        emit(AuthPhoneVerificationRequired());
+        return;
+      }
+
       emit(AuthAuthenticated(user));
       await _syncFcmToken();
     } catch (e) {

@@ -1,6 +1,7 @@
 ﻿using BeautyBookingSystem.Application.Common.Helpers;
 using BeautyBookingSystem.Application.DTOs.Search;
 using BeautyBookingSystem.Application.Interfaces;
+using BeautyBookingSystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace BeautyBookingSystem.Application.Services
@@ -19,7 +20,7 @@ namespace BeautyBookingSystem.Application.Services
             var query = _unitOfWork.StoreRepository
                 .GetQueryable()
                 .AsNoTracking()
-                .Where(s => s.IsOpen);
+                .Where(s => s.IsOpen && s.ApprovalStatus == ApprovalStatus.Approved);
 
             if (!string.IsNullOrWhiteSpace(request.Keyword))
             {

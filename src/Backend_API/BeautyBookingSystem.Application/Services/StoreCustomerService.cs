@@ -21,7 +21,10 @@ namespace BeautyBookingSystem.Application.Services
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 string term = searchTerm.ToLower().Trim();
-                query = query.Where(u => u.FullName.ToLower().Contains(term) || u.Phone.Contains(term));
+               query = query.Where(u => 
+                (u.FullName != null && u.FullName!.ToLower().Contains(term)) || 
+                (u.Phone != null && u.Phone!.Contains(term)) 
+                );
             }
 
             var customers = await query
@@ -29,7 +32,7 @@ namespace BeautyBookingSystem.Application.Services
                 {
                     CustomerId = u.Id,
                     FullName = u.FullName,
-                    Phone = u.Phone,
+                    Phone = u.Phone ?? "",
                     AvatarUrl = u.AvatarUrl,
                     TotalVisits = u.Bookings.Count(b => b.StoreId == storeId && b.Status == BookingStatus.Completed),
                     TotalSpent = u.Bookings
@@ -49,7 +52,7 @@ namespace BeautyBookingSystem.Application.Services
                 {
                     CustomerId = u.Id,
                     FullName = u.FullName,
-                    Phone = u.Phone,
+                    Phone = u.Phone?? "",
                     AvatarUrl = u.AvatarUrl,
                     TotalVisits = u.Bookings.Count(b => b.StoreId == storeId && b.Status == BookingStatus.Completed),
                     TotalSpent = u.Bookings.Where(b => b.StoreId == storeId && b.Status == BookingStatus.Completed).Sum(b => b.FinalPrice),

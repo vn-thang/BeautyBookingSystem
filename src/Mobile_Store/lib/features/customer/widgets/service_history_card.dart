@@ -11,7 +11,7 @@ class ServiceHistoryCard extends StatelessWidget {
 
   const ServiceHistoryCard({super.key, required this.history});
 
-  @override
+ @override
   Widget build(BuildContext context) {
     String displayDate = history.appointmentDate != null 
         ? Formatters.formatDateOnly(history.appointmentDate) 
@@ -37,27 +37,38 @@ class ServiceHistoryCard extends StatelessWidget {
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start, 
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
-                  ),
-                  child: Text(
-                    '$displayTime - $displayDate',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.primary, 
-                      fontWeight: FontWeight.w600, 
-                      fontSize: 13,
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
+                    ),
+                    child: Text(
+                      '$displayTime - $displayDate',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.primary, 
+                        fontWeight: FontWeight.w600, 
+                        fontSize: 13,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
-                Text(
-                  Formatters.formatCurrency(history.price), 
-                  style: AppTextStyles.bodyText.copyWith(
-                    fontWeight: FontWeight.bold, 
-                    color: AppColors.error,
+                const SizedBox(width: AppSpacing.sm), 
+                Flexible(
+                  child: Text(
+                    Formatters.formatCurrency(history.price), 
+                    style: AppTextStyles.bodyText.copyWith(
+                      fontWeight: FontWeight.bold, 
+                      color: AppColors.error,
+                    ),
+                    textAlign: TextAlign.right, 
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -66,21 +77,29 @@ class ServiceHistoryCard extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Divider(height: 1, color: AppColors.surface), 
             ),
+            
             Text(
               history.serviceName,
               style: AppTextStyles.bodyText.copyWith(
                 fontWeight: FontWeight.bold, 
                 fontSize: 16,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
+            
             const SizedBox(height: AppSpacing.sm), 
             Row(
               children: [
                 const Icon(Icons.content_cut, size: 14, color: AppColors.textSub),
                 const SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Thợ thực hiện: ${history.staffName}',
-                  style: AppTextStyles.labelSmall.copyWith(fontSize: 13),
+                Expanded(
+                  child: Text(
+                    'Thợ thực hiện: ${history.staffName}',
+                    style: AppTextStyles.labelSmall.copyWith(fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),

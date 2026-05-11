@@ -10,11 +10,8 @@ using System.Threading.Tasks;
 
 public class GlobalCategoryRepository : GenericRepository<GlobalCategory>, IGlobalCategoryRepository
 {
-    private readonly AppDbContext _context;
-
     public GlobalCategoryRepository(AppDbContext context) : base(context)
     {
-        _context = context;
     }
 
     public async Task<List<GlobalCategory>> GetActiveAsync()

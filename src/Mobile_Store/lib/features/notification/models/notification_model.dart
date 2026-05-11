@@ -16,13 +16,22 @@ class NotificationModel {
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
-    return NotificationModel(
-      id: json['id'],
-      title: json['title'] ?? '',
-      message: json['message'] ?? '',
-      type: json['type'] ?? 0,
-      isRead: json['isRead'] ?? false,
-      createdAt: DateTime.parse(json['createdAt']),
-    );
+  String rawDate = json['createdAt'] ?? '';
+  
+  DateTime parsedDate;
+  if (rawDate.isNotEmpty && !rawDate.endsWith('Z') && !rawDate.contains('+')) {
+    parsedDate = DateTime.parse('${rawDate}Z'); 
+  } else {
+    parsedDate = DateTime.parse(rawDate);
   }
+
+  return NotificationModel(
+    id: json['id'],
+    title: json['title'] ?? '',
+    message: json['message'] ?? '',
+    type: json['type'] ?? 0,
+    isRead: json['isRead'] ?? false,
+    createdAt: parsedDate,
+  );
+}
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_store/features/booking/models/store_createbooking_model.dart';
 
@@ -94,7 +95,7 @@ static Future<List<TimeSlotModel>> getAvailableTimeSlots({
         
     return data.map((e) => TimeSlotModel.fromJson(e)).toList();
   } catch (e) {
-    print("Lỗi getAvailableTimeSlots: $e");
+    debugPrint("Lỗi getAvailableTimeSlots: $e");
     throw Exception('Không thể tải khung giờ. Vui lòng thử lại.');
   }
 }
@@ -111,7 +112,7 @@ static Future<BookingResponseDto> createStoreBooking(CreateStoreBookingRequest r
         
     return BookingResponseDto.fromJson(responseData);
   } catch (e) {
-    print("Lỗi createStoreBooking: $e");
+    debugPrint("Lỗi createStoreBooking: $e");
     rethrow; 
   }
 }

@@ -18,7 +18,7 @@ class WalletBalanceCard extends StatelessWidget {
     required this.onWithdrawPressed, 
   });
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(AppDimens.paddingLarge),
@@ -38,24 +38,33 @@ class WalletBalanceCard extends StatelessWidget {
         children: [
           Text('SỐ DƯ HIỆN TẠI', style: AppTextStyles.labelSmall.copyWith(color: AppColors.white.withValues(alpha: 0.8), fontWeight: FontWeight.w600)),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            Formatters.formatCurrency(dashboard.currentBalance), 
-            style: AppTextStyles.heading1.copyWith(color: AppColors.white, fontSize: 32),
+          // 🎯 Đã thêm FittedBox để thu nhỏ font nếu số dư tỷ phú
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              Formatters.formatCurrency(dashboard.currentBalance), 
+              style: AppTextStyles.heading1.copyWith(color: AppColors.white, fontSize: 32),
+            ),
           ),
           const SizedBox(height: AppSpacing.xl),
           
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppDimens.paddingMedium),
+         Container(
+            padding: const EdgeInsets.all(AppDimens.paddingMedium),
             decoration: BoxDecoration(
               color: AppColors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column( // 🎯 Đã đổi từ Row sang Column
               children: [
-                _buildStatItem('Tổng nạp tháng này', dashboard.totalTopUpThisMonth, true),
-                Container(height: 30, width: 1, color: AppColors.white.withValues(alpha: 0.3)), 
-                _buildStatItem('Tổng phí đã trừ', dashboard.totalFeeThisMonth, false),
+                _buildStatItem('Tổng nạp tháng', dashboard.totalTopUpThisMonth, true),
+                
+                // Kẻ ngang phân cách giữa 2 dòng
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                  child: Divider(height: 1, color: AppColors.white.withValues(alpha: 0.3)), 
+                ),
+                
+                _buildStatItem('Tổng phí trừ', dashboard.totalFeeThisMonth, false),
               ],
             ),
           ),
@@ -69,12 +78,18 @@ class WalletBalanceCard extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.white,
                     foregroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: 4), // 🎯 Giảm padding ngang
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
                     elevation: 0,
                   ),
                   icon: const Icon(Icons.add_circle_outline, size: 20),
-                  label: Text('NẠP TIỀN', style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  // 🎯 3. Bọc Flexible và FittedBox cho nhãn của nút
+                  label: Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('NẠP TIỀN', style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary))
+                    ),
+                  ),
                   onPressed: onTopUpPressed,
                 ),
               ),
@@ -85,13 +100,19 @@ class WalletBalanceCard extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: 4), // 🎯 Giảm padding ngang
                     side: const BorderSide(color: AppColors.white),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
                     elevation: 0, 
                   ),
                   icon: const Icon(Icons.account_balance_wallet_outlined, size: 20),
-                  label: Text('RÚT TIỀN', style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, color: AppColors.white)),
+                   // 🎯 4. Bọc Flexible và FittedBox cho nhãn của nút
+                  label: Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('RÚT TIỀN', style: AppTextStyles.bodyText.copyWith(fontWeight: FontWeight.bold, color: AppColors.white))
+                    ),
+                  ),
                   onPressed: onWithdrawPressed,
                 ),
               ),
@@ -102,18 +123,32 @@ class WalletBalanceCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(String title, double amount, bool isTopUp) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  // 🎯 Cập nhật lại _buildStatItem để hỗ trợ căn lề (nếu cần) và bóp nhỏ text
+ Widget _buildStatItem(String title, double amount, bool isTopUp) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: AppTextStyles.labelSmall.copyWith(color: AppColors.white.withValues(alpha: 0.8), fontSize: 11)),
-        const SizedBox(height: 4),
+        // Nhãn bên trái
         Text(
-          '${isTopUp ? '+' : '-'}${Formatters.formatCurrency(amount)}',
-          style: AppTextStyles.bodyText.copyWith(
-            color: isTopUp ? const Color(0xFF69F0AE) : const Color.fromARGB(255, 60, 57, 46), 
-            fontSize: 14, 
-            fontWeight: FontWeight.bold
+          title, 
+          style: AppTextStyles.labelSmall.copyWith(color: AppColors.white.withValues(alpha: 0.8), fontSize: 13)
+        ),
+        
+        const SizedBox(width: 8), // Khoảng đệm an toàn
+        
+        // Số tiền bên phải (có FittedBox để tự bóp nếu số quá dài, nhưng giờ có rất nhiều không gian)
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              '${isTopUp ? '+' : '-'}${Formatters.formatCurrency(amount)}',
+              style: AppTextStyles.bodyText.copyWith(
+                color: isTopUp ? const Color(0xFF69F0AE) : const Color.fromARGB(255, 60, 57, 46), 
+                fontSize: 12, // Tăng nhẹ size chữ cho dễ nhìn
+                fontWeight: FontWeight.bold
+              ),
+            ),
           ),
         ),
       ],

@@ -15,11 +15,13 @@ namespace BeautyBookingSystem.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper; 
+        private readonly INotificationService _notificationService;
 
-        public AdminWalletService(IUnitOfWork unitOfWork, IMapper mapper)
+        public AdminWalletService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _notificationService = notificationService;
         }
 
         public async Task<PagedResponse<AdminWalletTransactionDto>> GetAllTransactionsAsync(
@@ -186,7 +188,22 @@ public async Task<PagedResponse<WithdrawalRequestDto>> GetProcessedWithdrawalsAs
         _unitOfWork.WalletTransactionRepository.Update(transaction);
     }
 
-    return await _unitOfWork.SaveChangesAsync() > 0;
+bool isSaved = await _unitOfWork.SaveChangesAsync() > 0;
+    if (isSaved)
+    {
+        var store = await _unitOfWork.StoreRepository.GetByIdAsync(request.StoreId);
+        if (store != null)
+        {
+            _ = _notificationService.CreateAndSendNotificationAsync(
+                store.OwnerId,
+                "✅ Rút tiền thành công",
+                $"Yêu cầu rút {request.Amount:N0}đ của bạn đã được duyệt thành công. Vui lòng kiểm tra tài khoản ngân hàng của bạn nhé.",
+                NotificationType.SystemAlert
+            );
+        }
+    }
+
+    return isSaved;
 }
 
 public async Task<bool> RejectWithdrawalAsync(int requestId, RejectWithdrawalDto requestDto)
@@ -232,7 +249,19 @@ public async Task<bool> RejectWithdrawalAsync(int requestId, RejectWithdrawalDto
     };
     await _unitOfWork.WalletTransactionRepository.AddAsync(refundTransaction);
 
-    return await _unitOfWork.SaveChangesAsync() > 0;
+    bool isSaved = await _unitOfWork.SaveChangesAsync() > 0;
+
+    if (isSaved && store != null)
+    {
+        _ = _notificationService.CreateAndSendNotificationAsync(
+            store.OwnerId,
+            "❌ Lệnh rút tiền bị từ chối",
+            $"Yêu cầu rút {request.Amount:N0}đ của bạn đã bị từ chối. Lý do: {requestDto.AdminNote}. Số tiền đã được hoàn lại vào ví cửa hàng.",
+            NotificationType.SystemAlert 
+        );
+    }
+
+    return isSaved;
 }
     }
 }
