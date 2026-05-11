@@ -19,7 +19,7 @@ class ApiConfig {
       if (_isEmulator) {
         return "http://10.0.2.2:5294/api/";
       } else {
-        return "http://192.168.1.144:5294/api/";
+        return "http://192.168.1.145:5294/api/";
       }
     }
 

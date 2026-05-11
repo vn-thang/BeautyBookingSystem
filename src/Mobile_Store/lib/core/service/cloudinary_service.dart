@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
 class BackendUploadService {
-  static const String baseUrl = 'http://192.168.1.144:5294';
+  static const String baseUrl = 'http://192.168.1.145:5294';
 
   static Future<String?> uploadImage(
     File imageFile, {
