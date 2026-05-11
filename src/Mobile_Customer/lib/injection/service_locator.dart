@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../core/network/dio_client.dart';
 import '../core/location/location_service.dart';
+import '../core/service/fcm_service.dart';
 
 // Auth import
 import '../features/auth/data/datasources/auth_remote_datasource.dart';
@@ -45,12 +46,24 @@ import '../features/home/presentation/bloc/store_detail_bloc.dart';
 import '../features/home/domain/usecases/get_service_detail.dart';
 import '../features/home/presentation/bloc/service_detail_bloc.dart';
 
+// Booking
 import '../features/booking/data/datasources/booking_remote_datasource.dart';
 import '../features/booking/data/repositories/booking_repository_impl.dart';
 import '../features/booking/domain/repositories/booking_repository.dart';
 import '../features/booking/domain/usecases/create_booking.dart';
 import '../features/booking/domain/usecases/get_available_staff.dart';
 import '../features/booking/presentation/bloc/booking_bloc.dart';
+
+// Notification feature
+import '../features/notification/data/datasources/notification_remote_datasource.dart';
+import '../features/notification/data/repositories/notification_repository_impl.dart';
+import '../features/notification/domain/repositories/notification_repository.dart';
+import '../features/notification/domain/usecases/get_notifications.dart';
+import '../features/notification/domain/usecases/get_unread_count.dart';
+import '../features/notification/domain/usecases/mark_all_as_read.dart';
+import '../features/notification/domain/usecases/mark_as_read.dart';
+import '../features/notification/domain/usecases/update_fcm_token.dart';
+import '../features/notification/presentation/bloc/notification_bloc.dart';
 
 // Search feature
 import '../features/review/data/datasources/review_remote_datasource.dart';
@@ -65,7 +78,7 @@ import '../features/search/domain/repositories/search_repository.dart';
 import '../features/search/domain/usecases/search_usecase.dart';
 import '../features/search/presentation/bloc/search_bloc.dart';
 
-//Chat feature
+// Chat feature
 import '../features/chat/data/datasources/chat_remote_data_source.dart';
 import '../features/chat/data/repositories/chat_repository_impl.dart';
 import '../features/chat/domain/repositories/chat_repository.dart';
@@ -73,7 +86,7 @@ import '../features/chat/domain/usecases/get_chat_history_usecase.dart';
 import '../features/chat/domain/usecases/send_chat_message_usecase.dart';
 import '../features/chat/presentation/bloc/chat_bloc.dart';
 
-//Customer Favorite feature
+// Customer Favorite feature
 import '../features/customer_favorite/data/datasources/customer_favorite_remote_datasource.dart';
 import '../features/customer_favorite/data/repositories/customer_favorite_repository_impl.dart';
 import '../features/customer_favorite/domain/repositories/customer_favorite_repository.dart';
@@ -90,6 +103,8 @@ import '../features/search_history/domain/usecases/delete_search_history.dart';
 import '../features/search_history/domain/usecases/get_recent_search_histories.dart';
 import '../features/search_history/domain/usecases/record_search_history.dart';
 import '../features/search_history/presentation/bloc/search_history_bloc.dart';
+
+// Store Reviews
 import '../features/store_reviews/data/datasources/store_reviews_remote_data_source.dart';
 import '../features/store_reviews/data/repositories/store_reviews_repository_impl.dart';
 import '../features/store_reviews/domain/repositories/store_reviews_repository.dart';
@@ -97,17 +112,7 @@ import '../features/store_reviews/domain/usecases/get_store_reviews_usecase.dart
 import '../features/store_reviews/domain/usecases/get_top_store_reviews_usecase.dart';
 import '../features/store_reviews/presentation/bloc/store_reviews_bloc.dart';
 
-//Notification feature
-import 'package:mobile_customer/features/notification/data/datasources/notification_remote_datasource.dart';
-import 'package:mobile_customer/features/notification/data/repositories/notification_repository_impl.dart';
-import 'package:mobile_customer/features/notification/domain/repositories/notification_repository.dart';
-import 'package:mobile_customer/features/notification/domain/usecases/get_notifications.dart';
-import 'package:mobile_customer/features/notification/domain/usecases/get_unread_count.dart';
-import 'package:mobile_customer/features/notification/domain/usecases/mark_all_as_read.dart';
-import 'package:mobile_customer/features/notification/domain/usecases/mark_as_read.dart';
-import 'package:mobile_customer/features/notification/presentation/bloc/notification_bloc.dart';
-
-//Contact Support feature
+// Contact Support feature
 import '../features/contact_support/data/datasources/contact_support_remote_data_source.dart';
 import '../features/contact_support/data/datasources/contact_support_remote_data_source_impl.dart';
 import '../features/contact_support/data/repositories/contact_support_repository_impl.dart';
@@ -122,7 +127,9 @@ Future<void> init() async {
   sl.registerLazySingleton<Dio>(() => DioClient().dio);
   sl.registerLazySingleton<LocationService>(() => LocationService());
   sl.registerLazySingleton<FlutterSecureStorage>(
-      () => const FlutterSecureStorage());
+    () => const FlutterSecureStorage(),
+  );
+  sl.registerLazySingleton<FcmService>(() => FcmService());
 
   // Auth
   sl.registerLazySingleton<AuthRemoteDataSource>(
@@ -144,6 +151,20 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UploadAvatar(sl<AuthRepository>()));
   sl.registerLazySingleton(() => VerifyPhone(sl<AuthRepository>()));
 
+  // Notification
+  sl.registerLazySingleton<NotificationRemoteDataSource>(
+    () => NotificationRemoteDataSource(sl<Dio>()),
+  );
+  sl.registerLazySingleton<NotificationRepository>(
+    () => NotificationRepositoryImpl(sl<NotificationRemoteDataSource>()),
+  );
+  sl.registerLazySingleton(
+      () => GetNotifications(sl<NotificationRepository>()));
+  sl.registerLazySingleton(() => GetUnreadCount(sl<NotificationRepository>()));
+  sl.registerLazySingleton(() => MarkAsRead(sl<NotificationRepository>()));
+  sl.registerLazySingleton(() => MarkAllAsRead(sl<NotificationRepository>()));
+  sl.registerLazySingleton(() => UpdateFcmToken(sl<NotificationRepository>()));
+
   sl.registerFactory(
     () => AuthBloc(
       sl<Login>(),
@@ -157,8 +178,17 @@ Future<void> init() async {
       sl<UpdateProfile>(),
       sl<UploadAvatar>(),
       sl<VerifyPhone>(),
+      sl<UpdateFcmToken>(),
+      sl<FcmService>(),
     ),
   );
+
+  sl.registerLazySingleton(() => NotificationBloc(
+        getNotifications: sl<GetNotifications>(),
+        getUnreadCount: sl<GetUnreadCount>(),
+        markAsRead: sl<MarkAsRead>(),
+        markAllAsRead: sl<MarkAllAsRead>(),
+      ));
 
   // Home
   sl.registerLazySingleton<HomeRemoteDataSource>(
@@ -176,38 +206,37 @@ Future<void> init() async {
     ),
   );
 
-// Booking
+  // Booking
   sl.registerLazySingleton<BookingRemoteDataSource>(
     () => BookingRemoteDataSourceImpl(sl<Dio>()),
   );
   sl.registerLazySingleton<BookingRepository>(
     () => BookingRepositoryImpl(sl<BookingRemoteDataSource>()),
   );
-  sl.registerLazySingleton(
-    () => CreateBooking(sl<BookingRepository>()),
-  );
+  sl.registerLazySingleton(() => CreateBooking(sl<BookingRepository>()));
   sl.registerLazySingleton(() => GetAvailableStaff(sl()));
   sl.registerFactory(() => BookingBloc(sl()));
 
-//Store
+  // Store
   sl.registerLazySingleton<StoreRepository>(
-      () => StoreRepositoryImpl(sl<HomeRemoteDataSource>()));
+    () => StoreRepositoryImpl(sl<HomeRemoteDataSource>()),
+  );
   sl.registerLazySingleton(() => GetStoresByCategory(sl<StoreRepository>()));
   sl.registerFactory(
-      () => CategoryStoreBloc(getStoresByCategory: sl<GetStoresByCategory>()));
+    () => CategoryStoreBloc(getStoresByCategory: sl<GetStoresByCategory>()),
+  );
   sl.registerLazySingleton(() => GetStoresByGroup(sl<StoreRepository>()));
   sl.registerFactory(
-      () => ServiceGroupStoreBloc(getStoresByGroup: sl<GetStoresByGroup>()));
-  sl.registerLazySingleton(
-    () => GetStoreById(sl<StoreRepository>()),
+    () => ServiceGroupStoreBloc(getStoresByGroup: sl<GetStoresByGroup>()),
   );
+  sl.registerLazySingleton(() => GetStoreById(sl<StoreRepository>()));
   sl.registerFactory(() => StoreDetailBloc(getStoreById: sl<GetStoreById>()));
 
-//Service
+  // Service
   sl.registerLazySingleton(() => GetServiceDetail(sl<Dio>()));
   sl.registerFactory(() => ServiceDetailBloc(sl<GetServiceDetail>()));
 
-//Search
+  // Search
   sl.registerLazySingleton<SearchRemoteDataSource>(
     () => SearchRemoteDataSource(sl<Dio>()),
   );
@@ -222,9 +251,10 @@ Future<void> init() async {
     ),
   );
 
-  //Chat
+  // Chat
   sl.registerLazySingleton<ChatRemoteDataSource>(
-      () => ChatRemoteDataSource(sl()));
+    () => ChatRemoteDataSource(sl()),
+  );
   sl.registerLazySingleton<ChatRepository>(() => ChatRepositoryImpl(sl()));
   sl.registerLazySingleton(() => SendChatMessageUseCase(sl()));
   sl.registerLazySingleton(() => GetChatHistoryUseCase(sl()));
@@ -235,7 +265,7 @@ Future<void> init() async {
     ),
   );
 
-  //Customer Favorite
+  // Customer Favorite
   sl.registerLazySingleton<CustomerFavoriteRemoteDataSource>(
     () => CustomerFavoriteRemoteDataSource(sl()),
   );
@@ -246,23 +276,31 @@ Future<void> init() async {
     ),
   );
 
-  sl.registerLazySingleton(() => FavoriteStoreUseCase(
-        sl<CustomerFavoriteRepository>(),
-      ));
+  sl.registerLazySingleton(
+    () => FavoriteStoreUseCase(
+      sl<CustomerFavoriteRepository>(),
+    ),
+  );
 
-  sl.registerLazySingleton(() => UnfavoriteStoreUseCase(
-        sl<CustomerFavoriteRepository>(),
-      ));
+  sl.registerLazySingleton(
+    () => UnfavoriteStoreUseCase(
+      sl<CustomerFavoriteRepository>(),
+    ),
+  );
 
-  sl.registerLazySingleton(() => FavoriteServiceUseCase(
-        sl<CustomerFavoriteRepository>(),
-      ));
+  sl.registerLazySingleton(
+    () => FavoriteServiceUseCase(
+      sl<CustomerFavoriteRepository>(),
+    ),
+  );
 
-  sl.registerLazySingleton(() => UnfavoriteServiceUseCase(
-        sl<CustomerFavoriteRepository>(),
-      ));
+  sl.registerLazySingleton(
+    () => UnfavoriteServiceUseCase(
+      sl<CustomerFavoriteRepository>(),
+    ),
+  );
 
-  //Review
+  // Review
   sl.registerLazySingleton<ReviewRemoteDataSource>(
     () => ReviewRemoteDataSource(sl<Dio>()),
   );
@@ -303,11 +341,6 @@ Future<void> init() async {
   );
 
   // Store Reviews
-  sl.registerFactory<StoreReviewsBloc>(
-    () => StoreReviewsBloc(
-      sl<GetStoreReviewsUseCase>(),
-    ),
-  );
   sl.registerLazySingleton<StoreReviewsRemoteDataSource>(
     () => StoreReviewsRemoteDataSourceImpl(sl()),
   );
@@ -319,28 +352,13 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetStoreReviewsUseCase(sl()));
   sl.registerLazySingleton(() => GetTopStoreReviewsUseCase(sl()));
 
-  // 1. Bloc
-  sl.registerLazySingleton(() => NotificationBloc(
-        getNotifications: sl(),
-        getUnreadCount: sl(),
-        markAsRead: sl(),
-        markAllAsRead: sl(),
-      ));
+  sl.registerFactory<StoreReviewsBloc>(
+    () => StoreReviewsBloc(
+      sl<GetStoreReviewsUseCase>(),
+    ),
+  );
 
-  // 2. Use Cases
-  sl.registerLazySingleton(() => GetNotifications(sl()));
-  sl.registerLazySingleton(() => GetUnreadCount(sl()));
-  sl.registerLazySingleton(() => MarkAsRead(sl()));
-  sl.registerLazySingleton(() => MarkAllAsRead(sl()));
-
-  // 3. Repository
-  sl.registerLazySingleton<NotificationRepository>(
-      () => NotificationRepositoryImpl(sl()));
-
-  // 4. Data Source
-  sl.registerLazySingleton<NotificationRemoteDataSource>(
-      () => NotificationRemoteDataSource(sl()));
-
+  // Contact Support
   sl.registerLazySingleton<ContactSupportRemoteDataSource>(
     () => ContactSupportRemoteDataSourceImpl(sl<Dio>()),
   );
@@ -349,9 +367,7 @@ Future<void> init() async {
     () => ContactSupportRepositoryImpl(sl()),
   );
 
-  sl.registerLazySingleton(
-    () => GetContactInfoUseCase(sl()),
-  );
+  sl.registerLazySingleton(() => GetContactInfoUseCase(sl()));
 
   sl.registerFactory(
     () => ContactSupportBloc(sl()),

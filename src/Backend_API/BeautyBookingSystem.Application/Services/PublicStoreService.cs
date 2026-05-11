@@ -22,7 +22,7 @@ namespace BeautyBookingSystem.Application.Services
         {
             var stores = await _unitOfWork.StoreRepository
                 .GetQueryable()
-                .Where(s => s.ApprovalStatus == ApprovalStatus.Approved)
+                .Where(s => s.ApprovalStatus == ApprovalStatus.Approved && s.IsOpen)
                 .ToListAsync();
 
             return stores.Select(s => new StoreListDto
@@ -43,6 +43,7 @@ namespace BeautyBookingSystem.Application.Services
                 .GetQueryable()
                 .Where(s =>
                     s.ApprovalStatus == ApprovalStatus.Approved &&
+                    s.IsOpen &&
                     s.Services.Any(se =>
                         se.CategoryId == p.CategoryId &&
                         se.IsActive));
@@ -109,6 +110,7 @@ namespace BeautyBookingSystem.Application.Services
                 .GetQueryable()
                 .Where(s =>
                     s.ApprovalStatus == ApprovalStatus.Approved &&
+                    s.IsOpen &&
                     s.Services.Any(se => se.GroupId == groupId && se.IsActive));
 
             if (!string.IsNullOrWhiteSpace(p.Q))
@@ -161,7 +163,10 @@ namespace BeautyBookingSystem.Application.Services
                 .Include(s => s.Services)
                 .Include(s => s.OperatingHours)
                 .Include(s => s.Banners)
-                .FirstOrDefaultAsync(s => s.Id == storeId && s.ApprovalStatus == ApprovalStatus.Approved);
+                .FirstOrDefaultAsync(s => s.Id == storeId &&
+            s.ApprovalStatus == ApprovalStatus.Approved &&
+            s.IsOpen);
+
             if (store == null) return null;
 
             var isFavorite = false;

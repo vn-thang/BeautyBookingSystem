@@ -1,8 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter/foundation.dart';
-import 'firebase_options.dart'; 
+
+import 'core/service/push_notification_service.dart';
 import 'injection/service_locator.dart' as di;
 import 'core/router/app_router.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
@@ -10,15 +10,8 @@ import 'features/auth/presentation/bloc/auth_event.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  bool isWindowsDesktop = !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
-  
-  if (!isWindowsDesktop) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  }
-
+  await Firebase.initializeApp();
+  await PushNotificationService.init();
   await di.init();
   runApp(const MyApp());
 }

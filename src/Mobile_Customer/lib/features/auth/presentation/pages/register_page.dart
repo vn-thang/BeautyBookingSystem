@@ -37,7 +37,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _phoneVerified = false;
   String? _verificationId;
   String? _firebaseIdToken;
-    String? _pendingFirebaseIdToken;
+  String? _pendingFirebaseIdToken;
 
   late TapGestureRecognizer _termsRecognizer;
 
@@ -238,11 +238,12 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         );
   }
-   Future<void> _loginWithGoogle() async {
+
+  Future<void> _loginWithGoogle() async {
     try {
       final googleSignIn = GoogleSignIn(
         serverClientId:
-            '334394781529-p9mug7mcegasdavsjgmo3mft9jqqagvh.apps.googleusercontent.com',
+            '361936167810-bs47k71bsrvrcg8bt0d3780focaif9b7.apps.googleusercontent.com',
       );
 
       await googleSignIn.signOut();
@@ -277,10 +278,10 @@ class _RegisterPageState extends State<RegisterPage> {
           );
     } catch (e, stacktrace) {
       if (!mounted) return;
-debugPrint("========== GOOGLE LOGIN ERROR ==========");
-  debugPrint("Error: $e");
-  debugPrint("Stacktrace: $stacktrace");
-  debugPrint("========================================");
+      debugPrint("========== GOOGLE LOGIN ERROR ==========");
+      debugPrint("Error: $e");
+      debugPrint("Stacktrace: $stacktrace");
+      debugPrint("========================================");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Đăng nhập Google thất bại: $e"),
@@ -381,7 +382,8 @@ debugPrint("========== GOOGLE LOGIN ERROR ==========");
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                         colors: [
-                                          AppColors.surface.withValues(alpha: 0.03),
+                                          AppColors.surface
+                                              .withValues(alpha: 0.03),
                                           AppColors.placeholderEnd
                                               .withValues(alpha: 0.25),
                                         ],
@@ -546,49 +548,45 @@ debugPrint("========== GOOGLE LOGIN ERROR ==========");
                                   );
                                 },
                               ),
-                            const SizedBox(height: 24), 
+                              const SizedBox(height: 24),
                               const SizedBox(height: 16),
-                          _rowOrDivider(),
-                          const SizedBox(height: 24),
-                          
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _facebookButton(
-                                onTap: () {
-                                  // TODO: Thêm hàm xử lý đăng nhập Facebook ở đây
-                                },
+                              _rowOrDivider(),
+                              const SizedBox(height: 24),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  _facebookButton(
+                                    onTap: () {
+                                      // TODO: Thêm hàm xử lý đăng nhập Facebook ở đây
+                                    },
+                                  ),
+                                  const SizedBox(width: 32),
+                                  _googleButton(
+                                    onTap: _loginWithGoogle,
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 32),
-                              _googleButton(
-                                onTap: _loginWithGoogle,
+                              const SizedBox(height: 32),
+                              Center(
+                                child: Text(
+                                  "Đã có tài khoản?",
+                                  style: AppTextStyles.bodyMuted.copyWith(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
-                            ],
-                          ),
-                          
-                          const SizedBox(height: 32),
-                        
-                          Center(
-                            child: Text(
-                              "Đã có tài khoản?",
-                              style: AppTextStyles.bodyMuted.copyWith(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: _secondaryButton(
+                                  text: "Đăng nhập ngay",
+                                  icon: Icons.login_rounded,
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                  },
+                                ),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 12), 
-                          
-                          SizedBox(
-                            width: double.infinity,
-                            child: _secondaryButton(
-                              text: "Đăng nhập ngay",
-                              icon: Icons.login_rounded,
-                              onTap: () {
-                                Navigator.pop(context); 
-                              },
-                            ),
-                          ),
                             ],
                           ),
                         ),
@@ -678,8 +676,8 @@ debugPrint("========== GOOGLE LOGIN ERROR ==========");
       ),
     );
   }
-   
-   Widget _rowOrDivider() {
+
+  Widget _rowOrDivider() {
     return Row(
       children: [
         const Expanded(
@@ -706,7 +704,8 @@ debugPrint("========== GOOGLE LOGIN ERROR ==========");
       ],
     );
   }
-   Widget _facebookButton({required VoidCallback onTap}) {
+
+  Widget _facebookButton({required VoidCallback onTap}) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -720,7 +719,7 @@ debugPrint("========== GOOGLE LOGIN ERROR ==========");
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05), 
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
@@ -729,14 +728,15 @@ debugPrint("========== GOOGLE LOGIN ERROR ==========");
           child: const Center(
             child: Icon(
               Icons.facebook,
-              color: Color(0xFF1877F2), 
-              size: 48, 
+              color: Color(0xFF1877F2),
+              size: 48,
             ),
           ),
         ),
       ),
     );
   }
+
   Widget _googleButton({required VoidCallback onTap}) {
     return Material(
       color: Colors.transparent,

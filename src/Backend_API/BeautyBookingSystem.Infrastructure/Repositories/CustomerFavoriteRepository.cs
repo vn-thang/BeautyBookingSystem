@@ -2,6 +2,7 @@
 using BeautyBookingSystem.Application.DTOs;
 using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Entities;
+using BeautyBookingSystem.Domain.Enums;
 using BeautyBookingSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -76,6 +77,8 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
                 where f.CustomerId == customerId
                       && f.StoreId != null
                       && f.ServiceId == null
+                      && s.IsOpen
+                      && s.ApprovalStatus == ApprovalStatus.Approved
                 select new
                 {
                     s.Id,
@@ -129,7 +132,11 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
 
             return await _context.Services
                 .AsNoTracking()
-                .Where(x => serviceIds.Contains(x.Id))
+                .Where(x => serviceIds.Contains(x.Id)&&
+            x.IsActive &&
+            x.Store != null &&
+            x.Store.IsOpen &&
+            x.Store.ApprovalStatus == ApprovalStatus.Approved)
                 .Select(x => new FavoriteServiceDto
                 {
                     Id = x.Id,

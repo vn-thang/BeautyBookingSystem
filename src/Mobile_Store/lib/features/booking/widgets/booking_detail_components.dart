@@ -4,14 +4,18 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_dimens.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/utils/formatters.dart'; 
+import '../../../core/utils/formatters.dart';
 import '../models/store_booking_model.dart';
 
 class CustomCardContainer extends StatelessWidget {
   final String title;
   final Widget child;
 
-  const CustomCardContainer({super.key, required this.title, required this.child});
+  const CustomCardContainer({
+    super.key,
+    required this.title,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,8 +30,8 @@ class CustomCardContainer extends StatelessWidget {
             color: AppColors.textMain.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
-          )
-        ]
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +169,8 @@ class CustomerSection extends StatelessWidget {
             label: 'Số điện thoại',
             value: detail.customerPhone,
           ),
-          if (detail.customerNote != null && detail.customerNote!.isNotEmpty) ...[
+          if (detail.customerNote != null &&
+              detail.customerNote!.isNotEmpty) ...[
             const Padding(
               padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Divider(height: 1, color: AppColors.surface),
@@ -175,7 +180,7 @@ class CustomerSection extends StatelessWidget {
               label: 'Ghi chú',
               value: detail.customerNote!,
             ),
-          ]
+          ],
         ],
       ),
     );
@@ -194,8 +199,10 @@ class ServicesSection extends StatelessWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: detail.services.length,
-        separatorBuilder: (_, _) =>
-            const Divider(height: AppDimens.paddingLarge, color: AppColors.surface),
+        separatorBuilder: (_, _) => const Divider(
+          height: AppDimens.paddingLarge,
+          color: AppColors.surface,
+        ),
         itemBuilder: (context, index) {
           final service = detail.services[index];
 
@@ -209,11 +216,14 @@ class ServicesSection extends StatelessWidget {
                     height: 50,
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius:
-                          BorderRadius.circular(AppDimens.radiusSmall),
+                      borderRadius: BorderRadius.circular(
+                        AppDimens.radiusSmall,
+                      ),
                     ),
-                    child: const Icon(Icons.spa_outlined,
-                        color: AppColors.textSub),
+                    child: const Icon(
+                      Icons.spa_outlined,
+                      color: AppColors.textSub,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
@@ -245,8 +255,7 @@ class ServicesSection extends StatelessWidget {
               InfoRow(
                 icon: Icons.calendar_today_outlined,
                 label: 'Ngày',
-                value:
-                    Formatters.formatDateOnly(service.appointmentDate),
+                value: Formatters.formatDateOnly(service.appointmentDate),
               ),
               InfoRow(
                 icon: Icons.access_time_outlined,
@@ -273,16 +282,15 @@ class PaymentSection extends StatelessWidget {
   final StoreBookingDetailModel detail;
   const PaymentSection({super.key, required this.detail});
 
-  Widget _row(String label, String value,
-      {Color? valueColor, bool bold = false}) {
+  Widget _row(
+    String label,
+    String value, {
+    Color? valueColor,
+    bool bold = false,
+  }) {
     return Row(
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: AppTextStyles.labelSmall,
-          ),
-        ),
+        Expanded(child: Text(label, style: AppTextStyles.labelSmall)),
         const SizedBox(width: 8),
         Text(
           value,
@@ -296,45 +304,50 @@ class PaymentSection extends StatelessWidget {
   }
 
   @override
-Widget build(BuildContext context) {
-  final bool isFullyPaid = detail.remainingAmount <= 0;
-  
-  final double extraPaidAmount = (detail.finalPrice - detail.remainingAmount) - detail.depositAmount;
+  Widget build(BuildContext context) {
+    final bool isFullyPaid = detail.remainingAmount <= 0;
 
-  return CustomCardContainer(
-    title: 'Chi tiết thanh toán',
-    child: Column(
-      children: [
-        _row('Tổng giá', Formatters.formatCurrency(detail.totalPrice)),
-            
-        if (detail.discountAmount > 0) ...[
-          const SizedBox(height: AppSpacing.sm),
-          _row('Khuyến mãi', '- ${Formatters.formatCurrency(detail.discountAmount)}', valueColor: AppColors.success),
+    final double extraPaidAmount =
+        (detail.finalPrice - detail.remainingAmount) - detail.depositAmount;
+
+    return CustomCardContainer(
+      title: 'Chi tiết thanh toán',
+      child: Column(
+        children: [
+          _row('Tổng giá', Formatters.formatCurrency(detail.totalPrice)),
+
+          if (detail.discountAmount > 0) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _row(
+              'Khuyến mãi',
+              '- ${Formatters.formatCurrency(detail.discountAmount)}',
+              valueColor: AppColors.success,
+            ),
+          ],
+
+          if (detail.depositAmount > 0) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _row('Đã cọc', Formatters.formatCurrency(detail.depositAmount)),
+          ],
+
+          if (isFullyPaid && extraPaidAmount > 0) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _row('Đã thanh toán', Formatters.formatCurrency(extraPaidAmount)),
+          ],
+
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: Divider(height: 1, color: AppColors.surface),
+          ),
+
+          _row(
+            'Cần thanh toán',
+            Formatters.formatCurrency(detail.remainingAmount),
+            valueColor: isFullyPaid ? AppColors.success : AppColors.primary,
+            bold: true,
+          ),
         ],
-
-        if (detail.depositAmount > 0) ...[
-          const SizedBox(height: AppSpacing.sm),
-          _row('Đã cọc', Formatters.formatCurrency(detail.depositAmount)),
-        ],
-
-        if (isFullyPaid && extraPaidAmount > 0) ...[
-          const SizedBox(height: AppSpacing.sm),
-          _row('Đã thanh toán', Formatters.formatCurrency(extraPaidAmount)),
-        ],
-
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-          child: Divider(height: 1, color: AppColors.surface),
-        ),
-
-        _row(
-          'Cần thanh toán',
-          Formatters.formatCurrency(detail.remainingAmount),
-          valueColor: isFullyPaid ? AppColors.success : AppColors.primary,
-          bold: true,
-        ),
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
 }

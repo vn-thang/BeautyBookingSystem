@@ -6,7 +6,8 @@ class NotificationRemoteDataSource {
 
   NotificationRemoteDataSource(this.dio);
 
-  Future<List<NotificationModel>> getNotifications(int pageIndex, int pageSize) async {
+  Future<List<NotificationModel>> getNotifications(
+      int pageIndex, int pageSize) async {
     final resp = await dio.get(
       'notifications',
       queryParameters: {
@@ -29,7 +30,7 @@ class NotificationRemoteDataSource {
 
   Future<int> getUnreadCount() async {
     final resp = await dio.get('notifications/unread-count');
-    
+
     // Kiểm tra xem backend trả về Map {"count": X} hay trả thẳng về số X
     if (resp.data is Map<String, dynamic>) {
       // Lấy value từ key 'count'
@@ -53,7 +54,7 @@ class NotificationRemoteDataSource {
   Future<bool> updateFcmToken(String fcmToken) async {
     final resp = await dio.put(
       'notifications/fcm-token',
-      data: fcmToken, // Có thể điều chỉnh thành {'token': fcmToken} tùy API
+      data: {'fcmToken': fcmToken},
     );
     return resp.statusCode == 200 || resp.statusCode == 204;
   }

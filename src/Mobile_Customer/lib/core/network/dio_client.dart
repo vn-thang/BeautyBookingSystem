@@ -10,6 +10,22 @@ import '../../injection/service_locator.dart' as di;
 
 class ApiConfig {
   static const bool _isEmulator = false;
+  static String get baseUrl {
+    if (kIsWeb) {
+      return "http://localhost:5294/api/";
+    }
+
+    if (Platform.isAndroid) {
+      if (_isEmulator) {
+        return "http://10.0.2.2:5294/api/";
+      } else {
+        return "http://192.168.1.145:5294/api/";
+      }
+    }
+
+    return "http://localhost:5294/api/";
+  }
+
   // static String get baseUrl {
   //   if (kIsWeb) {
   //     return "http://localhost:5294/api/";

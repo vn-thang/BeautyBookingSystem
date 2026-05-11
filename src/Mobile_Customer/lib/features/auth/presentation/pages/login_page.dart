@@ -277,20 +277,18 @@ class _LoginPageState extends State<LoginPage> {
         child: SafeArea(
           child: BlocListener<AuthBloc, AuthState>(
             listener: (context, state) {
-              if (state is AuthAuthenticated) {
-                final needPhone = _needsPhoneVerification(state.user);
-
-                if (needPhone) {
-                  if (!_phoneDialogShown) {
-                    _phoneDialogShown = true;
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (!mounted) return;
-                      _showVerifyPhoneDialog();
-                    });
-                  }
-                  return;
+              if (state is AuthPhoneVerificationRequired) {
+                if (!_phoneDialogShown) {
+                  _phoneDialogShown = true;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    _showVerifyPhoneDialog();
+                  });
                 }
+                return;
+              }
 
+              if (state is AuthAuthenticated) {
                 _phoneDialogShown = false;
 
                 if (widget.redirectPath != null) {
@@ -526,11 +524,9 @@ class _LoginPageState extends State<LoginPage> {
                               );
                             },
                           ),
-                         
                           const SizedBox(height: 16),
-                          _rowOrDivider(), 
+                          _rowOrDivider(),
                           const SizedBox(height: 24),
-                        
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -539,15 +535,13 @@ class _LoginPageState extends State<LoginPage> {
                                   // TODO: Thêm hàm xử lý đăng nhập Facebook ở đây
                                 },
                               ),
-                              const SizedBox(width: 32), 
+                              const SizedBox(width: 32),
                               _googleButton(
                                 onTap: _loginWithGoogle,
                               ),
                             ],
                           ),
-                          
                           const SizedBox(height: 32),
-                          
                           Center(
                             child: Text(
                               "Chưa có tài khoản?",
@@ -642,10 +636,10 @@ class _LoginPageState extends State<LoginPage> {
           height: 55,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white, 
+            color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05), 
+                color: Colors.black.withValues(alpha: 0.05),
                 offset: const Offset(0, 3),
               ),
             ],
@@ -653,14 +647,15 @@ class _LoginPageState extends State<LoginPage> {
           child: const Center(
             child: Icon(
               Icons.facebook,
-              color: Color(0xFF1877F2), 
-              size: 48, 
+              color: Color(0xFF1877F2),
+              size: 48,
             ),
           ),
         ),
       ),
     );
   }
+
   Widget _googleButton({required VoidCallback onTap}) {
     return Material(
       color: Colors.transparent,

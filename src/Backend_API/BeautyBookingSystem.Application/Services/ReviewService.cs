@@ -50,8 +50,9 @@ namespace BeautyBookingSystem.Application.Services
     await _unitOfWork.ReviewRepository.AddAsync(review);
     await _unitOfWork.SaveChangesAsync();
 
-    await RecalculateStoreRatingAsync(review.StoreId);
-    await _unitOfWork.SaveChangesAsync();
+
+            await RecalculateStoreRatingAsync(review.StoreId);
+            await _unitOfWork.SaveChangesAsync();
 
     if (booking.Store != null)
     {
