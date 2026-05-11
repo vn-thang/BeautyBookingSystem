@@ -48,14 +48,16 @@ class AppPrimaryButton extends StatelessWidget {
                     Icon(icon, color: AppColors.white, size: 18),
                     const SizedBox(width: 8), 
                   ],
-                  Text(
-                    text,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.bodyText.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                 Flexible(
+                    child: Text(
+                      text,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyText.copyWith(
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ],
@@ -102,14 +104,16 @@ class AppOutlineButton extends StatelessWidget {
               Icon(icon, color: buttonColor, size: 18),
               const SizedBox(width: 8),
             ],
-            Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.bodyText.copyWith(
-                color: buttonColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
+           Flexible(
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodyText.copyWith(
+                  color: buttonColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],

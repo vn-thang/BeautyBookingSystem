@@ -11,6 +11,7 @@ class AuthAuthenticated extends AuthState {
 
   AuthAuthenticated(this.user);
 }
+
 class AuthUnauthenticated extends AuthState {}
 
 class AuthError extends AuthState {
@@ -23,3 +24,5 @@ class AuthSuccess extends AuthState {
   final String message;
   AuthSuccess(this.message);
 }
+
+class AuthPhoneVerificationRequired extends AuthState {}

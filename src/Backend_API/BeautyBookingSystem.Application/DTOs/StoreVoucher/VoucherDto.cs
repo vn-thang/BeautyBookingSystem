@@ -21,6 +21,7 @@ namespace BeautyBookingSystem.Application.DTOs.StoreVoucher
         public DateTime EndDate { get; set; }
         public int UsageLimit { get; set; }
         public int UsedCount { get; set; }
+        public string? ImageUrl { get; set; } 
 
         public string Status
         {

@@ -270,12 +270,14 @@ class _BookingDetailPageState extends State<BookingDetailPage>
 
       final ok = await launchUrl(
         Uri.parse(url),
-        mode: LaunchMode.externalApplication,
+        mode: LaunchMode.inAppBrowserView, 
       );
 
       if (!ok) {
         throw Exception('Không mở được cổng thanh toán');
       }
+     await _loadDetail();
+      
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -458,6 +460,30 @@ class _BookingDetailPageState extends State<BookingDetailPage>
                                       padding: const EdgeInsets.fromLTRB(
                                           16, 8, 16, 20),
                                       children: [
+                                        if (item.status == 4 && item.cancelReason?.isNotEmpty == true) ...[
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.danger.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: AppColors.danger.withValues(alpha: 0.3),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Trạng thái: Đã hủy\n(${item.cancelReason})',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: AppColors.danger,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14.5,
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                    ],
                                         _headerCard(item),
                                         const SizedBox(height: 12),
                                         _sectionTitle('Lịch hẹn'),
@@ -496,21 +522,25 @@ class _BookingDetailPageState extends State<BookingDetailPage>
                                         _sectionCard(
                                           child: Column(
                                             children: [
-                                              _priceLine(
-                                                  'Tổng giá', item.totalPrice),
-                                              _priceLine('Giảm giá',
-                                                  -item.discountAmount),
+                                              _priceLine('Tổng giá', item.totalPrice),
+
+                                              if (item.discountAmount > 0)
+                                                _priceLine('Giảm giá', -item.discountAmount),
+
+                                              if (item.discountAmount > 0) 
+                                                const Divider(height: 20),
+                                              if (item.discountAmount > 0)
+                                                _priceLine('Tổng sau giảm', item.finalPrice, bold: true),
+
+                                              if (item.depositPaidAmount > 0)
+                                                _priceLine('Đã cọc', item.depositPaidAmount),
+
+                                              if (item.paidAmount > 0)
+                                                _priceLine('Đã thanh toán', item.paidAmount),
+
                                               const Divider(height: 20),
-                                              _priceLine('Tổng sau giảm',
-                                                  item.finalPrice,
-                                                  bold: true),
-                                              _priceLine('Đã cọc',
-                                                  item.depositPaidAmount),
-                                              _priceLine('Đã thanh toán',
-                                                  item.paidAmount),
-                                              const Divider(height: 20),
                                               _priceLine(
-                                                'Còn lại',
+                                                'Cần thanh toán',
                                                 item.remainingAmount,
                                                 bold: true,
                                                 highlight: true,
@@ -519,6 +549,7 @@ class _BookingDetailPageState extends State<BookingDetailPage>
                                           ),
                                         ),
                                         const SizedBox(height: 12),
+
                                         _sectionTitle('Giao dịch'),
                                         const SizedBox(height: 8),
                                         _sectionCard(
@@ -637,7 +668,7 @@ class _BookingDetailPageState extends State<BookingDetailPage>
                                             ),
                                           ),
                                         ],
-                                        if (item.status == 2 &&
+                                        if (item.status == 3 &&
                                             !reviewedReviews
                                                 .containsKey(item.id)) ...[
                                           const SizedBox(height: 14),
@@ -794,7 +825,12 @@ class _BookingDetailPageState extends State<BookingDetailPage>
             style: AppTextStyles.bodyMuted.copyWith(height: 1.35),
           ),
           const SizedBox(height: 10),
-          _simpleInfoRow('Ngày đặt', dateLabel),
+    _simpleInfoRow(
+            'Ngày đặt', 
+            item.createdAt != null 
+                ? DateFormat('dd/MM/yyyy HH:mm').format(item.createdAt!.toUtc().add(const Duration(hours: 7)))
+                : '-', 
+          ),
           const SizedBox(height: 6),
           _simpleInfoRow('Mã booking', '#${item.id}'),
         ],
@@ -825,10 +861,7 @@ class _BookingDetailPageState extends State<BookingDetailPage>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '${DateFormat('dd/MM/yyyy').format(s.appointmentDate)} • ${s.startTime.substring(0, 5)}',
-                      style: AppTextStyles.bodyMuted,
-                    ),
+                   
                     if ((s.staffName ?? '').trim().isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
@@ -870,7 +903,7 @@ class _BookingDetailPageState extends State<BookingDetailPage>
               Text(
                 p.statusText +
                     (p.paidAt != null
-                        ? ' • ${DateFormat('dd/MM/yyyy HH:mm').format(p.paidAt!)}'
+                    ? ' • ${DateFormat('HH:mm - dd/MM/yyyy').format(p.paidAt!)}'
                         : ''),
                 style: AppTextStyles.bodyMuted,
               ),

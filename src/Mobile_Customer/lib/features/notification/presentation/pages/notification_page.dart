@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-
-// Thay đổi đường dẫn import cho khớp với project của bạn
 import '../../../../injection/service_locator.dart'; 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -25,10 +23,8 @@ class _NotificationPageState extends State<NotificationPage> {
   @override
   void initState() {
     super.initState();
-    // Khởi tạo Bloc từ Service Locator
     _notificationBloc = sl<NotificationBloc>();
     
-    // Gọi event lấy dữ liệu (Lấy 50 thông báo)
     _notificationBloc.add(LoadNotifications(pageIndex: 1, pageSize: 50)); 
   }
 
@@ -37,30 +33,28 @@ class _NotificationPageState extends State<NotificationPage> {
     super.dispose();
   }
 
-  // Hàm format thời gian (VD: 14:30 • 20/10/2023)
-  String _formatDate(DateTime date) {
-    return DateFormat('HH:mm • dd/MM/yyyy').format(date);
-  }
+String _formatDate(DateTime? date) {
+  if (date == null) return '--:--';
 
-  // ==========================================
-  // ĐÃ SỬA: XỬ LÝ KHI BẤM VÀO THÔNG BÁO
-  // ==========================================
+  return DateFormat(
+    'HH:mm • dd/MM/yyyy',
+  ).format(date);
+}
+
   void _onNotificationTap(NotificationEntity notif) {
-    // 1. Đánh dấu đã đọc
+ 
     if (!notif.isRead) {
       _notificationBloc.add(MarkNotificationAsRead(notif.id));
     }
     
-    // 2. Hiển thị Popup (Bottom Sheet) chi tiết
     _showNotificationDetailBottomSheet(notif);
   }
 
-  // Giao diện Popup trượt lên từ dưới
   void _showNotificationDetailBottomSheet(NotificationEntity notif) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent, // Để làm viền bo tròn đẹp hơn
-      isScrollControlled: true, // Cho phép tùy chỉnh chiều cao linh hoạt
+      backgroundColor: Colors.transparent, 
+      isScrollControlled: true, 
       builder: (context) {
         return Container(
           padding: const EdgeInsets.only(top: 12, left: 20, right: 20, bottom: 24),
@@ -70,10 +64,9 @@ class _NotificationPageState extends State<NotificationPage> {
           ),
           child: SafeArea(
             child: Column(
-              mainAxisSize: MainAxisSize.min, // Tự động co giãn theo nội dung
+              mainAxisSize: MainAxisSize.min, 
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Thanh kéo nhỏ (Drag handle) ở trên cùng
                 Center(
                   child: Container(
                     width: 40,
@@ -86,12 +79,11 @@ class _NotificationPageState extends State<NotificationPage> {
                 ),
                 const SizedBox(height: 24),
                 
-                // Icon và Tiêu đề
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Icon(
-                      Icons.event_note_rounded, // Icon giống trong ảnh của bạn
+                      Icons.event_note_rounded, 
                       color: AppColors.primary, 
                       size: 28,
                     ),
@@ -119,24 +111,22 @@ class _NotificationPageState extends State<NotificationPage> {
                 const Divider(color: AppColors.borderSoft),
                 const SizedBox(height: 16),
                 
-                // Nội dung tin nhắn
                 Text(
                   notif.message,
                   style: AppTextStyles.body.copyWith(
                     fontSize: 15,
-                    height: 1.5, // Giãn dòng cho dễ đọc
+                    height: 1.5, 
                   ),
                 ),
                 
                 const SizedBox(height: 32),
                 
-                // Nút Đóng
                 SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary, // Màu hồng/đỏ của bạn
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
@@ -307,7 +297,7 @@ class _NotificationPageState extends State<NotificationPage> {
                     const SizedBox(height: 6),
                     Text(
                       notif.message,
-                      maxLines: 2, // Giới hạn 2 dòng ở danh sách ngoài cho gọn
+                      maxLines: 2, 
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.bodyMuted.copyWith(
                         color: notif.isRead ? AppColors.textSecondary : AppColors.textPrimary,

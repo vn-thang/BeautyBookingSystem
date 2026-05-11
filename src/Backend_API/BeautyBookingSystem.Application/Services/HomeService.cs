@@ -26,16 +26,19 @@ namespace BeautyBookingSystem.Application.Services
             double? lon)
         {
             var categories = await _unitOfWork
-                .GlobalCategoryRepository
-                .GetQueryable()
+     .GlobalCategoryRepository
+     .GetActiveAsync();
+
+            var categoryDtos = categories
                 .Take(10)
                 .Select(x => new GlobalCategoryDto
                 {
                     Id = x.Id,
                     Name = x.Name,
-                    IconUrl = x.IconUrl
+                    IconUrl = x.IconUrl,
+                    SortOrder = x.SortOrder
                 })
-                .ToListAsync();
+                .ToList();
 
             var groups = await _unitOfWork
                 .ServiceGroupRepository
@@ -52,6 +55,7 @@ namespace BeautyBookingSystem.Application.Services
                 .GetQueryable()
                 .Where(s =>
                     s.ApprovalStatus == ApprovalStatus.Approved &&
+                    s.IsOpen &&
                     s.Latitude != null &&
                     s.Longitude != null);
 
@@ -129,7 +133,8 @@ namespace BeautyBookingSystem.Application.Services
             var vouchers = await _unitOfWork
                 .VoucherRepository
                 .GetQueryable()
-                .Where(v => v.Service != null) 
+                .Include(v => v.Store)
+                .Where(v => v.Service != null && v.Store!.ApprovalStatus == ApprovalStatus.Approved)
                 .OrderByDescending(v => v.StartDate)
                 .Take(8)
                 .Select(v => new ServiceVoucherHomeDto
@@ -180,7 +185,7 @@ namespace BeautyBookingSystem.Application.Services
             return new HomeResponseDto
             {
                 UserName = "User",
-                Categories = categories,
+                Categories = categoryDtos,
                 ServiceGroups = groups,
                 NearbyStores = nearbyStores,
                 TopRatedStores = topRatedStores,

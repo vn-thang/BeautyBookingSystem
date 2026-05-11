@@ -362,6 +362,12 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("VnpPayDate")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VnpTransactionNo")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BookingId");
@@ -858,7 +864,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(3866),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 9, DateTimeKind.Utc).AddTicks(9797),
                             Description = "Tỷ lệ hoa hồng mặc định (%)",
                             Group = "Finance",
                             Key = "DefaultCommissionRate",
@@ -868,7 +874,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4774),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(786),
                             Description = "Phí duy trì mặc định hàng tháng (VNĐ)",
                             Group = "Finance",
                             Key = "DefaultMonthlyAppFee",
@@ -878,7 +884,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 7,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4776),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(789),
                             Description = "Tỷ lệ phí Admin thu trên tiền cọc khi khách bùng lịch (%)",
                             Group = "Finance",
                             Key = "PENALTY_COMMISSION_PERCENT",
@@ -888,7 +894,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4777),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(790),
                             Description = "Số ngày dùng thử miễn phí cho Cửa hàng mới duyệt",
                             Group = "General",
                             Key = "FreeTrialDays",
@@ -898,7 +904,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4778),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(792),
                             Description = "Bật/tắt chế độ bảo trì toàn hệ thống",
                             Group = "General",
                             Key = "MAINTENANCE_MODE",
@@ -908,7 +914,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 5,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4779),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(793),
                             Description = "Số điện thoại tổng đài hỗ trợ",
                             Group = "General",
                             Key = "HOTLINE",
@@ -918,7 +924,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 6,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4780),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(794),
                             Description = "Email hỗ trợ khách hàng",
                             Group = "General",
                             Key = "SUPPORT_EMAIL",
@@ -928,7 +934,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 8,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4781),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(795),
                             Description = "Khách hàng phải đặt trước tối thiểu bao nhiêu giờ",
                             Group = "Booking",
                             Key = "BOOKING_MIN_HOURS",
@@ -938,7 +944,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 9,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4783),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(796),
                             Description = "Số giờ tối thiểu để hủy lịch mà không bị phạt (mất cọc)",
                             Group = "Booking",
                             Key = "CANCEL_BEFORE_HOURS",
@@ -948,7 +954,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 10,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4784),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(797),
                             Description = "Thời gian giữ chỗ (phút) cho phép khách hàng đến trễ",
                             Group = "Booking",
                             Key = "GRACE_PERIOD_MINUTES",
@@ -958,7 +964,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 11,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4785),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(798),
                             Description = "Số lần tối đa khách hàng được phép hủy lịch trong 1 ngày",
                             Group = "Behavior",
                             Key = "MAX_CANCEL_PER_DAY",
@@ -968,7 +974,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 12,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4786),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(799),
                             Description = "Số lần 'Boom hàng' (No-show) tối đa trước khi bị khóa",
                             Group = "Behavior",
                             Key = "NOSHOW_LIMIT",
@@ -978,7 +984,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 13,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4787),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(800),
                             Description = "Tự động khóa tài khoản khách hàng nếu vượt giới hạn Boom hàng",
                             Group = "Behavior",
                             Key = "BLOCK_USER_IF_NOSHOW",
@@ -988,7 +994,7 @@ namespace BeautyBookingSystem.Infrastructure.Migrations
                         new
                         {
                             Id = 14,
-                            CreatedAt = new DateTime(2026, 4, 12, 15, 56, 2, 451, DateTimeKind.Utc).AddTicks(4788),
+                            CreatedAt = new DateTime(2026, 5, 11, 5, 0, 12, 10, DateTimeKind.Utc).AddTicks(801),
                             Description = "Số giờ tối thiểu để khách hàng được phép dời lịch (Reschedule)",
                             Group = "Booking",
                             Key = "RESCHEDULE_BEFORE_HOURS",

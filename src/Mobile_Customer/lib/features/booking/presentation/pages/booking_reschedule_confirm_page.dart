@@ -88,7 +88,7 @@ class _BookingRescheduleConfirmPageState
         await Future.delayed(const Duration(milliseconds: 300));
         if (!mounted) return;
 
-        context.go('/'); // đổi path này nếu route home của bạn khác
+        context.go('/');
       } else {
         throw Exception(data.toString());
       }
@@ -187,7 +187,7 @@ class _BookingRescheduleConfirmPageState
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Nhân viên hiện tại: ${widget.booking.staffName ?? 'Bất kỳ'}',
+                          'Nhân viên hiện tại: ${widget.booking.services.isNotEmpty ? widget.booking.services.first.staffName ?? 'Bất kỳ' : 'Bất kỳ'}',
                           style: AppTextStyles.bodyMuted,
                         ),
                       ],

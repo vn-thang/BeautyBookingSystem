@@ -7,11 +7,9 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
 {
     public class VoucherRepository : GenericRepository<Voucher>, IVoucherRepository
     {
-        private readonly AppDbContext _context;
 
         public VoucherRepository(AppDbContext context) : base(context)
         {
-            _context = context;
         }
 
         public async Task<List<Voucher>> GetByStoreAsync(int storeId, int? serviceId = null)

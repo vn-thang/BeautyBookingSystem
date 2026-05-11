@@ -155,7 +155,7 @@ public async Task<List<TopPerformanceItemDto>> GetTopCustomersAsync(DateTime? st
         if (endDate.HasValue) query = query.Where(b => b.CreatedAt <= endDate.Value);
 
         var topCustomers = await query
-            .GroupBy(b => new { CustomerId = b.CustomerId.Value, b.Customer.FullName }) 
+            .GroupBy(b => new { CustomerId = b.CustomerId!.Value, b.Customer.FullName }) 
             .Select(g => new TopPerformanceItemDto
             {
                 Id = g.Key.CustomerId, 

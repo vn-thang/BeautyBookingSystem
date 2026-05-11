@@ -9,11 +9,9 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
     public class StoreRepository
         : GenericRepository<Store>, IStoreRepository
     {
-        private readonly AppDbContext _context;
 
         public StoreRepository(AppDbContext context) : base(context)
         {
-            _context = context;
         }
         public async Task<Store?> GetStoreProfileAsync(int storeId)
         {

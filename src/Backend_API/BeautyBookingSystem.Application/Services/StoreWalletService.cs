@@ -380,7 +380,7 @@ namespace BeautyBookingSystem.Application.Services
                 StoreId = store.Id,
                 BookingId = booking.Id,
                 Amount = storeEarn, 
-                Type = TransactionType.Commission, 
+                Type = TransactionType.TopUp, 
                 Status = TransactionStatus.Completed, 
                 BalanceBefore = balanceBefore,
                 BalanceAfter = balanceAfter,

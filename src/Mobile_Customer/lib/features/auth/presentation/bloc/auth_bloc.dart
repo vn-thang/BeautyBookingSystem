@@ -1,9 +1,12 @@
+// lib/features/auth/presentation/bloc/auth_bloc.dart
 import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/service/fcm_service.dart';
+import '../../../notification/domain/usecases/update_fcm_token.dart';
 import '../../domain/usecases/change_password.dart';
 import '../../domain/usecases/forgot_password.dart';
 import '../../domain/usecases/get_profile.dart';
@@ -31,6 +34,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final UpdateProfile updateProfile;
   final UploadAvatar uploadAvatar;
   final VerifyPhone verifyPhone;
+  final UpdateFcmToken updateFcmToken;
+  final FcmService fcmService;
 
   Future<void> _profileMutationQueue = Future.value();
 
@@ -46,6 +51,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     this.updateProfile,
     this.uploadAvatar,
     this.verifyPhone,
+    this.updateFcmToken,
+    this.fcmService,
   ) : super(AuthInitial()) {
     on<LoginEvent>(_onLogin);
     on<LoginWithFirebaseEvent>(_onLoginWithFirebase);
@@ -101,6 +108,27 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     return 'Đã xảy ra lỗi';
   }
 
+  Future<void> _syncFcmToken() async {
+    try {
+      final token = await fcmService.initAndGetToken();
+      if (token != null && token.isNotEmpty) {
+        await updateFcmToken(token);
+      }
+
+      fcmService.onTokenRefresh.listen((newToken) async {
+        try {
+          if (newToken.isNotEmpty) {
+            await updateFcmToken(newToken);
+          }
+        } catch (_) {
+          // bỏ qua để không ảnh hưởng app
+        }
+      });
+    } catch (_) {
+      // bỏ qua để không ảnh hưởng đăng nhập
+    }
+  }
+
   Future<void> _onCheckAuth(
     CheckAuthEvent event,
     Emitter<AuthState> emit,
@@ -116,15 +144,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final user = await getProfile();
 
-      if (state is AuthAuthenticated) {
-        final current = (state as AuthAuthenticated).user;
-        if (current.id == user.id) {
-          emit(AuthAuthenticated(current));
-          return;
-        }
+      final phone = user.phone?.trim() ?? '';
+      final verified = user.isPhoneVerified == true;
+
+      if (phone.isEmpty || !verified) {
+        emit(AuthPhoneVerificationRequired());
+        return;
       }
 
       emit(AuthAuthenticated(user));
+      await _syncFcmToken();
     } catch (_) {
       await prefs.remove("token");
       await prefs.remove("refreshToken");
@@ -141,7 +170,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       final user = await login(event.email, event.password);
+
+      final phone = user.phone?.trim() ?? '';
+      final verified = user.isPhoneVerified == true;
+
+      if (phone.isEmpty || !verified) {
+        emit(AuthPhoneVerificationRequired());
+        return;
+      }
+
       emit(AuthAuthenticated(user));
+      await _syncFcmToken();
     } catch (e) {
       emit(AuthError(_extractMessage(e)));
     }
@@ -159,7 +198,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         linkToExistingAccount: event.linkToExistingAccount,
         isStoreOwnerApp: event.isStoreOwnerApp,
       );
+
+      final phone = user.phone?.trim() ?? '';
+      final verified = user.isPhoneVerified == true;
+
+      if (phone.isEmpty || !verified) {
+        emit(AuthPhoneVerificationRequired());
+        return;
+      }
+
       emit(AuthAuthenticated(user));
+      await _syncFcmToken();
     } catch (e) {
       emit(AuthError(_extractMessage(e)));
     }
@@ -175,6 +224,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       emit(AuthSuccess("Xác minh số điện thoại thành công"));
       emit(AuthAuthenticated(user));
+      await _syncFcmToken();
     } catch (e) {
       emit(AuthError(_extractMessage(e)));
     }
@@ -194,6 +244,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         event.firebaseIdToken,
       );
       emit(AuthAuthenticated(user));
+      await _syncFcmToken();
     } catch (e) {
       emit(AuthError(_extractMessage(e)));
     }

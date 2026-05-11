@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:mobile_store/core/utils/formatters.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -67,8 +68,11 @@ class PdfInvoiceHelper {
                     crossAxisAlignment: pw.CrossAxisAlignment.end,
                     children: [
                       pw.Text('Mã hóa đơn: #${bill.bookingId}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 12)),
-                      pw.SizedBox(height: 4),
-                      pw.Text('Ngày tạo: ${DateFormat('dd/MM/yyyy HH:mm').format(bill.createdAt)}', style: const pw.TextStyle(fontSize: 11)),
+                     pw.SizedBox(height: 4),
+                      pw.Text(
+                        'Ngày tạo: ${Formatters.formatDateTime(bill.createdAt)}', 
+                        style: const pw.TextStyle(fontSize: 11),
+                      ),
                     ],
                   ),
                 ],

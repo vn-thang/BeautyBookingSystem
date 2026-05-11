@@ -17,7 +17,7 @@ class BookingsCard extends StatelessWidget {
     required this.onViewAllBookings,
   });
 
-  Widget _buildBookingTab(BuildContext context, {required IconData icon, required String label, required int count, required int index}) {
+ Widget _buildBookingTab(BuildContext context, {required IconData icon, required String label, required int count, required int index}) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -27,14 +27,14 @@ class BookingsCard extends StatelessWidget {
       },
       child: CircleActionButton(
         icon: icon, 
-        label: '$label\n($count)', 
+        label: label, // Không dùng \n nữa
+        count: count.toString(), // 🎯 Truyền riêng số lượng vào trường count
         bgColor: AppColors.primary.withValues(alpha: 0.1), 
         iconColor: AppColors.primary
       ),
     );
   }
-
-  @override
+ @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 0, 
@@ -43,40 +43,48 @@ class BookingsCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppDimens.paddingMedium),
         child: Column(
           children: [
-            InkWell(
-              onTap: onViewAllBookings,
-              borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.list_alt, color: AppColors.warning, size: 24), 
-                        const SizedBox(width: AppSpacing.sm),
-                        Text(
-                          'Đơn đặt lịch', 
-                          style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.bold)
-                        ),
-                      ],
-                    ),
-                    Text(
-                      'Xem tất cả >', 
-                      style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500)
-                    ),
-                  ],
+            // CỤM TIÊU ĐỀ: Bấm được toàn dải
+           InkWell(
+  onTap: onViewAllBookings,
+  borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
+  child: Padding(
+    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0), // Tăng padding dọc lên 12 cho dễ bấm
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              const Icon(Icons.list_alt, color: AppColors.warning, size: 24), 
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Đơn đặt lịch', 
+                  style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
-            ),
+            ],
+          ),
+        ),
+        // 🎯 CHỈ ĐỂ LẠI ICON MŨI TÊN
+       const Icon(Icons.keyboard_double_arrow_right, color: AppColors.textSub, size: 24),
+      ],
+    ),
+  ),
+),
             const SizedBox(height: AppSpacing.xl),
+            
+            // CỤM 4 TAB: Có khoảng cách (SizedBox) ở giữa
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.start, 
               children: [
-                _buildBookingTab(context, icon: Icons.pending_actions, label: 'Chờ duyệt', count: counts.pending, index: 1),
-                _buildBookingTab(context, icon: Icons.check_circle_outline, label: 'Đã xác nhận', count: counts.confirmed, index: 2),
-                _buildBookingTab(context, icon: Icons.check_box_outlined, label: 'Hoàn thành', count: counts.completed, index: 3),
-                _buildBookingTab(context, icon: Icons.cancel_presentation, label: 'Khách hủy', count: counts.cancelledByCustomer, index: 4),
+                Expanded(child: _buildBookingTab(context, icon: Icons.pending_actions, label: 'Chờ duyệt', count: counts.pending, index: 1)),
+                const SizedBox(width: 4),
+                Expanded(child: _buildBookingTab(context, icon: Icons.check_circle_outline, label: 'Đã xác nhận', count: counts.confirmed, index: 2)),
+                const SizedBox(width: 4),
+                Expanded(child: _buildBookingTab(context, icon: Icons.check_box_outlined, label: 'Hoàn thành', count: counts.completed, index: 3)),
+                const SizedBox(width: 4),
+                Expanded(child: _buildBookingTab(context, icon: Icons.cancel_presentation, label: 'Khách hủy', count: counts.cancelledByCustomer, index: 4)),
               ],
             ),
           ],

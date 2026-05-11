@@ -366,7 +366,6 @@ namespace BeautyBookingSystem.Application.Services
 
             var provider = AuthProvider.Google;
 
-            // 1) Đã từng đăng nhập bằng FirebaseUid thì đăng nhập luôn
             var userByUid = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.FirebaseUid == uid);
             if (userByUid != null)
             {
@@ -392,7 +391,6 @@ namespace BeautyBookingSystem.Application.Services
                 return tokenResult;
             }
 
-            // 2) Nếu chưa có FirebaseUid, thử tìm theo email
             if (!string.IsNullOrWhiteSpace(email))
             {
                 var userByEmail = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Email == email);
@@ -402,7 +400,6 @@ namespace BeautyBookingSystem.Application.Services
                     if (userByEmail.Status != UserStatus.Active)
                         throw new BadRequestException("Tài khoản của bạn đã bị khóa.");
 
-                    // Tài khoản này đã là Google rồi -> login luôn, không hỏi link nữa
                     if (userByEmail.AuthProvider == AuthProvider.Google)
                     {
                         userByEmail.FirebaseUid = uid;
@@ -422,12 +419,14 @@ namespace BeautyBookingSystem.Application.Services
                         return tokenResult;
                     }
 
-                    // Tài khoản thường đăng ký bằng mật khẩu -> chỉ lúc này mới hỏi liên kết
                     if (!request.LinkToExistingAccount)
                         throw new BadRequestException("REQUIRE_LINK_CONFIRM:Email này đã được đăng ký. Bạn có muốn liên kết không?");
 
                     userByEmail.FirebaseUid = uid;
-                    userByEmail.AuthProvider = provider;
+                    if (userByEmail.AuthProvider != AuthProvider.Local)
+                    {
+                        userByEmail.AuthProvider = provider;
+                    }
 
                     if (!string.IsNullOrWhiteSpace(phone) && string.IsNullOrWhiteSpace(userByEmail.Phone))
                         userByEmail.Phone = phone;
@@ -444,7 +443,6 @@ namespace BeautyBookingSystem.Application.Services
                 }
             }
 
-            // 3) Thử tìm theo số điện thoại nếu có
             if (!string.IsNullOrWhiteSpace(phone))
             {
                 var userByPhone = await _unitOfWork.UserRepository.FirstOrDefaultAsync(u => u.Phone == phone);
@@ -470,7 +468,6 @@ namespace BeautyBookingSystem.Application.Services
                 }
             }
 
-            // 4) Chưa có tài khoản -> tạo mới
             if (request.IsStoreOwnerApp && string.IsNullOrWhiteSpace(phone))
                 throw new BadRequestException("REQUIRE_PHONE_VERIFICATION:Bạn cần xác thực số điện thoại trước.");
 

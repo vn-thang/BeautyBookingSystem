@@ -7,11 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 public class ServiceRepository : GenericRepository<Service>, IServiceRepository
 {
-    private readonly AppDbContext _context;
 
     public ServiceRepository(AppDbContext context) : base(context)
     {
-        _context = context;
     }
 
     public async Task<List<Service>> GetByStoreAsync(int storeId)
@@ -53,7 +51,7 @@ public class ServiceRepository : GenericRepository<Service>, IServiceRepository
             .OrderBy(x => x.SortOrder)
             .ToListAsync();
     }
-    public async Task<Service?> GetByIdAsync(int id)
+    public override async Task<Service?> GetByIdAsync(int id)
     {
         return await _context.Services
             .Include(x => x.Store)

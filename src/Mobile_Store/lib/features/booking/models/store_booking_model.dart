@@ -2,6 +2,7 @@ class StoreBookingListModel {
   final int id;
   final String customerName;
   final String customerPhone;
+  final String? avatarUrl;
   final double finalPrice;
   final String status;
   final DateTime createdAt;
@@ -10,6 +11,7 @@ class StoreBookingListModel {
     required this.id,
     required this.customerName,
     required this.customerPhone,
+    this.avatarUrl,
     required this.finalPrice,
     required this.status,
     required this.createdAt,
@@ -20,6 +22,7 @@ class StoreBookingListModel {
       id: json['id'] ?? 0,
       customerName: json['customerName'] ?? '',
       customerPhone: json['customerPhone'] ?? '',
+      avatarUrl: json['avatarUrl'],
       finalPrice: (json['finalPrice'] ?? 0).toDouble(),
       status: json['status'] ?? '',
       createdAt: DateTime.parse(json['createdAt']),
@@ -43,6 +46,7 @@ class StoreBookingDetailModel extends StoreBookingListModel {
     required super.id,
     required super.customerName,
     required super.customerPhone,
+    super.avatarUrl,
     required super.finalPrice,
     required super.status,
     required super.createdAt,
@@ -55,7 +59,7 @@ class StoreBookingDetailModel extends StoreBookingListModel {
     this.cancelReason,
     this.cancelledBy,
     required this.services,
-    this.paymentId
+    this.paymentId,
   });
 
   factory StoreBookingDetailModel.fromJson(Map<String, dynamic> json) {
@@ -64,13 +68,14 @@ class StoreBookingDetailModel extends StoreBookingListModel {
       id: json['id'] ?? 0,
       customerName: json['customerName'] ?? '',
       customerPhone: json['customerPhone'] ?? '',
+      avatarUrl: json['avatarUrl'],
       finalPrice: (json['finalPrice'] ?? 0).toDouble(),
       status: json['status'] ?? '',
       createdAt: DateTime.parse(json['createdAt']),
       customerNote: json['customerNote'],
       totalPrice: (json['totalPrice'] ?? 0).toDouble(),
       discountAmount: (json['discountAmount'] ?? 0).toDouble(),
-      
+
       // 3. Parse dữ liệu từ JSON gửi về
       depositAmount: (json['depositAmount'] ?? 0).toDouble(),
       remainingAmount: (json['remainingAmount'] ?? 0).toDouble(),
@@ -78,7 +83,9 @@ class StoreBookingDetailModel extends StoreBookingListModel {
       cancelReason: json['cancelReason'],
       cancelledBy: json['cancelledBy'],
       paymentId: json['paymentId'],
-      services: servicesList.map((e) => BookingServiceModel.fromJson(e)).toList(),
+      services: servicesList
+          .map((e) => BookingServiceModel.fromJson(e))
+          .toList(),
     );
   }
 }
@@ -87,7 +94,7 @@ class BookingServiceModel {
   final int bookingDetailId;
   final String serviceName;
   final DateTime appointmentDate;
-  final String startTime; 
+  final String startTime;
   final String endTime;
   final double price;
   final int? staffId;
@@ -126,14 +133,12 @@ class AvailableStaffModel {
   final String fullName;
   final String? avatarUrl;
   final String position;
-  
 
   AvailableStaffModel({
     required this.id,
     required this.fullName,
     this.avatarUrl,
     required this.position,
-    
   });
 
   factory AvailableStaffModel.fromJson(Map<String, dynamic> json) {

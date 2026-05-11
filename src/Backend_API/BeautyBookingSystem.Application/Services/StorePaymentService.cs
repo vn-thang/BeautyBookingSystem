@@ -68,7 +68,9 @@ namespace BeautyBookingSystem.Application.Services
             }
 
             if (payment.Status == PaymentStatus.Success)
-                throw new Exception("Giao dịch này đã được thanh toán rồi.");
+            {
+                return true;
+            }
 
             payment.Status = PaymentStatus.Success;
             payment.PaidAt = DateTime.UtcNow;
@@ -112,7 +114,7 @@ namespace BeautyBookingSystem.Application.Services
 
             if (result && payment.Booking.CustomerId.HasValue)
             {
-                _ = _notificationService.CreateAndSendNotificationAsync(
+                await _notificationService.CreateAndSendNotificationAsync(
                     payment.Booking.CustomerId.Value,
                     "🔄Thông báo hoàn tiền",
                     $"Số tiền của giao dịch #{payment.Id} đã được hoàn lại. Vui lòng kiểm tra tài khoản của bạn.",

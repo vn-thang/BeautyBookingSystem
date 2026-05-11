@@ -157,18 +157,13 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
 
   double _voucherBaseAmount(Map<String, dynamic> voucher) {
     final serviceId = (voucher['serviceId'] as num?)?.toInt();
-
-    // Nếu serviceId null -> Voucher toàn shop -> Lấy tổng tiền giỏ hàng
     if (serviceId == null) return subtotal;
-
-    // Nếu có serviceId -> Voucher dịch vụ -> Lấy giá của dịch vụ đó
     final service = _serviceById(serviceId);
     if (service == null) return 0;
 
     return (service['price'] as num).toDouble();
   }
 
-  // 2. Kiểm tra điều kiện áp dụng
   bool _voucherAppliesToCurrentBooking(Map<String, dynamic> voucher) {
     final baseAmount = _voucherBaseAmount(voucher);
     if (baseAmount <= 0) return false;
@@ -177,7 +172,6 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
     return baseAmount >= minOrder;
   }
 
-  // 3. Tính toán nháp số tiền giảm (dùng để sắp xếp)
   double _calculatePotentialDiscount(Map<String, dynamic> voucher) {
     if (!_voucherAppliesToCurrentBooking(voucher)) return 0;
 
@@ -189,10 +183,8 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
 
     double raw = 0;
     if (discountType == 0) {
-      // Giảm %
       raw = baseAmount * (discountValue / 100);
     } else {
-      // Giảm tiền mặt
       raw = discountValue;
     }
 
@@ -200,10 +192,8 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
     return raw;
   }
 
-  // 4. Tính số tiền giảm thực tế của giỏ hàng
   double computeDiscount() {
     if (appliedVoucher == null) return 0;
-    // Dùng luôn hàm tính nháp ở trên cho gọn code
     return _calculatePotentialDiscount(appliedVoucher!);
   }
 
@@ -216,26 +206,24 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
     final val = storeData?['depositPercent'];
     if (val is num) return val.toInt();
     if (val is String) return int.tryParse(val) ?? 0;
-    return 0; // Mặc định 0% nếu API không có
+    return 0; 
   }
 
   double get storeDepositThreshold {
     final val = storeData?['depositThreshold'];
     if (val is num) return val.toDouble();
     if (val is String) return double.tryParse(val) ?? 0.0;
-    return 0.0; // Mặc định 0đ nếu API không có
+    return 0.0; 
   }
 
   bool get allowCashOnDelivery => finalTotal < storeDepositThreshold;
   bool get allowDeposit =>
       finalTotal >= storeDepositThreshold && storeDepositPercent > 0;
 
-  // 0 = COD, 1 = VNPay.
   int get paymentMethod => paymentPlan == _payLater ? 2 : 1;
 
   double get depositAmount {
     if (paymentPlan == _deposit) {
-      // Công thức tính cọc = Tổng sau giảm * (% cọc / 100)
       return finalTotal * (storeDepositPercent / 100);
     }
     return 0;
@@ -246,10 +234,9 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
       return 0;
     }
     if (paymentPlan == _deposit) {
-      // Số tiền trả ngay lúc này chính là tiền cọc
       return finalTotal * (storeDepositPercent / 100);
     }
-    return finalTotal; // Thanh toán toàn bộ
+    return finalTotal; 
   }
 
   void _normalizePaymentPlan() {
@@ -376,17 +363,11 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
         };
       }).toList();
 
-      // final vresp = await dio.get('voucher/active');
-      // final vdata = (vresp.data as List).cast<Map<String, dynamic>>();
-
-      // Lấy voucher theo storeId để khớp với backend API của bạn
       final vresp = await dio.get('voucher/store/${widget.storeId}/active');
       final vdata = (vresp.data as List).cast<Map<String, dynamic>>();
 
-      // Lấy toàn bộ danh sách để hiện ra UI
       vouchers = vdata;
 
-      // Logic sắp xếp danh sách voucher
       vouchers.sort((a, b) {
         bool canUseA = _voucherAppliesToCurrentBooking(a);
         bool canUseB = _voucherAppliesToCurrentBooking(b);
@@ -397,13 +378,11 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
         if (canUseA && canUseB) {
           double discountA = _calculatePotentialDiscount(a);
           double discountB = _calculatePotentialDiscount(b);
-          return discountB.compareTo(discountA); // Cái nào giảm nhiều xếp trước
+          return discountB.compareTo(discountA); 
         }
 
         return 0;
       });
-
-      // vouchers = vdata.where(_voucherAppliesToCurrentBooking).toList();
 
       if (mounted) {
         setState(() {
@@ -815,17 +794,32 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                               final minOrder = v['minOrderValue'] != null
                                   ? (v['minOrderValue'] as num).toDouble()
                                   : 0;
-                              String expiryDate = 'Đang cập nhật';
-                              if (v['endDate'] != null) {
-                                try {
-                                  DateTime parsedDate =
-                                      DateTime.parse(v['endDate'].toString());
-                                  expiryDate = DateFormat('HH:mm dd/MM/yyyy')
-                                      .format(parsedDate);
-                                } catch (e) {
-                                  expiryDate = 'Lỗi ngày tháng';
+
+                       String expiryDate = 'Đang cập nhật';
+
+                                if (v['endDate'] != null) {
+                                  try {
+                                    String rawDate = v['endDate'].toString();
+                                    DateTime parsedDate;
+
+                                    bool hasTimezone =
+                                        rawDate.endsWith('Z') ||
+                                        rawDate.contains('+07:00') ||
+                                        rawDate.contains('+00:00');
+
+                                    if (hasTimezone) {
+                                      parsedDate = DateTime.parse(rawDate).toLocal();
+                                    } else {
+                                      parsedDate =
+                                          DateTime.parse(rawDate).add(const Duration(hours: 7));
+                                    }
+
+                                    expiryDate =
+                                        DateFormat('HH:mm dd/MM/yyyy').format(parsedDate);
+                                  } catch (e) {
+                                    expiryDate = 'Lỗi ngày tháng';
+                                  }
                                 }
-                              }
 
                               String titleStr = isPercent
                                   ? 'Giảm ${val.toInt()}%'
@@ -979,7 +973,6 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                           ),
                   ),
 
-                  // --- 4. NÚT ĐỒNG Ý ---
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -987,7 +980,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             offset: const Offset(0, -4),
                             blurRadius: 8)
                       ],
@@ -1289,9 +1282,10 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                                 const SizedBox(height: 16),
                                 _sectionHeader('Tổng kết'),
                                 const SizedBox(height: 10),
-                                _sectionCard(
-                                  child: Column(
-                                    children: [
+                              _sectionCard(
+                                child: Column(
+                                  children: [
+                                    if (discount > 0) ...[
                                       _summaryRow(
                                         label: 'Tổng giá gốc',
                                         value: _formatMoney(subtotal),
@@ -1307,15 +1301,17 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                                         label: 'Tổng sau giảm',
                                         value: _formatMoney(finalTotal),
                                       ),
-                                      const SizedBox(height: 10),
+                                    ]
+                                    else ...[
                                       _summaryRow(
-                                        label: 'Thanh toán ngay',
-                                        value: _formatMoney(amountToPayNow),
-                                        valueColor: AppColors.primary,
+                                        label: 'Tổng cộng',
+                                        value: _formatMoney(subtotal),
                                       ),
                                     ],
-                                  ),
+
+                                  ],
                                 ),
+                              ),
                                 const SizedBox(height: 18),
                               ],
                             ),
@@ -1341,7 +1337,7 @@ class _BookingConfirmPageState extends State<BookingConfirmPage> {
                   children: [
                     Expanded(
                       child: _summaryTile(
-                        label: 'Cần thanh toán',
+                        label: 'Thanh toán ngay',
                         value: _formatMoney(amountToPayNow),
                       ),
                     ),

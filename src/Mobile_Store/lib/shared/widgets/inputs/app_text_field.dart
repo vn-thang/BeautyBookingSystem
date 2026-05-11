@@ -52,7 +52,7 @@ class _AppTextFieldState extends State<AppTextField> {
     super.dispose();
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,73 +69,82 @@ class _AppTextFieldState extends State<AppTextField> {
           const SizedBox(height: 8),
         ],
 
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: _isFocused ? AppColors.white : const Color(0xFFF3F4F6),
-            borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
-            border: Border.all(
-              color: _isFocused ? AppColors.primary : Colors.transparent, 
-              width: 1.5,
-            ),
-            boxShadow: _isFocused ? [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.15),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              )
-            ] : [],
+        // Đã xóa AnimatedContainer và dùng trực tiếp TextFormField
+        TextFormField(
+          controller: widget.controller,
+          focusNode: _focusNode,
+          obscureText: widget.isPassword ? _obscurePassword : false,
+          validator: widget.validator,
+          onChanged: widget.onChanged,
+          keyboardType: widget.keyboardType,
+          maxLines: widget.isPassword ? 1 : widget.maxLines,
+          style: AppTextStyles.bodyText.copyWith(
+            fontWeight: FontWeight.w500, 
           ),
-          child: TextFormField(
-            controller: widget.controller,
-            focusNode: _focusNode,
-            obscureText: widget.isPassword ? _obscurePassword : false,
-            validator: widget.validator,
-            onChanged: widget.onChanged,
-            keyboardType: widget.keyboardType,
-            maxLines: widget.isPassword ? 1 : widget.maxLines,
-            style: AppTextStyles.bodyText.copyWith(
-              fontWeight: FontWeight.w500, 
-            ),
-            cursorColor: AppColors.primary, 
+          cursorColor: AppColors.primary, 
+          
+          decoration: InputDecoration(
+            isDense: true,
+            // 1. Cho phép tô màu nền trực tiếp trong TextFormField
+            filled: true,
+            fillColor: _isFocused ? AppColors.white : const Color(0xFFF3F4F6),
             
-            decoration: InputDecoration(
-              isDense: true,
-              border: InputBorder.none, 
-              focusedBorder: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              
-              prefixIcon: Icon(
-                widget.icon, 
-                size: 20, 
-                color: _isFocused ? AppColors.primary : AppColors.textSub 
-              ),
-              
-              hintText: widget.hint,
-              hintStyle: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.textSub.withValues(alpha: 0.6),
-                fontWeight: FontWeight.w400
-              ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              
-              errorStyle: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.error, 
-                height: 0.1 
-              ),
-              
-              suffixIcon: widget.isPassword
-                  ? IconButton(
-                      icon: Icon(
-                        _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        size: 20, 
-                        color: _isFocused ? AppColors.primary : AppColors.textSub,
-                      ),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                    )
-                  : null,
+            // 2. Viền lúc bình thường (chưa gõ)
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+              borderSide: const BorderSide(color: Colors.transparent, width: 1.5),
             ),
+            
+            // 3. Viền lúc ĐANG GÕ (hiện viền màu primary)
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+              borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+            ),
+            
+            // 4. Viền lúc CÓ LỖI (hiện viền màu đỏ)
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+              borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+            ),
+            
+            // 5. Viền lúc CÓ LỖI VÀ ĐANG GÕ
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+              borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+            ),
+            
+            prefixIcon: Icon(
+              widget.icon, 
+              size: 20, 
+              color: _isFocused ? AppColors.primary : AppColors.textSub 
+            ),
+            
+            hintText: widget.hint,
+            hintStyle: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.textSub.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w400
+            ),
+            // Padding bên trong ô nhập, chỉnh rộng ra 1 chút cho đẹp
+            contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            
+            // 🎯 QUAN TRỌNG: Xóa height: 0.1 đi để chữ lỗi rớt thẳng xuống dưới
+            errorStyle: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.error, 
+              fontWeight: FontWeight.w500,
+              height: 1.2, // Tăng khoảng cách dòng
+            ),
+            
+            suffixIcon: widget.isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      size: 20, 
+                      color: _isFocused ? AppColors.primary : AppColors.textSub,
+                    ),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  )
+                : null,
+                errorMaxLines: 3,
           ),
         ),
       ],

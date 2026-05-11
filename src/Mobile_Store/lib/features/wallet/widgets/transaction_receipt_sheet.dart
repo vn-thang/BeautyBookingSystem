@@ -93,7 +93,10 @@ class TransactionReceiptSheet extends StatelessWidget {
 
             _buildReceiptRow('Trạng thái', statusRowText, valueColor: statusColor),
             if (transaction.createdAt != null)
-              _buildReceiptRow('Thời gian', '${transaction.createdAt!.hour.toString().padLeft(2, '0')}:${transaction.createdAt!.minute.toString().padLeft(2, '0')} - ${transaction.createdAt!.day}/${transaction.createdAt!.month}/${transaction.createdAt!.year}'),
+           _buildReceiptRow(
+            'Thời gian', 
+            Formatters.formatDateTime(transaction.createdAt),
+            ),
             _buildReceiptRow('Mã giao dịch', '#${transaction.id}'),
             _buildReceiptRow('Nội dung', cleanDescription),
 

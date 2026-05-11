@@ -19,12 +19,16 @@ class ApiConfig {
       if (_isEmulator) {
         return "http://10.0.2.2:5294/api/";
       } else {
-        return "http://192.168.1.144:5294/api/";
+        return "http://192.168.1.145:5294/api/";
       }
     }
 
     return "http://localhost:5294/api/";
   }
+
+  // static String get baseUrl {
+  //   return "https://doreatha-absolvable-astrid.ngrok-free.dev/api/";
+  // }
 }
 
 class DioClient {
@@ -177,3 +181,9 @@ class DioClient {
     });
   }
 }
+
+/*
+	9704198526191432198
+  	NGUYEN VAN A
+    07/15
+    */

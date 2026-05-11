@@ -13,7 +13,7 @@ class CommissionCard extends StatelessWidget {
   
   const CommissionCard({super.key, required this.comm});
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 0, 
@@ -22,54 +22,73 @@ class CommissionCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppDimens.paddingMedium),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+            // 🎯 CỤM TIÊU ĐỀ: Bấm được toàn dải, bỏ chữ thay bằng Icon >>
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(builder: (context) => const StoreWalletScreen())
+                );
+              },
+              borderRadius: BorderRadius.circular(AppDimens.radiusSmall),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 4.0), // Padding dọc 12 cho dễ bấm
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.pie_chart, color: AppColors.warning, size: 24), 
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      'Thống kê chi tiêu', 
-                      style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.bold)
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Icon(Icons.pie_chart, color: AppColors.warning, size: 24), 
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              'Thống kê chi tiêu', 
+                              style: AppTextStyles.bodyText.copyWith(fontSize: 14, fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    // Chỉ để lại icon mũi tên kép
+                    const Icon(Icons.keyboard_double_arrow_right, color: AppColors.textSub, size: 24),
                   ],
                 ),
-               GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context, 
-                      MaterialPageRoute(builder: (context) => const StoreWalletScreen())
-                    );
-                  },
-                  child: Text(
-                    'Xem tất cả >', 
-                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500)
-                  )
-                ),
-              ],
+              ),
             ),
+            
             const SizedBox(height: AppDimens.paddingLarge),
+            
+            // 🎯 CỤM 3 CỘT: Đã tăng SizedBox width lên 16 để chữ không bị dính vào nhau
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                StatItemWidget(
-                  icon: Icons.monetization_on, 
-                  iconColor: AppColors.warning, 
-                  value: Formatters.formatCurrency(comm.totalCommission), 
-                  label: 'Hoa hồng'
+                Expanded(
+                  child: StatItemWidget(
+                    icon: Icons.monetization_on, 
+                    iconColor: AppColors.warning, 
+                    value: Formatters.formatCurrency(comm.totalCommission), 
+                    label: 'Hoa hồng'
+                  ),
                 ),
-                StatItemWidget(
-                  icon: Icons.phone_android, 
-                  iconColor: Colors.blue, 
-                  value: Formatters.formatCurrency(comm.appUsageFee), 
-                  label: 'Sử dụng app'
+                const SizedBox(width: 12), // Tăng khoảng cách lên 16 cho thoáng
+                Expanded(
+                  child: StatItemWidget(
+                    icon: Icons.phone_android, 
+                    iconColor: Colors.blue, 
+                    value: Formatters.formatCurrency(comm.appUsageFee), 
+                    label: 'Sử dụng app'
+                  ),
                 ),
-                StatItemWidget(
-                  icon: Icons.account_balance, 
-                  iconColor: AppColors.error, 
-                  value: Formatters.formatCurrency(comm.totalWithdrawn), 
-                  label: 'Tổng tiền đã rút'
+                const SizedBox(width: 12), // Tăng khoảng cách lên 16 cho thoáng
+                Expanded(
+                  child: StatItemWidget(
+                    icon: Icons.account_balance, 
+                    iconColor: AppColors.error, 
+                    value: Formatters.formatCurrency(comm.totalWithdrawn), 
+                    label: 'Tổng tiền đã rút'
+                  ),
                 ),
               ],
             ),

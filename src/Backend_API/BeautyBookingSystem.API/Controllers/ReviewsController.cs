@@ -34,14 +34,6 @@ namespace BeautyBookingSystem.API.Controllers
             return Ok(result);
         }
 
-        [HttpPut("{reviewId}/reply")]
-        [Authorize(Roles = "Admin,Staff")]
-        public async Task<IActionResult> Reply(int reviewId, [FromBody] string reply)
-        {
-            await _reviewService.ReplyAsync(reviewId, reply);
-            return Ok(new { message = "Reply review thành công" });
-        }
-
         private int GetCurrentUserId()
         {
             var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);

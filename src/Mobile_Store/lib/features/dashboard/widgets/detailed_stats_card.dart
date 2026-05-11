@@ -107,6 +107,85 @@ class DetailedStatsCard extends StatelessWidget {
     );
   }
 
+// @override
+//   Widget build(BuildContext context) {
+//     return Card(
+//       elevation: 0,
+//       color: AppColors.white,
+//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusMedium)),
+//       child: Padding(
+//         padding: const EdgeInsets.all(AppDimens.paddingMedium),
+//         child: Column(
+//           children: [
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//               children: [
+//                 Expanded(
+//                   child: Row(
+//                     children: [
+//                       const Icon(Icons.bar_chart, color: AppColors.primary, size: 24),
+//                       const SizedBox(width: AppSpacing.sm),
+//                       Flexible(
+//                         child: Text(
+//                           'Thống kê chi tiết', 
+//                           style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
+//                           overflow: TextOverflow.ellipsis, 
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+                
+//                 const SizedBox(width: 8), 
+                
+//                 SizedBox(
+//                   width: 130, 
+//                   child: AppFilterDropdown<String>(
+//                     hint: 'Tất cả',
+//                     value: currentFilter,
+//                     items: const [
+//                       DropdownMenuItem(value: 'today', child: Text('Hôm nay')),
+//                       DropdownMenuItem(value: 'week', child: Text('Tuần này')),
+//                       DropdownMenuItem(value: 'month', child: Text('Tháng này')),
+//                       DropdownMenuItem(value: 'all', child: Text('Tất cả')),
+//                       DropdownMenuItem(value: 'custom', child: Text('Tùy chỉnh')),
+//                     ],
+//                     onChanged: (String? newValue) {
+//                       if (newValue != null) {
+//                         onFilterChanged(newValue);
+//                       }
+//                     },
+//                   ),
+//                 ),
+//               ],
+//             ),
+            
+//             const SizedBox(height: AppSpacing.xl),
+            
+//             Row(
+//               children: [
+//                 _buildDatePicker(context, label: 'Bắt đầu', isStart: true),
+//                 const SizedBox(width: AppSpacing.lg),
+//                 _buildDatePicker(context, label: 'Kết thúc', isStart: false),
+//               ],
+//             ),
+            
+//             const SizedBox(height: AppDimens.paddingLarge),
+            
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.spaceAround,
+//               children: [
+//                 StatItemWidget(icon: Icons.groups, iconColor: AppColors.textSub, value: '${stats.totalCustomers}', label: 'Khách hàng'),
+//                 StatItemWidget(icon: Icons.calendar_month, iconColor: AppColors.primary, value: '${stats.totalBookings}', label: 'Lịch đặt'),
+//                 StatItemWidget(icon: Icons.attach_money, iconColor: AppColors.success, value: Formatters.formatCurrency(stats.totalRevenue), label: 'Doanh thu'),
+//               ],
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
 @override
   Widget build(BuildContext context) {
     return Card(
@@ -116,52 +195,60 @@ class DetailedStatsCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(AppDimens.paddingMedium),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start, // Căn trái toàn bộ cột
           children: [
+            // 🎯 DÒNG 1: TIÊU ĐỀ (Đứng 1 mình để hiển thị đầy đủ 100%)
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                const Icon(Icons.bar_chart, color: AppColors.primary, size: 24),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: Row(
-                    children: [
-                      const Icon(Icons.bar_chart, color: AppColors.primary, size: 24),
-                      const SizedBox(width: AppSpacing.sm),
-                      Flexible(
-                        child: Text(
-                          'Thống kê chi tiết', 
-                          style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis, 
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(width: 8), 
-                
-                SizedBox(
-                  width: 130, 
-                  child: AppFilterDropdown<String>(
-                    hint: 'Tất cả',
-                    value: currentFilter,
-                    items: const [
-                      DropdownMenuItem(value: 'today', child: Text('Hôm nay')),
-                      DropdownMenuItem(value: 'week', child: Text('Tuần này')),
-                      DropdownMenuItem(value: 'month', child: Text('Tháng này')),
-                      DropdownMenuItem(value: 'all', child: Text('Tất cả')),
-                      DropdownMenuItem(value: 'custom', child: Text('Tùy chỉnh')),
-                    ],
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        onFilterChanged(newValue);
-                      }
-                    },
+                  child: Text(
+                    'Thống kê chi tiết', 
+                    style: AppTextStyles.bodyText.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
             ),
             
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.lg), // Khoảng cách giữa tiêu đề và khu vực lọc
             
+            // 🎯 DÒNG 2: DROPDOWN BỘ LỌC (Chuyển xuống đây cho rộng rãi)
+          Row(
+  // Khi đã dùng Expanded, bạn không cần spaceBetween nữa vì nó sẽ tự động đẩy đầy khoảng trống
+  children: [
+    Text(
+      'Thời gian:', 
+      style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.w500, color: AppColors.textMain),
+    ),
+    
+    const SizedBox(width: 16), // Thêm khoảng trống giữa chữ và Dropdown cho đẹp
+    
+    // 🎯 CHÌA KHÓA Ở ĐÂY: Thay SizedBox bằng Expanded
+    Expanded( 
+      child: AppFilterDropdown<String>(
+        hint: 'Tất cả',
+        value: currentFilter,
+        items: const [
+          DropdownMenuItem(value: 'today', child: Text('Hôm nay')),
+          DropdownMenuItem(value: 'week', child: Text('Tuần này')),
+          DropdownMenuItem(value: 'month', child: Text('Tháng này')),
+          DropdownMenuItem(value: 'all', child: Text('Tất cả')),
+          DropdownMenuItem(value: 'custom', child: Text('Tùy chỉnh')),
+        ],
+        onChanged: (String? newValue) {
+          if (newValue != null) {
+            onFilterChanged(newValue);
+          }
+        },
+      ),
+    ),
+  ],
+),
+            
+            const SizedBox(height: AppSpacing.md),
+            
+            // 🎯 DÒNG 3: BỘ CHỌN NGÀY
             Row(
               children: [
                 _buildDatePicker(context, label: 'Bắt đầu', isStart: true),
@@ -172,12 +259,21 @@ class DetailedStatsCard extends StatelessWidget {
             
             const SizedBox(height: AppDimens.paddingLarge),
             
+            // 🎯 DÒNG 4: 3 CỘT THỐNG KÊ (Giữ nguyên cấu trúc chống tràn)
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                StatItemWidget(icon: Icons.groups, iconColor: AppColors.textSub, value: '${stats.totalCustomers}', label: 'Khách hàng'),
-                StatItemWidget(icon: Icons.calendar_month, iconColor: AppColors.primary, value: '${stats.totalBookings}', label: 'Lịch đặt'),
-                StatItemWidget(icon: Icons.attach_money, iconColor: AppColors.success, value: Formatters.formatCurrency(stats.totalRevenue), label: 'Doanh thu'),
+                Expanded(
+                  child: StatItemWidget(icon: Icons.groups, iconColor: AppColors.textSub, value: '${stats.totalCustomers}', label: 'Khách hàng')
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: StatItemWidget(icon: Icons.calendar_month, iconColor: AppColors.primary, value: '${stats.totalBookings}', label: 'Lịch đặt')
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: StatItemWidget(icon: Icons.attach_money, iconColor: AppColors.success, value: Formatters.formatCurrency(stats.totalRevenue), label: 'Doanh thu')
+                ),
               ],
             ),
           ],

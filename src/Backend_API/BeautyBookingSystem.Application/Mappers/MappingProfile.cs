@@ -25,6 +25,7 @@ using BeautyBookingSystem.Application.DTOs.MyStore;
 using BeautyBookingSystem.Application.DTOs.StoreService;
 using BeautyBookingSystem.Application.DTOs.StoreServiceGroup;
 using BeautyBookingSystem.Application.DTOs.StoreStaff;
+using BeautyBookingSystem.Domain.Enums;
 
 namespace BeautyBookingSystem.Application.Mappers
 {
@@ -78,7 +79,12 @@ namespace BeautyBookingSystem.Application.Mappers
     .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(src => 
         src.CustomerId.HasValue && src.Customer != null
             ? src.Customer.Phone 
-            : src.WalkInCustomerPhone ?? string.Empty));
+            : src.WalkInCustomerPhone ?? string.Empty))
+             .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src =>
+        src.CustomerId.HasValue && src.Customer != null
+            ? src.Customer.AvatarUrl   
+            : null                   
+    ));
 
             CreateMap<Booking, StoreBookingDetailDto>()
                 .IncludeBase<Booking, StoreBookingListDto>()
@@ -88,7 +94,13 @@ namespace BeautyBookingSystem.Application.Mappers
                 ? src.Payments.First().Id
                 : (int?)null
                 ))
-                .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.FinalPrice - src.DepositAmount));
+                // .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => src.FinalPrice - src.DepositAmount));
+
+                .ForMember(dest => dest.RemainingAmount, opt => opt.MapFrom(src => 
+                src.FinalPrice - (src.Payments != null 
+                ? src.Payments.Where(p => p.Status == PaymentStatus.Success).Sum(p => p.Amount) 
+                : 0)
+    ));
                 CreateMap<BookingDetail, BookingServiceItemDto>()
                 .ForMember(dest => dest.BookingDetailId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.ServiceName, opt => opt.MapFrom(src => src.Service.Name))

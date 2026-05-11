@@ -8,37 +8,59 @@ class WithdrawBalanceCard extends StatelessWidget {
   const WithdrawBalanceCard({super.key, required this.availableBalance});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+Widget build(BuildContext context) {
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.primary.withValues(alpha: 0.3), 
+          blurRadius: 10, 
+          offset: const Offset(0, 5)
+        )
+      ],
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start, // 🎯 Căn lề trái toàn bộ cho chuyên nghiệp
+      children: [
+        const Text(
+          'SỐ DƯ KHẢ DỤNG', 
+          style: TextStyle(
+            color: Colors.white70, 
+            fontSize: 13, 
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          )
         ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5))
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('SỐ DƯ KHẢ DỤNG', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
-              SizedBox(height: 4),
-              Text('Có thể rút ngay', style: TextStyle(color: Colors.white54, fontSize: 11)),
-            ],
+        const SizedBox(height: 4),
+        const Text(
+          'Có thể rút ngay về tài khoản ngân hàng', 
+          style: TextStyle(
+            color: Colors.white54, 
+            fontSize: 11
+          )
+        ),
+        
+        const SizedBox(height: 16), // 🎯 Khoảng cách giữa tiêu đề và số tiền
+        
+        // 🎯 Số tiền nằm riêng một hàng, tha hồ hiển thị không lo bị cắt
+        Text(
+          Formatters.formatCurrency(availableBalance),
+          style: const TextStyle(
+            color: Colors.white, 
+            fontSize: 28, // Tăng nhẹ size chữ để nổi bật số tiền
+            fontWeight: FontWeight.bold,
           ),
-          Text(
-            Formatters.formatCurrency(availableBalance),
-            style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 }

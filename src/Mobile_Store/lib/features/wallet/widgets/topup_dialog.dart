@@ -15,6 +15,7 @@ class WalletDialogs {
 
     return showDialog<double>(
       context: context,
+      barrierDismissible: true, 
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
@@ -25,6 +26,8 @@ class WalletDialogs {
                   backgroundColor: isSelected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.white,
                   side: BorderSide(color: isSelected ? AppColors.primary : AppColors.surface),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
+                
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
                 onPressed: () {
                   setState(() {
@@ -37,6 +40,7 @@ class WalletDialogs {
                   style: AppTextStyles.bodyText.copyWith(
                     color: isSelected ? AppColors.primary : AppColors.textMain,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    fontSize: 13, 
                   ),
                 ),
               );
@@ -44,6 +48,8 @@ class WalletDialogs {
 
             return AlertDialog(
               backgroundColor: AppColors.white,
+            
+              scrollable: true, 
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusLarge)),
               title: Text('Nạp tiền vào ví', style: AppTextStyles.heading1.copyWith(fontSize: 20)),
               content: Column(
@@ -70,7 +76,10 @@ class WalletDialogs {
                     icon: Icons.attach_money,
                     keyboardType: TextInputType.number,
                     onChanged: (val) {
-                      setState(() => selectedAmount = null); 
+                   
+                      if (selectedAmount != null) {
+                        setState(() => selectedAmount = null); 
+                      }
                     },
                   ),
                 ],

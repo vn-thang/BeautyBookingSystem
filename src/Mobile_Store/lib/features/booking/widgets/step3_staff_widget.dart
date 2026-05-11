@@ -120,7 +120,7 @@ class Step3StaffWidget extends StatelessWidget {
                         ? Image.network(
                             avatarUrl, 
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _buildFallbackAvatar(name),
+                            errorBuilder: (_, _, _) => _buildFallbackAvatar(name),
                           )
                         : _buildFallbackAvatar(name),
               ),

@@ -18,6 +18,8 @@ namespace BeautyBookingSystem.Domain.Entities
         public decimal Amount { get; set; }
         public PaymentStatus Status { get; set; }
         public string? TransactionId { get; set; }
+        public string? VnpTransactionNo { get; set; } 
+        public string? VnpPayDate { get; set; }
         public DateTime? PaidAt { get; set; }
     }
 }
