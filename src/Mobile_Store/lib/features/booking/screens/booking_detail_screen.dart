@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_store/core/theme/app_text_styles.dart';
 import 'package:mobile_store/features/booking/screens/booking_bill_preview_screen.dart';
 import 'package:mobile_store/features/payment/services/store_payment_api.dart';
+import 'package:mobile_store/shared/widgets/buttons/app_buttons.dart';
 import '../../../shared/widgets/feedback/snackbar_helper.dart';
 import '../../../shared/widgets/inputs/app_header.dart';
 import '../../../core/theme/app_colors.dart';
@@ -117,15 +119,103 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
       SnackBarHelper.showError(context, e.toString());
     }
   }
+void _showCancelDialog(StoreBookingDetailModel detail) {
+  final hasDeposit = detail.hasDeposit;
+  final hasExtraPaid = detail.hasExtraPaid;
 
-  void _showCancelDialog() {
+  if (hasDeposit || hasExtraPaid) {
     showDialog(
       context: context,
-      builder: (context) => CancelBookingDialog(
-        onConfirmCancel: (reason) => _updateStatus('Cancelled', cancelReason: reason),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: AppColors.error,
+                  size: 32,
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Cảnh báo hủy đơn',
+                style: AppTextStyles.heading1.copyWith(
+                  fontSize: 18,
+                  color: AppColors.textMain,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: AppSpacing.sm),
+
+              Text(
+                hasDeposit && hasExtraPaid
+                    ? 'Đơn này đã được đặt cọc và thanh toán một phần.\nBạn vẫn muốn hủy?'
+                    : hasDeposit
+                        ? 'Đơn này đã có tiền cọc.\nBạn vẫn muốn hủy?'
+                        : 'Đơn này đã được thanh toán.\nBạn vẫn muốn hủy?',
+                style: AppTextStyles.bodyText.copyWith(
+                  color: AppColors.textSub,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppOutlineButton(
+                      text: 'Hủy',
+                      color: AppColors.textSub,
+                      onTap: () => Navigator.pop(ctx),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: AppPrimaryButton(
+                      text: 'Tiếp tục',
+                      color: AppColors.error,
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _openCancelReasonDialog();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
+  } else {
+    _openCancelReasonDialog();
   }
+}
+
+void _openCancelReasonDialog() {
+  showDialog(
+    context: context,
+    builder: (context) => CancelBookingDialog(
+      onConfirmCancel: (reason) =>
+          _updateStatus('Cancelled', cancelReason: reason),
+    ),
+  );
+}
   void _showNoShowDialog() {
     showDialog(
       context: context,
@@ -282,7 +372,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                   ),
                   BookingDetailBottomActions(
                     detail: detail,
-                    onCancelPressed: _showCancelDialog,
+                   onCancelPressed: () => _showCancelDialog(detail),
                     onAssignStaffPressed: () => _openAssignStaffSheet(detail),
                     onConfirmPressed: () => _confirmBookingDirectly(detail.id), 
                     onCompletePressed: () => _showCompleteAndPayDialog(detail),

@@ -104,18 +104,14 @@ class WalletTransactionHistory extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
 
-          // 🎯 Đã bỏ SingleChildScrollView ngang đi vì không cần thiết nữa
           Row(
               children: [
-                // 🎯 1. Bọc Expanded cho Dropdown Tháng
                 Expanded(
                   child: AppFilterDropdown<int?>(
                     hint: 'Tháng',
                     value: selectedMonth, 
                     
-                    // 🎯 GIAO DIỆN HIỂN THỊ TRÊN NÚT (CĂN CHỈNH ĐẸP MẮT)
                     selectedItemBuilder: (BuildContext context) {
-                      // Tạo danh sách nhãn giống hệt với items bên dưới
                       final labels = ['Tháng', ...List.generate(12, (index) => 'Tháng ${index + 1}')];
                       return labels.map((label) {
                         return Container(
@@ -132,7 +128,6 @@ class WalletTransactionHistory extends StatelessWidget {
                       }).toList();
                     },
 
-                    // 🎯 GIAO DIỆN KHI MENU XỔ XUỐNG
                     items: [
                       DropdownMenuItem<int?>(
                         value: null, 
@@ -149,17 +144,14 @@ class WalletTransactionHistory extends StatelessWidget {
                   ),
                 ),
                 
-                const SizedBox(width: AppSpacing.sm), // Giữ lại khoảng cách giữa các khối
+                const SizedBox(width: AppSpacing.sm), 
 
-                // 🎯 2. Bọc Expanded cho Dropdown Năm
                 Expanded(
                   child: AppFilterDropdown<int?>(
                     hint: 'Năm',
                     value: selectedYear, 
                     
-                    // 🎯 GIAO DIỆN HIỂN THỊ TRÊN NÚT (CĂN CHỈNH ĐẸP MẮT)
                     selectedItemBuilder: (BuildContext context) {
-                      // Tạo danh sách nhãn năm
                       final labels = ['Năm', ..._generateYears().map((y) => 'Năm $y')];
                       return labels.map((label) {
                         return Container(
@@ -176,7 +168,6 @@ class WalletTransactionHistory extends StatelessWidget {
                       }).toList();
                     },
 
-                    // 🎯 GIAO DIỆN KHI MENU XỔ XUỐNG
                     items: [
                       DropdownMenuItem<int?>(
                         value: null, 
@@ -200,8 +191,8 @@ Expanded(
   child: AppFilterDropdown<int?>(
     hint: 'Loại GD',
     value: selectedType,
-    alignment: Alignment.centerRight, // 🎯 Neo vào mép phải
-    menuWidth: 220, // 🎯 ÉP MENU RỘNG 220px (Nó sẽ tự tràn sang trái vì neo phải)
+    alignment: Alignment.centerRight, 
+    menuWidth: 220, 
 
     selectedItemBuilder: (BuildContext context) {
       return _transactionTypes.map((type) {
@@ -223,7 +214,6 @@ Expanded(
           type['label'] as String,
           style: AppTextStyles.bodyText,
           maxLines: 1,
-          // 🎯 Không cần SizedBox ở đây nữa, menuWidth đã lo rồi
         ),
       );
     }).toList(),
@@ -251,11 +241,9 @@ Expanded(
                 final String normStatus = tx.status.toLowerCase();
                 final bool isPending = normStatus == 'pending' || normStatus == '0';
                 final bool isFailed = normStatus == 'failed' || normStatus == 'cancelled' || normStatus == '2' || normStatus == '3';
-                
                 final isAdd = tx.isAddition;
                 final sign = isAdd ? '+' : '-'; 
 
-                // 1. MÀU CỦA TRẠNG THÁI (Dành cho Icon bên trái)
                 Color statusColor;
                 IconData txIcon;
                 
@@ -270,7 +258,6 @@ Expanded(
                   txIcon = isAdd ? Icons.arrow_downward : Icons.arrow_upward; 
                 }
 
-                // 2. MÀU CỦA SỐ TIỀN (+ Xanh, - Đỏ)
                 Color amountColor = isAdd ? AppColors.success : AppColors.error;
 
                 String cleanDescription = tx.description.replaceAll(RegExp(r'\[Biên lai:.*?\]'), '').trim();
@@ -291,24 +278,21 @@ Expanded(
   subtitle: Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const SizedBox(height: 4), // Khoảng cách giữa title và subtitle
-      
-      // 1. Hiển thị ngày tháng chuẩn giờ VN
-      if (tx.createdAt != null)
+      const SizedBox(height: 4), 
+            if (tx.createdAt != null)
         Text(
           Formatters.formatDateTime(tx.createdAt), 
           style: AppTextStyles.labelSmall,
         ),
       
-      const SizedBox(height: 2), // Khoảng cách nhỏ để dễ nhìn
+      const SizedBox(height: 2), 
       
-      // 2. Đưa số dư xuống dòng dưới
       Text(
         'Số dư: ${Formatters.formatCurrency(tx.balanceAfter)}',
         style: AppTextStyles.labelSmall,
       ),
       
-      const SizedBox(height: 4), // Khoảng cách trước badge
+      const SizedBox(height: 4), 
       _buildStatusBadge(tx.status),
     ],
   ),

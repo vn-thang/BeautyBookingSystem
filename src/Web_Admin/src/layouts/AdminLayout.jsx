@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Layout, Menu, message, Dropdown, Avatar, Button, Tag } from 'antd'; 
+import { Layout, Menu, message, Dropdown, Avatar, Button } from 'antd'; 
 import { 
   UserOutlined, 
   KeyOutlined, 
   MenuFoldOutlined, 
   MenuUnfoldOutlined,
-  LogoutOutlined,
-  PhoneOutlined
+  LogoutOutlined
 } from '@ant-design/icons'; 
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
@@ -49,13 +48,13 @@ const AdminLayout = () => {
     { type: 'divider', style: { margin: 0, borderColor: 'rgba(255,255,255,0.1)' } }, 
     { 
       key: 'change_pwd', 
-      icon: <KeyOutlined style={{ fontSize: '15px' }} className="menu-item-icon" />, 
+      icon: <KeyOutlined style={{ fontSize: '14px' }} className="menu-item-icon" />, 
       label: <span style={{ fontWeight: 600, fontSize: '14px' }}>Đổi mật khẩu</span>,
       className: 'dark-hover-menu-item'
     },
     { 
       key: 'logout', 
-      icon: <LogoutOutlined style={{ fontSize: '15px' }} className="menu-item-icon" />, 
+      icon: <LogoutOutlined style={{ fontSize: '14px' }} className="menu-item-icon" />, 
       label: <span style={{ fontWeight: 600, fontSize: '14px' }}>Đăng xuất</span>, 
       className: 'dark-hover-menu-item dark-hover-danger'
     }
@@ -78,6 +77,17 @@ const AdminLayout = () => {
     <Layout style={{ minHeight: '100vh', background: '#F4F7FE' }}>
       
       <style>{`
+        /* ĐỒNG BỘ FONT 14PX VÀ MÀU TRẮNG HỒNG NHẠT CHO MENU */
+        .ant-menu-dark .ant-menu-item, 
+        .ant-menu-dark .ant-menu-submenu-title {
+          font-size: 14px !important;
+          color: #FDF2F8 !important; 
+        }
+
+        .ant-menu-dark .ant-menu-item-selected {
+          color: #ffffff !important;
+        }
+
         /* Ẩn background trắng mặc định của item disable (vùng info) */
         .ant-dropdown-menu-item-disabled {
           background-color: transparent !important;
@@ -89,7 +99,12 @@ const AdminLayout = () => {
           border-radius: 8px !important;
           margin-top: 4px !important;
           transition: all 0.2s ease;
-          color: #E2E8F0 !important; /* Chữ mặc định màu xám sáng */
+          color: #f8e5ef !important; /* Trắng hồng nhạt */
+          font-size: 14px !important;
+        }
+        
+        .dark-hover-menu-item span {
+          font-size: 14px !important;
         }
         
         .dark-hover-menu-item .menu-item-icon {
@@ -99,7 +114,7 @@ const AdminLayout = () => {
         /* Hover đổi mật khẩu -> Nền xanh, chữ trắng */
         .dark-hover-menu-item:not(.dark-hover-danger):hover {
           background-color: #4318FF !important; 
-          color: #ffffff !important;           
+          color: #ffffff !important;          
         }
         .dark-hover-menu-item:not(.dark-hover-danger):hover .menu-item-icon {
           color: #ffffff !important;
@@ -117,7 +132,7 @@ const AdminLayout = () => {
         /* Hover đăng xuất -> Nền đỏ rực, chữ trắng */
         .dark-hover-danger:hover {
           background-color: #EF4444 !important; 
-          color: #ffffff !important;           
+          color: #ffffff !important;          
         }
         .dark-hover-danger:hover .menu-item-icon {
           color: #ffffff !important;
@@ -149,9 +164,9 @@ const AdminLayout = () => {
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center', 
-          color: '#ffffff', 
+          color: '#edbed8', /* Trắng hồng nhạt */
           fontWeight: 900, 
-          fontSize: collapsed ? '20px' : '22px',
+          fontSize: collapsed ? '20px' : '22px', /* Logo giữ size to để đẹp */
           letterSpacing: '1px',
           borderBottom: '1px solid rgba(255,255,255,0.06)'
         }}>
@@ -198,9 +213,9 @@ const AdminLayout = () => {
             {!collapsed && (
               <div style={{ marginLeft: '14px', flex: 1, overflow: 'hidden' }}>
                 <div style={{ 
-                  color: '#F8FAFC', 
+                  color: '#FDF2F8', /* Trắng hồng nhạt */
                   fontWeight: 600, 
-                  fontSize: '15px', 
+                  fontSize: '14px', /* Đồng bộ font 14px */
                   whiteSpace: 'nowrap', 
                   textOverflow: 'ellipsis', 
                   overflow: 'hidden' 
@@ -232,7 +247,8 @@ const AdminLayout = () => {
             border: 'none', 
             background: 'transparent', 
             padding: '0 8px',
-            marginBottom: '24px' 
+            marginBottom: '24px',
+            fontSize: '14px' /* Ép size 14px */
           }} 
         />
       </Sider>

@@ -14,7 +14,8 @@ const STATUS_VI = {
     Completed: 'Hoàn thành',
     Pending: 'Chờ duyệt',
     Cancelled: 'Đã hủy',
-    Confirmed: 'Đã xác nhận'
+    Confirmed: 'Đã xác nhận',
+     DepositPaid: 'Đã cọc'
 };
 
 const renderCustomizedLabel = ({ x, y, cx, percent }) => {

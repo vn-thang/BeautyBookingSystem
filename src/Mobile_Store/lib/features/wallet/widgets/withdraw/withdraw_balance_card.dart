@@ -28,7 +28,7 @@ Widget build(BuildContext context) {
     ),
     child: Column(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start, // 🎯 Căn lề trái toàn bộ cho chuyên nghiệp
+      crossAxisAlignment: CrossAxisAlignment.start, 
       children: [
         const Text(
           'SỐ DƯ KHẢ DỤNG', 
@@ -48,14 +48,13 @@ Widget build(BuildContext context) {
           )
         ),
         
-        const SizedBox(height: 16), // 🎯 Khoảng cách giữa tiêu đề và số tiền
+        const SizedBox(height: 16), 
         
-        // 🎯 Số tiền nằm riêng một hàng, tha hồ hiển thị không lo bị cắt
         Text(
           Formatters.formatCurrency(availableBalance),
           style: const TextStyle(
             color: Colors.white, 
-            fontSize: 28, // Tăng nhẹ size chữ để nổi bật số tiền
+            fontSize: 28, 
             fontWeight: FontWeight.bold,
           ),
         ),

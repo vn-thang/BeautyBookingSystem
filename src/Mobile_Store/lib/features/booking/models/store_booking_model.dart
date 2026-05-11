@@ -62,6 +62,21 @@ class StoreBookingDetailModel extends StoreBookingListModel {
     this.paymentId
   });
 
+  double get totalPaid => finalPrice - remainingAmount;
+
+  double get extraPaid =>
+      (totalPaid - depositAmount).clamp(0, double.infinity);
+
+  bool get hasDeposit => depositAmount > 0;
+
+  bool get hasExtraPaid => extraPaid > 0;
+
+  bool get hasAnyPayment => totalPaid > 0;
+
+  bool get isFullyPaid => remainingAmount <= 0;
+
+  bool get shouldWarnBeforeCancel => hasDeposit || hasExtraPaid;
+
   factory StoreBookingDetailModel.fromJson(Map<String, dynamic> json) {
     var servicesList = json['services'] as List? ?? [];
     return StoreBookingDetailModel(

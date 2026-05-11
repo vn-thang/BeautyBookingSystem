@@ -194,7 +194,7 @@ bool isSaved = await _unitOfWork.SaveChangesAsync() > 0;
         var store = await _unitOfWork.StoreRepository.GetByIdAsync(request.StoreId);
         if (store != null)
         {
-            _ = _notificationService.CreateAndSendNotificationAsync(
+            await _notificationService.CreateAndSendNotificationAsync(
                 store.OwnerId,
                 "✅ Rút tiền thành công",
                 $"Yêu cầu rút {request.Amount:N0}đ của bạn đã được duyệt thành công. Vui lòng kiểm tra tài khoản ngân hàng của bạn nhé.",
@@ -253,7 +253,7 @@ public async Task<bool> RejectWithdrawalAsync(int requestId, RejectWithdrawalDto
 
     if (isSaved && store != null)
     {
-        _ = _notificationService.CreateAndSendNotificationAsync(
+        await _notificationService.CreateAndSendNotificationAsync(
             store.OwnerId,
             "❌ Lệnh rút tiền bị từ chối",
             $"Yêu cầu rút {request.Amount:N0}đ của bạn đã bị từ chối. Lý do: {requestDto.AdminNote}. Số tiền đã được hoàn lại vào ví cửa hàng.",

@@ -4,6 +4,7 @@ namespace BeautyBookingSystem.Application.DTOs.StoreWallet
     {
         public decimal CurrentBalance { get; set; }
         public decimal MinimumBalance { get; set; }
+        public decimal WithdrawableBalance { get; set; }
         public bool IsOpen { get; set; }
         public decimal TotalTopUpThisMonth { get; set; }
         public decimal TotalFeeThisMonth { get; set; }

@@ -53,7 +53,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
-        error: e.toString(),
+       error: _mapError(e),
       ));
     }
   }
@@ -113,8 +113,29 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     } catch (e) {
       emit(state.copyWith(
         isSending: false,
-        error: e.toString(),
+       error: _mapError(e),
       ));
     }
   }
+}
+String _mapError(Object e) {
+  final error = e.toString().toLowerCase();
+
+  if (error.contains('503') || error.contains('unavailable')) {
+    return 'Hệ thống AI đang bận, vui lòng thử lại sau.';
+  }
+
+  if (error.contains('429') || error.contains('quota')) {
+    return 'Hệ thống đang quá tải, bạn thử lại sau ít phút nhé.';
+  }
+
+  if (error.contains('500')) {
+    return 'Hệ thống đang gặp sự cố, vui lòng thử lại sau.';
+  }
+
+  if (error.contains('timeout')) {
+    return 'Kết nối chậm, vui lòng thử lại.';
+  }
+
+  return 'Đã có lỗi xảy ra, vui lòng thử lại sau.';
 }

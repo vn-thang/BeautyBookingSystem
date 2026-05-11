@@ -19,7 +19,7 @@ const PendingActions = ({ data }) => {
         },
         {
             title: 'Yêu cầu rút tiền',
-            count: data?.pendingPayouts || 0,
+           count: data?.pendingPayouts || 0,
             icon: <DollarOutlined />,
             color: '#52c41a', bg: '#f6ffed',
             path: '/finance/withdrawals'

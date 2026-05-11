@@ -9,5 +9,6 @@ public class VnPayCallbackResult
         public string OrderId { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
         public string? TransactionId { get; set; }
+        public string? PayDate { get; set; }
     }
 }

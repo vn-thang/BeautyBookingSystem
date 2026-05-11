@@ -131,8 +131,10 @@ namespace BeautyBookingSystem.Application.Services
     pendingActions.PendingStores = await _unitOfWork.StoreRepository.GetQueryable()
         .CountAsync(s => s.ApprovalStatus == ApprovalStatus.Pending);
         
-    pendingActions.PendingPayouts = 0; // TODO
-    pendingActions.ReportedReviews = 0; // TODO
+   pendingActions.PendingPayouts = await _unitOfWork.WithdrawalRequestRepository
+    .GetQueryable()
+    .CountAsync(x => x.Status == WithdrawalStatus.Pending);
+    pendingActions.ReportedReviews = 0; 
 
     result.PendingActions = pendingActions;
 

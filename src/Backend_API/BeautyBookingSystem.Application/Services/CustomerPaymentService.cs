@@ -111,7 +111,9 @@ namespace BeautyBookingSystem.Application.Services
     {
         payment.Status = PaymentStatus.Success;
         payment.PaidAt = DateTime.UtcNow;
-        payment.TransactionId = vnPayResult.TransactionId; 
+       payment.TransactionId = vnPayResult.OrderId;      
+        payment.VnpTransactionNo = vnPayResult.TransactionId; 
+        payment.VnpPayDate = vnPayResult.PayDate;
         _unitOfWork.PaymentRepository.Update(payment);
 
         var duplicatePendingPayments = booking.Payments
@@ -210,66 +212,66 @@ namespace BeautyBookingSystem.Application.Services
 }
 
 
-    public async Task<bool> RefundPaymentAsync(int paymentId, int storeId, string cancelBy = "System")
+   public async Task<bool> RefundPaymentAsync(int paymentId, int storeId, string cancelBy = "System")
+{
+    var payment = await _unitOfWork.PaymentRepository.GetQueryable()
+        .Include(p => p.Booking)
+        .FirstOrDefaultAsync(p => p.Id == paymentId && p.Booking.StoreId == storeId);
+
+    if (payment == null) throw new NotFoundException("Không tìm thấy giao dịch này.");
+    if (payment.Status != PaymentStatus.Success) throw new Exception("Giao dịch chưa thành công, không thể hoàn tiền.");
+
+    if (string.IsNullOrEmpty(payment.VnpPayDate) || string.IsNullOrEmpty(payment.VnpTransactionNo))
+        throw new Exception("Thiếu thông tin giao dịch gốc từ VNPay (VnpPayDate hoặc VnpTransactionNo). Không thể tự động hoàn tiền.");
+
+    var refundResult = await _vnPayService.RefundAsync(
+        vnp_TxnRef: $"PAY_{payment.Id}",         
+        vnp_TransactionDate: payment.VnpPayDate,  
+        amount: payment.Amount,
+        createBy: cancelBy, 
+        vnp_TransactionNo: payment.VnpTransactionNo 
+    );
+
+    if (!refundResult.IsSuccess)
+        throw new Exception($"VNPay từ chối hoàn tiền: Code: {refundResult.ResponseCode} - {refundResult.Message}");
+
+    payment.Status = PaymentStatus.Refunded;
+    _unitOfWork.PaymentRepository.Update(payment);
+
+    var store = await _unitOfWork.StoreRepository.GetByIdAsync(payment.Booking.StoreId);
+    if (store != null)
     {
-        var payment = await _unitOfWork.PaymentRepository.GetQueryable()
-            .Include(p => p.Booking)
-            .FirstOrDefaultAsync(p => p.Id == paymentId && p.Booking.StoreId == storeId);
-
-        if (payment == null) throw new NotFoundException("Không tìm thấy giao dịch này.");
-        if (payment.Status != PaymentStatus.Success) throw new Exception("Giao dịch chưa thành công, không thể hoàn tiền.");
-
-        if (string.IsNullOrEmpty(payment.VnpPayDate) || string.IsNullOrEmpty(payment.TransactionId))
-            throw new Exception("Thiếu thông tin giao dịch gốc từ VNPay. Không thể tự động hoàn tiền.");
-
-        var refundResult = await _vnPayService.RefundAsync(
-            vnp_TxnRef: payment.TransactionId,
-            vnp_TransactionDate: payment.VnpPayDate,
-            amount: payment.Amount,
-            createBy: cancelBy, 
-            vnp_TransactionNo: payment.VnpTransactionNo ?? ""
-        );
-
-        if (!refundResult.IsSuccess)
-            throw new Exception($"VNPay từ chối hoàn tiền: {refundResult.Message}");
-
-        payment.Status = PaymentStatus.Refunded;
-        _unitOfWork.PaymentRepository.Update(payment);
-
-        var store = await _unitOfWork.StoreRepository.GetByIdAsync(payment.Booking.StoreId);
-        if (store != null)
+        decimal balanceBefore = store.WalletBalance;
+        store.WalletBalance -= payment.Amount;
+        _unitOfWork.StoreRepository.Update(store);
+        
+        var walletTx = new WalletTransaction
         {
-            decimal balanceBefore = store.WalletBalance;
-            store.WalletBalance -= payment.Amount;
-            _unitOfWork.StoreRepository.Update(store);
-            
-            var walletTx = new WalletTransaction
-            {
-                StoreId = store.Id,
-                Type = TransactionType.Withdrawal, 
-                Amount = payment.Amount,
-                BalanceBefore = balanceBefore,
-                BalanceAfter = store.WalletBalance,
-                Status = TransactionStatus.Completed,
-                Description = $"Hệ thống trừ tiền do hoàn thanh toán đơn #{payment.BookingId}",
-                CreatedAt = DateTime.UtcNow
-            };
-            await _unitOfWork.WalletTransactionRepository.AddAsync(walletTx);
-        }
-
-        var result = await _unitOfWork.SaveChangesAsync() > 0;
-
-        if (result && payment.Booking.CustomerId.HasValue)
-        {
-            await _notificationService.CreateAndSendNotificationAsync(
-                payment.Booking.CustomerId.Value,
-                "🔄 Thông báo hoàn tiền",
-                $"Số tiền {payment.Amount:N0}đ của lịch hẹn #{payment.BookingId} đã được hoàn lại qua VNPay.",
-                NotificationType.SystemAlert
-            );
-        }
-
-        return result;
+            StoreId = store.Id,
+            Type = TransactionType.ClawbackDeposit, 
+            Amount = payment.Amount,
+            BalanceBefore = balanceBefore,
+            BalanceAfter = store.WalletBalance,
+            Status = TransactionStatus.Completed,
+            Description = $"Hệ thống trừ tiền do hoàn thanh toán đơn #{payment.BookingId}",
+            CreatedAt = DateTime.UtcNow
+        };
+        await _unitOfWork.WalletTransactionRepository.AddAsync(walletTx);
     }
+
+    var result = await _unitOfWork.SaveChangesAsync() > 0;
+
+    if (result && payment.Booking.CustomerId.HasValue)
+    {
+        await _notificationService.CreateAndSendNotificationAsync(
+            payment.Booking.CustomerId.Value,
+            "🔄 Thông báo hoàn tiền",
+            $"Số tiền {payment.Amount:N0}đ của lịch hẹn #{payment.BookingId} đã được hoàn lại qua VNPay.",
+            NotificationType.SystemAlert
+        );
+    }
+
+    return result;
+}
     }
 }

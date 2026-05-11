@@ -41,10 +41,11 @@ namespace BeautyBookingSystem.Application.Services
 
             var recent = await _sessionRepository.GetRecentMessagesAsync(
                 session.Id,
-                take: 5,
+                take: 3,
                 cancellationToken: cancellationToken);
 
-            var memory = BuildMemory(recent);
+            // var memory = BuildMemory(recent);
+             var memory = BuildMemoryOptimized(recent);
 
             var context = await _knowledgeProvider.BuildContextAsync(
                 userId,
@@ -52,7 +53,7 @@ namespace BeautyBookingSystem.Application.Services
                 request.UserLat,
                 request.UserLng,
                 cancellationToken);
-
+             context = TrimTo(context, 1500);
             if (context.Contains(ContextTooLargeMarker, StringComparison.Ordinal))
             {
                 var reply = "Cuộc trò chuyện đã dài rồi. Bạn hãy bấm **Chat mới** để mình hỗ trợ tiếp chính xác hơn nhé.";
@@ -69,6 +70,23 @@ namespace BeautyBookingSystem.Application.Services
                 {
                     SessionKey = session.SessionKey,
                     Reply = reply
+                };
+            }
+
+             if (IsDirectAnswer(context))
+            {
+                await _sessionRepository.AddMessageAsync(
+                    session.Id,
+                    ChatMessageRole.Assistant,
+                    context,
+                    cancellationToken: cancellationToken);
+
+                await _sessionRepository.SaveChangesAsync(cancellationToken);
+
+                return new ChatResponseDto
+                {
+                    SessionKey = session.SessionKey,
+                    Reply = context
                 };
             }
 
@@ -125,6 +143,23 @@ namespace BeautyBookingSystem.Application.Services
             }
 
             return TrimTo(sb.ToString(), 1200);
+        }
+
+        private static string BuildMemoryOptimized(IReadOnlyList<BeautyBookingSystem.Domain.Entities.ChatMessage> messages)
+        {
+            var lastUser = messages.LastOrDefault(x => x.Role == ChatMessageRole.User)?.Content;
+
+            if (string.IsNullOrWhiteSpace(lastUser))
+                return string.Empty;
+
+            return $"Người dùng đang cần: {lastUser}";
+        }
+
+        private static bool IsDirectAnswer(string context)
+        {
+            if (string.IsNullOrWhiteSpace(context))
+                return false;
+            return context.StartsWith("1.") || context.StartsWith("- ");
         }
 
         private static string TrimTo(string? value, int maxChars)

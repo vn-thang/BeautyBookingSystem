@@ -38,7 +38,6 @@ class WalletBalanceCard extends StatelessWidget {
         children: [
           Text('SỐ DƯ HIỆN TẠI', style: AppTextStyles.labelSmall.copyWith(color: AppColors.white.withValues(alpha: 0.8), fontWeight: FontWeight.w600)),
           const SizedBox(height: AppSpacing.sm),
-          // 🎯 Đã thêm FittedBox để thu nhỏ font nếu số dư tỷ phú
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
@@ -54,11 +53,10 @@ class WalletBalanceCard extends StatelessWidget {
               color: AppColors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(AppDimens.radiusMedium),
             ),
-            child: Column( // 🎯 Đã đổi từ Row sang Column
+            child: Column( 
               children: [
                 _buildStatItem('Tổng nạp tháng', dashboard.totalTopUpThisMonth, true),
                 
-                // Kẻ ngang phân cách giữa 2 dòng
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                   child: Divider(height: 1, color: AppColors.white.withValues(alpha: 0.3)), 
@@ -78,12 +76,11 @@ class WalletBalanceCard extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.white,
                     foregroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: 4), // 🎯 Giảm padding ngang
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: 4),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
                     elevation: 0,
                   ),
                   icon: const Icon(Icons.add_circle_outline, size: 20),
-                  // 🎯 3. Bọc Flexible và FittedBox cho nhãn của nút
                   label: Flexible(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
@@ -100,13 +97,12 @@ class WalletBalanceCard extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     foregroundColor: AppColors.white,
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: 4), // 🎯 Giảm padding ngang
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: 4),
                     side: const BorderSide(color: AppColors.white),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppDimens.radiusSmall)),
                     elevation: 0, 
                   ),
                   icon: const Icon(Icons.account_balance_wallet_outlined, size: 20),
-                   // 🎯 4. Bọc Flexible và FittedBox cho nhãn của nút
                   label: Flexible(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
@@ -123,20 +119,17 @@ class WalletBalanceCard extends StatelessWidget {
     );
   }
 
-  // 🎯 Cập nhật lại _buildStatItem để hỗ trợ căn lề (nếu cần) và bóp nhỏ text
  Widget _buildStatItem(String title, double amount, bool isTopUp) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Nhãn bên trái
         Text(
           title, 
           style: AppTextStyles.labelSmall.copyWith(color: AppColors.white.withValues(alpha: 0.8), fontSize: 13)
         ),
         
-        const SizedBox(width: 8), // Khoảng đệm an toàn
+        const SizedBox(width: 8),
         
-        // Số tiền bên phải (có FittedBox để tự bóp nếu số quá dài, nhưng giờ có rất nhiều không gian)
         Flexible(
           child: FittedBox(
             fit: BoxFit.scaleDown,
@@ -145,7 +138,7 @@ class WalletBalanceCard extends StatelessWidget {
               '${isTopUp ? '+' : '-'}${Formatters.formatCurrency(amount)}',
               style: AppTextStyles.bodyText.copyWith(
                 color: isTopUp ? const Color(0xFF69F0AE) : const Color.fromARGB(255, 60, 57, 46), 
-                fontSize: 12, // Tăng nhẹ size chữ cho dễ nhìn
+                fontSize: 12, 
                 fontWeight: FontWeight.bold
               ),
             ),
