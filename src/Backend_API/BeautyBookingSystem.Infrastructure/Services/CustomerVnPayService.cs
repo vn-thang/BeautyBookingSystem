@@ -111,7 +111,7 @@ namespace BeautyBookingSystem.Infrastructure.Services
             var vnp_Command = "refund";
             var vnp_TransactionType = "02"; 
             var vnp_Amount = ((long)(amount * 100)).ToString();
-            var vnp_CreateDate = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var vnp_CreateDate = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             var vnp_OrderInfo = $"Hoan tien cho giao dich {vnp_TxnRef}";
 
             var payLib = new VnPayLibrary();

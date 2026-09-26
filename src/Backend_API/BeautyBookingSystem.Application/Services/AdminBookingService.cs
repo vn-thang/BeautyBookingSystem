@@ -53,11 +53,16 @@ namespace BeautyBookingSystem.Application.Services
             }
             if (request.FromDate.HasValue)
             {
-                query = query.Where(b => b.CreatedAt >= request.FromDate.Value);
+                var fromDate = DateTime.SpecifyKind(
+                    request.FromDate.Value,
+                    DateTimeKind.Utc);
+                query = query.Where(b => b.CreatedAt >= fromDate);
             }
             if (request.ToDate.HasValue)
             {
-                var toDate = request.ToDate.Value.Date.AddDays(1).AddTicks(-1); 
+                var toDate = DateTime.SpecifyKind(
+                    request.ToDate.Value.Date.AddDays(1).AddTicks(-1),
+                    DateTimeKind.Utc);
                 query = query.Where(b => b.CreatedAt <= toDate);
             }
 

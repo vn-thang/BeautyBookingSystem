@@ -162,11 +162,10 @@ namespace BeautyBookingSystem.Application.Services
                             b.Status != Domain.Enums.BookingDetailStatus.Cancelled)
                 .ToListAsync();
 
-            var overlappingBookings = activeBookings.Where(b => 
+            var overlappingBookings = activeBookings.Where(b =>
             {
-                DateTime appointmentDate = DateTime.Today; 
-                DateTime bookingStartDateTime = appointmentDate.Date.Add(b.StartTime);
-                DateTime bookingEndDateTime = appointmentDate.Date.Add(b.EndTime);
+                DateTime bookingStartDateTime = b.AppointmentDate.Date.Add(b.StartTime);
+                DateTime bookingEndDateTime = b.AppointmentDate.Date.Add(b.EndTime);
                 return bookingStartDateTime < request.ToDate && bookingEndDateTime > request.FromDate;
             }).ToList();
 

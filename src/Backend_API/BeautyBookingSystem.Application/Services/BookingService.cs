@@ -7,6 +7,7 @@ using BeautyBookingSystem.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Hangfire;
 using BeautyBookingSystem.Application.Common.Exceptions;
+using BeautyBookingSystem.Application.Common;
 
 namespace BeautyBookingSystem.Application.Services
 {
@@ -17,6 +18,7 @@ namespace BeautyBookingSystem.Application.Services
         private readonly ISystemConfigService _systemConfigService;
         private readonly ICustomerPaymentService _paymentService;
         private readonly IStoreWalletService _storeWalletService;
+        private static readonly Dictionary<string, SemaphoreSlim> _locks = new();
 
         public BookingService(IUnitOfWork unitOfWork, 
         INotificationService notificationService, 
@@ -30,6 +32,17 @@ namespace BeautyBookingSystem.Application.Services
             _paymentService = paymentService;
             _storeWalletService = storeWalletService;
         }
+
+        private SemaphoreSlim GetLock(string key)
+{
+    lock (_locks)
+    {
+        if (!_locks.ContainsKey(key))
+            _locks[key] = new SemaphoreSlim(1, 1);
+
+        return _locks[key];
+    }
+}
 
         public async Task<BookingResponseDto> CreateBookingAsync(
             int customerId,
@@ -63,7 +76,7 @@ namespace BeautyBookingSystem.Application.Services
 
             if (maxCancelPerDay > 0)
             {
-                var todayStart = DateTime.UtcNow.AddHours(7).Date;
+                var todayStart = VietnamTime.TodayStartUtc;
                 var todayEnd = todayStart.AddDays(1);
 
                 int todayCancelCount = await _unitOfWork.BookingRepository.GetQueryable()
@@ -90,10 +103,11 @@ namespace BeautyBookingSystem.Application.Services
 
             int minHours = await _systemConfigService.GetValueAsync<int>(SystemConfigKeys.BookingMinHours);
             if (minHours <= 0) minHours = 2;
-            var bookingDateTime = firstItem.AppointmentDate.Date.Add(firstItem.StartTime);
-            var nowVN = DateTime.UtcNow.AddHours(7);
+            var bookingDateTime = VietnamTime.ToUtc(
+                firstItem.AppointmentDate.Date.Add(firstItem.StartTime));
+            var nowUtc = DateTime.UtcNow;
 
-            if (bookingDateTime < nowVN.AddHours(minHours))
+            if (bookingDateTime < nowUtc.AddHours(minHours))
             {
                 throw new InvalidOperationException($"Hệ thống yêu cầu đặt lịch trước tối thiểu {minHours} tiếng. Vui lòng chọn giờ muộn hơn.");
             }
@@ -118,24 +132,46 @@ namespace BeautyBookingSystem.Application.Services
             var bookingStartTime = firstItem.StartTime;
             var bookingEndTime = bookingStartTime.Add(TimeSpan.FromMinutes(totalDurationMinutes));
 
-            var requestedStaffIds = serviceItems
-                .Select(x => x.StaffId)
-                .Where(x => x.HasValue)
-                .Select(x => x.Value)
-                .Distinct()
-                .ToList();
+          var requestedStaffIds = serviceItems
+    .Select(x => x.StaffId)
+    .Where(x => x.HasValue)
+    .Select(x => x.Value)
+    .Distinct()
+    .ToList();
 
-            if (requestedStaffIds.Count > 1)
-                throw new InvalidOperationException("Tất cả dịch vụ phải dùng cùng một nhân viên hoặc để trống để hệ thống tự chọn");
+if (requestedStaffIds.Count > 1)
+    throw new InvalidOperationException("Tất cả dịch vụ phải dùng cùng một nhân viên hoặc để trống để hệ thống tự chọn");
 
-            int? requestedStaffId = requestedStaffIds.Count == 1 ? requestedStaffIds[0] : null;
+int? requestedStaffId = requestedStaffIds.Count == 1 ? requestedStaffIds[0] : null;
 
-            var assignedStaffId = await ResolveAssignedStaffIdAsync(
-                request.StoreId,
-                firstItem.AppointmentDate,
-                bookingStartTime,
-                bookingEndTime,
-                requestedStaffId);
+var lockKey = $"booking_{request.StoreId}_{firstItem.AppointmentDate:yyyyMMdd}_{requestedStaffId ?? 0}";
+var semaphore = GetLock(lockKey);
+
+await semaphore.WaitAsync();
+
+using var transaction = await _unitOfWork.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
+try
+{
+    var assignedStaffId = await ResolveAssignedStaffIdAsync(
+        request.StoreId,
+        firstItem.AppointmentDate,
+        bookingStartTime,
+        bookingEndTime,
+        requestedStaffId);
+
+    bool isConflict = await _unitOfWork.BookingDetailRepository.GetQueryable()
+        .AnyAsync(x =>
+            x.StaffId == assignedStaffId &&
+            x.AppointmentDate == firstItem.AppointmentDate &&
+            x.Status != BookingDetailStatus.Cancelled &&
+            bookingStartTime < x.EndTime &&
+            bookingEndTime > x.StartTime);
+
+    if (isConflict)
+    {
+        throw new InvalidOperationException("Khung giờ vừa bị người khác đặt mất, vui lòng chọn lại.");
+    }
 
             var booking = new Booking
             {
@@ -311,11 +347,13 @@ namespace BeautyBookingSystem.Application.Services
             }
 
             await _unitOfWork.SaveChangesAsync();
+            await transaction.CommitAsync();
 
-            var appointmentDateTime = firstItem.AppointmentDate.Date.Add(firstItem.StartTime);
+            var appointmentDateTime = VietnamTime.ToUtc(
+                firstItem.AppointmentDate.Date.Add(firstItem.StartTime));
             var reminderTime = appointmentDateTime.AddMinutes(-30);
 
-            var delay = reminderTime - nowVN;
+            var delay = reminderTime - DateTime.UtcNow;
 
             if (delay > TimeSpan.Zero)
             {
@@ -354,6 +392,17 @@ namespace BeautyBookingSystem.Application.Services
                 Status = booking.Status,
                 Services = detailDtos
             };
+            
+}
+catch
+{
+    await transaction.RollbackAsync();
+    throw;
+}
+finally
+{
+    semaphore.Release();
+}
         }
 
         public async Task<bool> RescheduleBookingAsync(int customerId, int bookingId, RescheduleBookingRequest request)
@@ -370,17 +419,20 @@ namespace BeautyBookingSystem.Application.Services
                 throw new InvalidOperationException("Bạn đã vượt quá số lần dời lịch cho phép. Vui lòng hủy đơn nếu không thể đến.");
 
             var firstDetail = booking.BookingDetails.OrderBy(d => d.StartTime).First();
-            var oldBookingDateTime = firstDetail.AppointmentDate.Date.Add(firstDetail.StartTime);
-            var nowVN = DateTime.UtcNow.AddHours(7);
+            var oldBookingDateTime = VietnamTime.ToUtc(
+                DateTime.SpecifyKind(firstDetail.AppointmentDate.Date, DateTimeKind.Unspecified)
+                    .Add(firstDetail.StartTime));
+            var nowUtc = DateTime.UtcNow;
 
             int minHours = await _systemConfigService.GetValueAsync<int>(SystemConfigKeys.BookingMinHours) > 0
                         ? await _systemConfigService.GetValueAsync<int>(SystemConfigKeys.BookingMinHours) : 2;
 
-            if (oldBookingDateTime < nowVN.AddHours(minHours))
+            if (oldBookingDateTime < nowUtc.AddHours(minHours))
                 throw new InvalidOperationException($"Không thể dời lịch. Hệ thống yêu cầu dời lịch trước tối thiểu {minHours} tiếng.");
 
-            var newBookingDateTime = request.NewAppointmentDate.Date.Add(request.NewStartTime);
-            if (newBookingDateTime < nowVN.AddHours(minHours))
+            var newBookingDateTime = VietnamTime.ToUtc(
+                request.NewAppointmentDate.Date.Add(request.NewStartTime));
+            if (newBookingDateTime < nowUtc.AddHours(minHours))
                 throw new InvalidOperationException($"Thời gian dời lịch mới không hợp lệ. Phải cách hiện tại ít nhất {minHours} tiếng.");
 
             var totalDurationMinutes = booking.BookingDetails.Sum(d => (d.EndTime - d.StartTime).TotalMinutes);
@@ -419,7 +471,7 @@ namespace BeautyBookingSystem.Application.Services
             }
 
             var reminderTime = newBookingDateTime.AddMinutes(-30);
-            var delay = reminderTime - nowVN;
+            var delay = reminderTime - DateTime.UtcNow;
 
             if (delay > TimeSpan.Zero)
             {
@@ -610,9 +662,10 @@ namespace BeautyBookingSystem.Application.Services
             if (firstDetail == null)
                 throw new InvalidOperationException("Booking has no schedule");
 
-            var bookingDateTime = firstDetail.AppointmentDate.Date.Add(firstDetail.StartTime);
-            var now = DateTime.UtcNow.AddHours(7);
-            bool isLateCancel = bookingDateTime <= now.AddHours(cancelBeforeHours);
+            var bookingDateTime = VietnamTime.ToUtc(
+                DateTime.SpecifyKind(firstDetail.AppointmentDate.Date, DateTimeKind.Unspecified)
+                    .Add(firstDetail.StartTime));
+            bool isLateCancel = bookingDateTime <= DateTime.UtcNow.AddHours(cancelBeforeHours);
 
             booking.Status = BookingStatus.Cancelled;
             booking.CancelledBy = CancelledByType.Customer;
@@ -842,7 +895,7 @@ else
                 return new List<BookingTimeSlotDto>();
 
             var slots = new List<BookingTimeSlotDto>();
-            var nowVN = DateTime.UtcNow.AddHours(7);
+            var nowVN = VietnamTime.Now;
 
             TimeSpan currentTime = operatingHour.OpenTime;
             TimeSpan closingTime = operatingHour.CloseTime;
@@ -986,9 +1039,11 @@ else
             int graceMinutes = await _systemConfigService.GetValueAsync<int>(SystemConfigKeys.GracePeriodMinutes);
             if (graceMinutes <= 0) graceMinutes = 30;
 
-            var bookingDateTime = firstDetail.AppointmentDate.Date.Add(firstDetail.StartTime);
+            var bookingDateTime = VietnamTime.ToUtc(
+                DateTime.SpecifyKind(firstDetail.AppointmentDate.Date, DateTimeKind.Unspecified)
+                    .Add(firstDetail.StartTime));
             var maxAllowedTime = bookingDateTime.AddMinutes(graceMinutes);
-            var now = DateTime.UtcNow.AddHours(7);
+            var now = DateTime.UtcNow;
 
             if (now < maxAllowedTime)
             {
@@ -1073,8 +1128,7 @@ else
             int rescheduleBeforeHours = await _systemConfigService.GetValueAsync<int>(SystemConfigKeys.RescheduleBeforeHours);
             if (rescheduleBeforeHours <= 0) rescheduleBeforeHours = 2;
 
-            var nowVN = DateTime.UtcNow.AddHours(7);
-            var todayStart = nowVN.Date;
+            var todayStart = VietnamTime.TodayStartUtc;
             var todayEnd = todayStart.AddDays(1);
 
             int currentCancelCountToday = await _unitOfWork.BookingRepository.GetQueryable()

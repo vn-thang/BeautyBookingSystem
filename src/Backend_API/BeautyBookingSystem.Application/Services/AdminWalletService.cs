@@ -37,12 +37,17 @@ namespace BeautyBookingSystem.Application.Services
 
             if (startDate.HasValue)
             {
-                query = query.Where(t => t.CreatedAt >= startDate.Value);
+                var utcStartDate = DateTime.SpecifyKind(
+                    startDate.Value,
+                    DateTimeKind.Utc);
+                query = query.Where(t => t.CreatedAt >= utcStartDate);
             }
 
             if (endDate.HasValue)
             {
-                var endOfDay = endDate.Value.Date.AddDays(1).AddTicks(-1);
+                var endOfDay = DateTime.SpecifyKind(
+                    endDate.Value.Date.AddDays(1).AddTicks(-1),
+                    DateTimeKind.Utc);
                 query = query.Where(t => t.CreatedAt <= endOfDay);
             }
 

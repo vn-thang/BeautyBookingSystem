@@ -22,8 +22,12 @@ namespace BeautyBookingSystem.Application.Services
     var result = new AdminDashboardDto();
     var now = DateTime.UtcNow;
 
-    DateTime actualFromDate = fromDate ?? new DateTime(now.Year, now.Month, 1);
-    DateTime actualToDate = toDate ?? now;
+    DateTime actualFromDate = DateTime.SpecifyKind(
+        fromDate ?? new DateTime(now.Year, now.Month, 1),
+        DateTimeKind.Utc);
+    DateTime actualToDate = DateTime.SpecifyKind(
+        toDate ?? now,
+        DateTimeKind.Utc);
 
     var userQuery = _unitOfWork.UserRepository.GetQueryable()
         .Where(u => u.CreatedAt >= actualFromDate && u.CreatedAt <= actualToDate);

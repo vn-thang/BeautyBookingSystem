@@ -40,7 +40,7 @@ namespace BeautyBookingSystem.Infrastructure.Services
             string baseUrl = _configuration["Vnpay:BaseUrl"] ?? string.Empty;
             string urlCallBack = _configuration["Vnpay:StoreReturnUrl"] ?? string.Empty;
 
-            var tick = DateTime.Now.Ticks.ToString();
+            var tick = DateTime.UtcNow.Ticks.ToString();
             var txnRef = $"{model.StoreId}_{tick}"; 
 
             var pay = new VnPayLibrary();
@@ -128,7 +128,7 @@ public async Task<(bool IsSuccess, string ResponseCode, string Message)> RefundA
     var vnp_Command = "refund";
     var vnp_TransactionType = "02"; 
     var vnp_Amount = ((long)(amount * 100)).ToString();
-    var vnp_CreateDate = DateTime.Now.ToString("yyyyMMddHHmmss");
+    var vnp_CreateDate = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
     var vnp_OrderInfo = $"Hoan tien cho giao dich {vnp_TxnRef}";
 
     var payLib = new VnPayLibrary();

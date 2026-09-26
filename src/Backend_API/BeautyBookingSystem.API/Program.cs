@@ -19,16 +19,44 @@ using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// builder.Services.AddDbContext<AppDbContext>(options =>
+// {
+//     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), 
+//         sqlOptions => 
+//         {
+//             sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+//         });
+        
+//     options.ConfigureWarnings(warnings => 
+//         warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+// });
+
+var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
+Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
+Console.WriteLine($"DatabaseProvider: {databaseProvider}");
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), 
-        sqlOptions => 
-        {
-            sqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-        });
-        
-    options.ConfigureWarnings(warnings => 
-        warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+    if (databaseProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseNpgsql(connectionString);
+    }
+    else
+    {
+        options.UseSqlServer(
+            connectionString,
+            sqlOptions =>
+            {
+                sqlOptions.UseQuerySplittingBehavior(
+                    QuerySplittingBehavior.SplitQuery);
+            });
+    }
+
+    options.ConfigureWarnings(warnings =>
+        warnings.Ignore(
+            Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
 });
 
 builder.Services.AddDirectoryBrowser();
@@ -129,17 +157,17 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-var connectionStrings = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddHangfire(configuration => configuration
-    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-    .UseSimpleAssemblyNameTypeSerializer()
-    .UseRecommendedSerializerSettings()
-    .UseSqlServerStorage(connectionStrings));
-builder.Services.AddHangfireServer(options => 
-{
-    options.WorkerCount = 10; 
-    options.SchedulePollingInterval = TimeSpan.FromSeconds(15); 
-});
+// var connectionStrings = builder.Configuration.GetConnectionString("DefaultConnection");
+// builder.Services.AddHangfire(configuration => configuration
+//     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+//     .UseSimpleAssemblyNameTypeSerializer()
+//     .UseRecommendedSerializerSettings()
+//     .UseSqlServerStorage(connectionStrings));
+// builder.Services.AddHangfireServer(options => 
+// {
+//     options.WorkerCount = 10; 
+//     options.SchedulePollingInterval = TimeSpan.FromSeconds(15); 
+// });
 
 var firebaseKeyPath = Path.Combine(Directory.GetCurrentDirectory(), "firebase-key.json"); 
 if (File.Exists(firebaseKeyPath))
@@ -162,24 +190,32 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("GlobalCorsPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials() 
-              .SetIsOriginAllowed(origin => true); 
+        policy
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
-builder.WebHost.UseUrls("http://0.0.0.0:5294");
+
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5294";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 var app = builder.Build();
 
-app.UseMiddleware<BeautyBookingSystem.API.Middleware.ExceptionMiddleware>();
-app.UseHangfireDashboard("/hangfire");
-
-if (app.Environment.IsDevelopment())
+if (databaseProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    using var scope = app.Services.CreateScope();
+
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    db.Database.EnsureCreated();
 }
+
+app.UseMiddleware<BeautyBookingSystem.API.Middleware.ExceptionMiddleware>();
+// app.UseHangfireDashboard("/hangfire");
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseCors("GlobalCorsPolicy"); 
 
@@ -189,17 +225,17 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-RecurringJob.AddOrUpdate<IBookingCleanupService>(
-    "auto-cancel-unpaid-bookings", 
-    service => service.CancelExpiredPendingBookingsAsync(),
-    "*/5 * * * *" // Biểu thức Cron: Mỗi 5 phút
-);
+// RecurringJob.AddOrUpdate<IBookingCleanupService>(
+//     "auto-cancel-unpaid-bookings", 
+//     service => service.CancelExpiredPendingBookingsAsync(),
+//     "*/5 * * * *" // Biểu thức Cron: Mỗi 5 phút
+// );
 
-RecurringJob.AddOrUpdate<IStoreWalletService>(
-    "auto-monthly-fee-deduction", 
-    walletService => walletService.ProcessMonthlyAppFeeAsync(), 
-    "5 0 * * *", 
-    new RecurringJobOptions { TimeZone = TimeZoneInfo.Local } 
-);
+// RecurringJob.AddOrUpdate<IStoreWalletService>(
+//     "auto-monthly-fee-deduction", 
+//     walletService => walletService.ProcessMonthlyAppFeeAsync(), 
+//     "5 0 * * *", 
+//     new RecurringJobOptions { TimeZone = TimeZoneInfo.Local } 
+// );
 
 app.Run();

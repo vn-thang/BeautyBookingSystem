@@ -67,7 +67,7 @@ namespace BeautyBookingSystem.API.Controllers
 
             var fileBytes = _excelService.GenerateStoreRevenueExcel(data);
 
-            string fileName = $"DoanhThu_{DateTime.Now:dd_MM_yyyy}.xlsx";
+            string fileName = $"DoanhThu_{DateTime.UtcNow:dd_MM_yyyy}.xlsx";
             string contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
             return File(fileBytes, contentType, fileName);

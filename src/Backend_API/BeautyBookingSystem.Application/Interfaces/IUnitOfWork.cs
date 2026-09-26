@@ -1,7 +1,9 @@
 ﻿using BeautyBookingSystem.Application.Interfaces.Repositories;
 using BeautyBookingSystem.Domain.Entities;
+using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,7 +36,10 @@ namespace BeautyBookingSystem.Application.Interfaces
         IGenericRepository<StaffSchedule> StaffScheduleRepository { get; }
         IGenericRepository<StaffLeave> StaffLeaveRepository { get; }
         IGenericRepository<StoreBanner> StoreBannerRepository { get; }
-
+        
+        Task<IDbContextTransaction> BeginTransactionAsync(
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
+    );
         Task<int> SaveChangesAsync();
     }
 }

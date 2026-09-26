@@ -2,8 +2,11 @@
 using BeautyBookingSystem.Application.Interfaces.Repositories;
 using BeautyBookingSystem.Domain.Entities;
 using BeautyBookingSystem.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -72,5 +75,10 @@ namespace BeautyBookingSystem.Infrastructure.Repositories
         {
             _context.Dispose();
         }
+        public async Task<IDbContextTransaction> BeginTransactionAsync(
+    IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+{
+    return await _context.Database.BeginTransactionAsync(isolationLevel);
+}
     }
 }

@@ -2,6 +2,7 @@
 using BeautyBookingSystem.Application.Common.Exceptions;
 using BeautyBookingSystem.Application.DTOs.AdminStore;
 using BeautyBookingSystem.Application.DTOs.Common;
+using BeautyBookingSystem.Application.Common;
 using BeautyBookingSystem.Application.Interfaces;
 using BeautyBookingSystem.Domain.Enums;
 using System;
@@ -129,7 +130,9 @@ namespace BeautyBookingSystem.Application.Services
                 {
                     title = "Cửa hàng đã được duyệt!";
                     
-                    var billingDateStr = store.NextBillingDate?.AddHours(7).ToString("dd/MM/yyyy");
+                    var billingDateStr = store.NextBillingDate.HasValue
+                        ? VietnamTime.FromUtc(store.NextBillingDate.Value).ToString("dd/MM/yyyy")
+                        : null;
 
                     message = $"Chúc mừng! Cửa hàng '{store.Name}' của bạn đã được phê duyệt. " +
                               $"Bạn được tặng {freeTrialDays} ngày dùng thử miễn phí. " +

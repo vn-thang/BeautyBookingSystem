@@ -13,6 +13,8 @@ public class BookingDetailRepository
     }
     public async Task<List<BookingDetail>> GetByStoreAndDateAsync(int storeId, DateTime date)
     {
+        date = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
+
         return await _context.BookingDetails
             .Include(x => x.Booking)
             .Where(x =>
@@ -28,6 +30,8 @@ public class BookingDetailRepository
     {
         if (staffId == null)
             return false;
+
+        date = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
 
         return await _context.BookingDetails
             .AnyAsync(d =>

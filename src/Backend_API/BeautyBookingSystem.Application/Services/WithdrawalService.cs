@@ -107,7 +107,7 @@ namespace BeautyBookingSystem.Application.Services
     request!.Status = WithdrawalStatus.Approved;
     request.ReceiptImageUrl = dto.ReceiptImageUrl;
     request.ProcessedByAdminId = adminId;
-    request.ProcessedAt = DateTime.Now;
+    request.ProcessedAt = DateTime.UtcNow;
     var pendingTransaction = await _unitOfWork.WalletTransactionRepository.GetQueryable()
         .Where(t => t.StoreId == request.StoreId 
                  && t.Type == TransactionType.Withdrawal 
@@ -166,7 +166,7 @@ namespace BeautyBookingSystem.Application.Services
             request.Status = WithdrawalStatus.Rejected;
             request.AdminNote = dto.AdminNote;
             request.ProcessedByAdminId = adminId;
-            request.ProcessedAt = DateTime.Now;
+            request.ProcessedAt = DateTime.UtcNow;
 
             await _unitOfWork.WalletTransactionRepository.AddAsync(refundTransaction);
             _unitOfWork.WithdrawalRequestRepository.Update(request);

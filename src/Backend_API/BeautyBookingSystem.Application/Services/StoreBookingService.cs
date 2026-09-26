@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BeautyBookingSystem.Application.Common;
 using BeautyBookingSystem.Application.Common.Exceptions;
 using BeautyBookingSystem.Application.DTOs.Booking;
 using BeautyBookingSystem.Application.DTOs.StoreBooking;
@@ -33,35 +34,62 @@ namespace BeautyBookingSystem.Application.Services
             _vnPayService = vnPayService;
         }
 
-        public async Task<List<StoreBookingListDto>> GetBookingsAsync(string? status = null, int? staffId = null, DateTime? startDate = null, DateTime? endDate = null)
-            {
-                int storeId = await _currentUserService.GetCurrentStoreIdAsync();
+public async Task<List<StoreBookingListDto>> GetBookingsAsync(
+    string? status = null,
+    int? staffId = null,
+    DateTime? startDate = null,
+    DateTime? endDate = null)
+{
+    int storeId = await _currentUserService.GetCurrentStoreIdAsync();
 
-                var query = _unitOfWork.BookingRepository.GetQueryable()
-                    .Include(b => b.Customer)
-                    .Where(b => b.StoreId == storeId);
+    var query = _unitOfWork.BookingRepository
+        .GetQueryable()
+        .Include(b => b.Customer)
+        .Where(b => b.StoreId == storeId);
 
-                if (!string.IsNullOrEmpty(status) && Enum.TryParse<BookingStatus>(status, true, out var parsedStatus))
-                {
-                    query = query.Where(b => b.Status == parsedStatus);
-                }
-            if (staffId.HasValue)
-            {
-                query = query.Where(b => b.BookingDetails.Any(bd => bd.StaffId == staffId.Value));
-            }
-                if (startDate.HasValue)
-                {
-                    query = query.Where(b => b.CreatedAt >= startDate.Value.Date);
-                }
-                if (endDate.HasValue)
-                {
-                    var nextDay = endDate.Value.Date.AddDays(1);
-                    query = query.Where(b => b.CreatedAt < nextDay);
-                }
+    // Filter trạng thái
+    if (!string.IsNullOrEmpty(status) &&
+        Enum.TryParse<BookingStatus>(status, true, out var parsedStatus))
+    {
+        query = query.Where(b => b.Status == parsedStatus);
+    }
 
-                var bookings = await query.OrderByDescending(b => b.CreatedAt).ToListAsync();
-                return _mapper.Map<List<StoreBookingListDto>>(bookings);
-            }
+    // Filter nhân viên
+    if (staffId.HasValue)
+    {
+        query = query.Where(b =>
+            b.BookingDetails.Any(bd =>
+                bd.StaffId == staffId.Value));
+    }
+
+    // Filter từ ngày
+    if (startDate.HasValue)
+    {
+        var start = DateTime.SpecifyKind(
+            startDate.Value.Date,
+            DateTimeKind.Utc);
+
+        query = query.Where(b =>
+            b.CreatedAt >= start);
+    }
+
+    // Filter đến ngày
+    if (endDate.HasValue)
+    {
+        var end = DateTime.SpecifyKind(
+            endDate.Value.Date.AddDays(1),
+            DateTimeKind.Utc);
+
+        query = query.Where(b =>
+            b.CreatedAt < end);
+    }
+
+    var bookings = await query
+        .OrderByDescending(b => b.CreatedAt)
+        .ToListAsync();
+
+    return _mapper.Map<List<StoreBookingListDto>>(bookings);
+}
 
         public async Task<StoreBookingDetailDto> GetBookingDetailAsync(int bookingId)
         {
@@ -80,47 +108,62 @@ namespace BeautyBookingSystem.Application.Services
             return _mapper.Map<StoreBookingDetailDto>(booking);
         }
 
-        public async Task<List<AvailableStaffDto>> GetAvailableStaffsAsync(
-            DateTime date, 
-            TimeSpan startTime, 
-            TimeSpan endTime, 
-            int? excludeBookingId = null) 
-        {
-            int storeId = await _currentUserService.GetCurrentStoreIdAsync();
-            var appointmentDayOfWeek = date.DayOfWeek;
-            var bookingStartDateTime = date.Date.Add(startTime);
-            var bookingEndDateTime = date.Date.Add(endTime);
+public async Task<List<AvailableStaffDto>> GetAvailableStaffsAsync(
+    DateTime date,
+    TimeSpan startTime,
+    TimeSpan endTime,
+    int? excludeBookingId = null)
+{
+    int storeId = await _currentUserService.GetCurrentStoreIdAsync();
 
-            // 1. Lấy danh sách ID thợ bận
-            var busyStaffIds = await _unitOfWork.BookingDetailRepository.GetQueryable()
-                .Where(bd => bd.Booking.StoreId == storeId
-                        && bd.AppointmentDate.Date == date.Date
-                        && bd.Status != BookingDetailStatus.Cancelled 
-                        && bd.Status != BookingDetailStatus.Done       
-                        && bd.StaffId != null
-                        && bd.BookingId != excludeBookingId) 
-                .Where(bd => bd.StartTime < endTime && bd.EndTime > startTime)
-                .Select(bd => bd.StaffId!.Value)
-                .Distinct()
-                .ToListAsync();
+    // Chuẩn hóa ngày về UTC
+    date = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
 
-            // 2. Lọc thợ rảnh theo lịch làm việc và nghỉ phép
-            var availableStaffs = await _unitOfWork.StaffRepository.GetQueryable()
-                .Include(s => s.Schedules)
-                .Include(s => s.Leaves)
-                .Where(s => s.StoreId == storeId && s.IsActive && !busyStaffIds.Contains(s.Id))
-                .Where(s => s.Schedules.Any(sch => 
-                    sch.DayOfWeek == appointmentDayOfWeek && 
-                    sch.IsWorking && 
-                    sch.StartTime <= startTime && 
-                    sch.EndTime >= endTime))
-                .Where(s => !s.Leaves.Any(l => 
-                    l.FromDate < bookingEndDateTime && 
-                    l.ToDate > bookingStartDateTime))
-                .ToListAsync();
+    var nextDate = date.AddDays(1);
 
-            return _mapper.Map<List<AvailableStaffDto>>(availableStaffs);
-        }
+    var bookingStartDateTime = date.Add(startTime);
+    var bookingEndDateTime = date.Add(endTime);
+
+    var appointmentDayOfWeek = date.DayOfWeek;
+
+    // 1. Lấy danh sách ID thợ đang bận
+    var busyStaffIds = await _unitOfWork.BookingDetailRepository
+        .GetQueryable()
+        .Where(bd =>
+            bd.Booking.StoreId == storeId &&
+            bd.AppointmentDate >= date &&
+            bd.AppointmentDate < nextDate &&
+            bd.Status != BookingDetailStatus.Cancelled &&
+            bd.Status != BookingDetailStatus.Done &&
+            bd.StaffId != null &&
+            bd.BookingId != excludeBookingId &&
+            bd.StartTime < endTime &&
+            bd.EndTime > startTime)
+        .Select(bd => bd.StaffId!.Value)
+        .Distinct()
+        .ToListAsync();
+
+    // 2. Lọc thợ rảnh
+    var availableStaffs = await _unitOfWork.StaffRepository
+        .GetQueryable()
+        .Include(s => s.Schedules)
+        .Include(s => s.Leaves)
+        .Where(s =>
+            s.StoreId == storeId &&
+            s.IsActive &&
+            !busyStaffIds.Contains(s.Id))
+        .Where(s => s.Schedules.Any(sch =>
+            sch.DayOfWeek == appointmentDayOfWeek &&
+            sch.IsWorking &&
+            sch.StartTime <= startTime &&
+            sch.EndTime >= endTime))
+        .Where(s => !s.Leaves.Any(l =>
+            l.FromDate < bookingEndDateTime &&
+            l.ToDate > bookingStartDateTime))
+        .ToListAsync();
+
+    return _mapper.Map<List<AvailableStaffDto>>(availableStaffs);
+}
 
         public async Task<bool> AssignStaffAndConfirmAsync(int bookingId, AssignStaffRequest request)
         {
@@ -359,166 +402,228 @@ namespace BeautyBookingSystem.Application.Services
         return true; 
         }
 
-        public async Task<BookingResponseDto> CreateStoreBookingAsync(CreateStoreBookingRequest request)
+       public async Task<BookingResponseDto> CreateStoreBookingAsync(
+    CreateStoreBookingRequest request)
+{
+    int storeId = await _currentUserService.GetCurrentStoreIdAsync();
+
+    // Ngày booking được gửi từ frontend là ngày Việt Nam.
+    // Chuẩn hóa thành UTC để lưu/query PostgreSQL.
+    var appointmentDate = DateTime.SpecifyKind(
+        request.AppointmentDate.Date,
+        DateTimeKind.Utc);
+
+    var nowVN = TimeZoneInfo.ConvertTimeFromUtc(
+        DateTime.UtcNow,
+        TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+
+    var store = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
+
+    if (store == null || !store.IsOpen)
+        throw new InvalidOperationException(
+            "Cửa hàng hiện đang đóng cửa hoặc ngừng hoạt động, không thể tạo đơn.");
+
+    if (request.Services == null || !request.Services.Any())
+        throw new InvalidOperationException(
+            "Danh sách dịch vụ không được rỗng.");
+
+    if (appointmentDate.Date < nowVN.Date)
+        throw new InvalidOperationException(
+            "Không thể tạo đơn cho ngày trong quá khứ.");
+
+    var serviceItems = request.Services.ToList();
+    var firstItem = serviceItems.First();
+
+    var operatingHour = await _unitOfWork.StoreOperatingHourRepository
+        .GetQueryable()
+        .FirstOrDefaultAsync(w =>
+            w.StoreId == storeId &&
+            w.DayOfWeek == appointmentDate.DayOfWeek);
+
+    if (operatingHour == null)
+        throw new InvalidOperationException(
+            "Cửa hàng không có lịch làm việc vào ngày này.");
+
+    if (firstItem.StartTime < operatingHour.OpenTime)
+        throw new InvalidOperationException(
+            $"Giờ hẹn ({firstItem.StartTime}) sớm hơn giờ mở cửa ({operatingHour.OpenTime}).");
+
+    var loadedServices = new List<Service>();
+
+    foreach (var item in serviceItems)
+    {
+        var service = await _unitOfWork.ServiceRepository
+            .GetByIdAsync(item.ServiceId);
+
+        if (service == null || service.StoreId != storeId)
+            throw new KeyNotFoundException(
+                $"Dịch vụ {item.ServiceId} không hợp lệ.");
+
+        loadedServices.Add(service);
+    }
+
+    var booking = new Booking
+    {
+        StoreId = storeId,
+        CustomerId = null,
+        WalkInCustomerName = request.CustomerName,
+        WalkInCustomerPhone = request.CustomerPhone,
+        Source = BookingSource.StoreAdmin,
+        CustomerNote = request.Note,
+        Status = BookingStatus.Confirmed,
+        DiscountAmount = 0,
+        DepositAmount = 0
+    };
+
+    decimal totalPrice = 0;
+
+    var detailDtos = new List<BookingDetailResponseDto>();
+    var currentStartTime = firstItem.StartTime;
+
+    for (int i = 0; i < serviceItems.Count; i++)
+    {
+        var item = serviceItems[i];
+        var service = loadedServices[i];
+
+        var startTime = currentStartTime;
+
+        var endTime = startTime.Add(
+            TimeSpan.FromMinutes(service.DurationMinutes));
+
+        if (endTime > operatingHour.CloseTime)
+            throw new InvalidOperationException(
+                $"Dịch vụ kết thúc lúc {endTime}, vượt quá giờ đóng cửa ({operatingHour.CloseTime}).");
+
+        if (item.StaffId.HasValue && item.StaffId.Value > 0)
         {
-            int storeId = await _currentUserService.GetCurrentStoreIdAsync();
-            var nowVN = DateTime.UtcNow.AddHours(7);
+            var availableStaffs = await GetAvailableStaffsAsync(
+                appointmentDate,
+                startTime,
+                endTime);
 
-            var store = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
-            if (store == null || !store.IsOpen)
-                throw new InvalidOperationException("Cửa hàng hiện đang đóng cửa hoặc ngừng hoạt động, không thể tạo đơn.");
-
-            if (request.Services == null || !request.Services.Any())
-                throw new InvalidOperationException("Danh sách dịch vụ không được rỗng.");
-
-            if (request.AppointmentDate.Date < nowVN.Date)
-                throw new InvalidOperationException("Không thể tạo đơn cho ngày trong quá khứ.");
-
-            var serviceItems = request.Services.ToList();
-            var firstItem = serviceItems.First();
-
-            var operatingHour = await _unitOfWork.StoreOperatingHourRepository.GetQueryable()
-                .FirstOrDefaultAsync(w => w.StoreId == storeId && w.DayOfWeek == request.AppointmentDate.DayOfWeek);
-
-            if (operatingHour == null)
-                throw new InvalidOperationException("Cửa hàng không có lịch làm việc vào ngày này.");
-
-            if (firstItem.StartTime < operatingHour.OpenTime)
-                throw new InvalidOperationException($"Giờ hẹn ({firstItem.StartTime}) sớm hơn giờ mở cửa ({operatingHour.OpenTime}).");
-
-            var loadedServices = new List<Service>();
-            foreach (var item in serviceItems)
-            {
-                var service = await _unitOfWork.ServiceRepository.GetByIdAsync(item.ServiceId);
-                if (service == null || service.StoreId != storeId)
-                    throw new KeyNotFoundException($"Dịch vụ {item.ServiceId} không hợp lệ.");
-
-                loadedServices.Add(service);
-            }
-
-            var booking = new Booking
-            {
-                StoreId = storeId,
-                CustomerId = null,
-                WalkInCustomerName = request.CustomerName,
-                WalkInCustomerPhone = request.CustomerPhone,
-                Source = BookingSource.StoreAdmin,
-                CustomerNote = request.Note,
-                Status = BookingStatus.Confirmed,
-                DiscountAmount = 0,
-                DepositAmount = 0,
-            };
-
-            decimal totalPrice = 0;
-            var detailDtos = new List<BookingDetailResponseDto>();
-            var currentStartTime = firstItem.StartTime;
-
-            for (int i = 0; i < serviceItems.Count; i++)
-            {
-                var item = serviceItems[i];
-                var service = loadedServices[i];
-
-                var startTime = currentStartTime;
-                var endTime = startTime.Add(TimeSpan.FromMinutes(service.DurationMinutes));
-
-                if (endTime > operatingHour.CloseTime)
-                    throw new InvalidOperationException($"Dịch vụ kết thúc lúc {endTime}, vượt quá giờ đóng cửa ({operatingHour.CloseTime}).");
-
-                if (item.StaffId.HasValue && item.StaffId.Value > 0)
-                {
-                    var availableStaffs = await GetAvailableStaffsAsync(request.AppointmentDate, startTime, endTime);
-                    if (!availableStaffs.Any(s => s.Id == item.StaffId.Value))
-                        throw new InvalidOperationException($"Nhân viên ID {item.StaffId} đang bận hoặc nghỉ trong khung giờ {startTime} - {endTime}.");
-                }
-
-                var detail = new BookingDetail
-                {
-                    Booking = booking,
-                    ServiceId = item.ServiceId,
-                    StaffId = (item.StaffId.HasValue && item.StaffId.Value > 0) ? item.StaffId : null,
-                    AppointmentDate = request.AppointmentDate.Date,
-                    StartTime = startTime,
-                    EndTime = endTime,
-                    Price = service.Price,
-                    Status = BookingDetailStatus.Pending
-                };
-
-                await _unitOfWork.BookingDetailRepository.AddAsync(detail);
-                totalPrice += service.Price;
-
-                detailDtos.Add(new BookingDetailResponseDto
-                {
-                    ServiceId = service.Id,
-                    ServiceName = service.Name,
-                    StaffId = detail.StaffId,
-                    AppointmentDate = request.AppointmentDate.Date,
-                    StartTime = startTime,
-                    EndTime = endTime,
-                    Price = service.Price
-                });
-
-                currentStartTime = endTime;
-            }
-
-            booking.TotalPrice = totalPrice;
-            booking.FinalPrice = totalPrice;
-
-            await _unitOfWork.BookingRepository.AddAsync(booking);
-
-            var payment = new Payment
-            {
-                Booking = booking,
-                PaymentMethod = PaymentMethod.COD,
-                PaymentType = PaymentType.Full,
-                Amount = totalPrice,
-                Status = PaymentStatus.Pending
-            };
-            await _unitOfWork.PaymentRepository.AddAsync(payment);
-
-            await _unitOfWork.SaveChangesAsync();
-
-            return new BookingResponseDto
-            {
-                Id = booking.Id,
-                TotalPrice = booking.TotalPrice,
-                DiscountAmount = booking.DiscountAmount,
-                DepositAmount = booking.DepositAmount,
-                FinalPrice = booking.FinalPrice,
-                Status = booking.Status,
-                Services = detailDtos
-            };
+            if (!availableStaffs.Any(s => s.Id == item.StaffId.Value))
+                throw new InvalidOperationException(
+                    $"Nhân viên ID {item.StaffId} đang bận hoặc nghỉ trong khung giờ {startTime} - {endTime}.");
         }
 
-    public async Task<List<TimeSlotDto>> GetAvailableTimeSlotsAsync(DateTime date, int totalDurationMinutes)
+        var detail = new BookingDetail
+        {
+            Booking = booking,
+            ServiceId = item.ServiceId,
+            StaffId = item.StaffId.HasValue && item.StaffId.Value > 0
+                ? item.StaffId
+                : null,
+
+            // UTC
+            AppointmentDate = appointmentDate,
+
+            StartTime = startTime,
+            EndTime = endTime,
+            Price = service.Price,
+            Status = BookingDetailStatus.Pending
+        };
+
+        await _unitOfWork.BookingDetailRepository.AddAsync(detail);
+
+        totalPrice += service.Price;
+
+        detailDtos.Add(new BookingDetailResponseDto
+        {
+            ServiceId = service.Id,
+            ServiceName = service.Name,
+            StaffId = detail.StaffId,
+
+            // UTC
+            AppointmentDate = appointmentDate,
+
+            StartTime = startTime,
+            EndTime = endTime,
+            Price = service.Price
+        });
+
+        currentStartTime = endTime;
+    }
+
+    booking.TotalPrice = totalPrice;
+    booking.FinalPrice = totalPrice;
+
+    await _unitOfWork.BookingRepository.AddAsync(booking);
+
+    var payment = new Payment
+    {
+        Booking = booking,
+        PaymentMethod = PaymentMethod.COD,
+        PaymentType = PaymentType.Full,
+        Amount = totalPrice,
+        Status = PaymentStatus.Pending
+    };
+
+    await _unitOfWork.PaymentRepository.AddAsync(payment);
+
+    await _unitOfWork.SaveChangesAsync();
+
+    return new BookingResponseDto
+    {
+        Id = booking.Id,
+        TotalPrice = booking.TotalPrice,
+        DiscountAmount = booking.DiscountAmount,
+        DepositAmount = booking.DepositAmount,
+        FinalPrice = booking.FinalPrice,
+        Status = booking.Status,
+        Services = detailDtos
+    };
+}
+
+  public async Task<List<TimeSlotDto>> GetAvailableTimeSlotsAsync(
+    DateTime date,
+    int totalDurationMinutes)
 {
     int storeId = await _currentUserService.GetCurrentStoreIdAsync();
     var slots = new List<TimeSlotDto>();
+
+    date = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
 
     var store = await _unitOfWork.StoreRepository.GetByIdAsync(storeId);
     if (store == null || !store.IsOpen)
         return slots;
 
-    var operatingHour = await _unitOfWork.StoreOperatingHourRepository.GetQueryable()
-        .FirstOrDefaultAsync(w => w.StoreId == storeId && w.DayOfWeek == date.DayOfWeek);
+    var operatingHour = await _unitOfWork.StoreOperatingHourRepository
+        .GetQueryable()
+        .FirstOrDefaultAsync(w =>
+            w.StoreId == storeId &&
+            w.DayOfWeek == date.DayOfWeek);
 
-    if (operatingHour == null || operatingHour.OpenTime == operatingHour.CloseTime) 
-        return slots; 
+    if (operatingHour == null ||
+        operatingHour.OpenTime == operatingHour.CloseTime)
+        return slots;
 
-    TimeSpan currentTime = operatingHour.OpenTime; 
-    TimeSpan closingTime = operatingHour.CloseTime;
-    var nowVN = DateTime.UtcNow.AddHours(7);
+    var currentTime = operatingHour.OpenTime;
+    var closingTime = operatingHour.CloseTime;
+
+    // Giờ Việt Nam hiện tại
+    var nowVN = TimeZoneInfo.ConvertTimeFromUtc(
+        DateTime.UtcNow,
+        TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
 
     while (currentTime.Add(TimeSpan.FromMinutes(totalDurationMinutes)) <= closingTime)
     {
-        var endTime = currentTime.Add(TimeSpan.FromMinutes(totalDurationMinutes));
-        
-        bool isPastSlot = (date.Date == nowVN.Date && currentTime <= nowVN.TimeOfDay);
+        var endTime = currentTime.Add(
+            TimeSpan.FromMinutes(totalDurationMinutes));
+
+        bool isPastSlot =
+            date.Date == VietnamTime.Now.Date &&
+            currentTime <= nowVN.TimeOfDay;
 
         bool isAvailable = false;
 
         if (!isPastSlot)
         {
-            var availableStaffs = await GetAvailableStaffsAsync(date, currentTime, endTime);
+            var availableStaffs =
+                await GetAvailableStaffsAsync(
+                    date,
+                    currentTime,
+                    endTime);
+
             isAvailable = availableStaffs.Any();
         }
 
@@ -528,7 +633,7 @@ namespace BeautyBookingSystem.Application.Services
             IsAvailable = isAvailable
         });
 
-        currentTime = currentTime.Add(TimeSpan.FromMinutes(totalDurationMinutes));
+        currentTime = endTime;
     }
 
     return slots;

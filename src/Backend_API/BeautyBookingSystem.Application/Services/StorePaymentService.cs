@@ -36,10 +36,20 @@ namespace BeautyBookingSystem.Application.Services
                 .Where(p => p.Booking.StoreId == storeId);
 
             if (request.FromDate.HasValue)
-                query = query.Where(p => p.PaidAt >= request.FromDate.Value || p.Booking.CreatedAt >= request.FromDate.Value);
+            {
+                var fromDate = DateTime.SpecifyKind(
+                    request.FromDate.Value,
+                    DateTimeKind.Utc);
+                query = query.Where(p => p.PaidAt >= fromDate || p.Booking.CreatedAt >= fromDate);
+            }
 
             if (request.ToDate.HasValue)
-                query = query.Where(p => p.PaidAt <= request.ToDate.Value || p.Booking.CreatedAt <= request.ToDate.Value);
+            {
+                var toDate = DateTime.SpecifyKind(
+                    request.ToDate.Value,
+                    DateTimeKind.Utc);
+                query = query.Where(p => p.PaidAt <= toDate || p.Booking.CreatedAt <= toDate);
+            }
 
             if (!string.IsNullOrEmpty(request.PaymentMethod) && Enum.TryParse<PaymentMethod>(request.PaymentMethod, true, out var methodEnum))
                 query = query.Where(p => p.PaymentMethod == methodEnum);
